@@ -50,12 +50,12 @@ export const FarmGrid: React.FC = () => {
         const isSelected = selectedTileCoord?.x === tile.x && selectedTileCoord?.y === tile.y;
         const isHovered = hoveredCoord?.x === tile.x && hoveredCoord?.y === tile.y;
 
-        // Black & Grayish soil dynamics
-        // Moisture 0: #292625 (dry dark charcoal) -> Moisture 100: #0d0d0e (pure black loam)
+        // Natural soil moisture dynamics
+        // Moisture 0: #a16207 (warm dry amber-brown) -> Moisture 100: #3b1d11 (deep moist rich loam)
         const moistureFactor = tile.moisture / 100;
-        const r = Math.round(41 - moistureFactor * 28);
-        const g = Math.round(38 - moistureFactor * 25);
-        const b = Math.round(37 - moistureFactor * 23);
+        const r = Math.round(165 - moistureFactor * 105);
+        const g = Math.round(100 - moistureFactor * 70);
+        const b = Math.round(35 - moistureFactor * 20);
         const soilColor = `rgb(${r}, ${g}, ${b})`;
 
         return (
@@ -80,27 +80,27 @@ export const FarmGrid: React.FC = () => {
               <boxGeometry args={[1.08, 0.1, 1.08]} />
               <meshStandardMaterial
                 color={soilColor}
-                roughness={0.92}
-                metalness={0.06}
+                roughness={0.9}
+                metalness={0.05}
               />
             </mesh>
 
-            {/* Dark graphite furrow borders */}
+            {/* Natural wooden furrow borders */}
             <mesh position={[0, 0.06, 0.52]}>
               <boxGeometry args={[1.12, 0.06, 0.04]} />
-              <meshStandardMaterial color="#1a1c20" roughness={0.8} />
+              <meshStandardMaterial color="#78350f" roughness={0.8} />
             </mesh>
             <mesh position={[0, 0.06, -0.52]}>
               <boxGeometry args={[1.12, 0.06, 0.04]} />
-              <meshStandardMaterial color="#1a1c20" roughness={0.8} />
+              <meshStandardMaterial color="#78350f" roughness={0.8} />
             </mesh>
             <mesh position={[0.52, 0.06, 0]}>
               <boxGeometry args={[0.04, 0.06, 1.08]} />
-              <meshStandardMaterial color="#1a1c20" roughness={0.8} />
+              <meshStandardMaterial color="#78350f" roughness={0.8} />
             </mesh>
             <mesh position={[-0.52, 0.06, 0]}>
               <boxGeometry args={[0.04, 0.06, 1.08]} />
-              <meshStandardMaterial color="#1a1c20" roughness={0.8} />
+              <meshStandardMaterial color="#78350f" roughness={0.8} />
             </mesh>
 
             {/* Weeds if infested */}

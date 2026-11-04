@@ -14,160 +14,168 @@ export const Environment: React.FC = () => {
 
   return (
     <group>
-      {/* Expansive Terrain Base - Sleek Dark Slate / Charcoal */}
+      {/* Expansive Terrain Base - Natural Lush Green Countryside Pasture */}
       <mesh position={[0, -0.05, 0]} receiveShadow>
         <boxGeometry args={[48, 0.2, 48]} />
-        <meshStandardMaterial color="#1a1c20" roughness={0.92} metalness={0.08} />
+        <meshStandardMaterial color="#22c55e" roughness={0.85} metalness={0.05} />
       </mesh>
 
-      {/* Farm boundary stone / gravel pathway */}
+      {/* Farm boundary dirt & gravel pathway */}
       <mesh position={[0, -0.04, 0]} receiveShadow>
         <boxGeometry args={[11, 0.21, 11]} />
-        <meshStandardMaterial color="#26282e" roughness={0.95} />
+        <meshStandardMaterial color="#ca8a04" roughness={0.92} />
       </mesh>
 
-      {/* Inner field ground clearing */}
+      {/* Inner field ground clearing - Fresh grass clearing */}
       <mesh position={[0, -0.03, 0]} receiveShadow>
         <boxGeometry args={[9.5, 0.22, 9.5]} />
-        <meshStandardMaterial color="#1f2227" roughness={0.88} />
+        <meshStandardMaterial color="#16a34a" roughness={0.8} />
       </mesh>
 
-      {/* --- RUSTIC CHARCOAL FARMHOUSE --- */}
+      {/* --- RUSTIC COZY FARMHOUSE --- */}
       <group position={[-8, 0, -4]} rotation={[0, 0.4, 0]}>
-        {/* Main Building Base */}
+        {/* Main Building Base (Warm Cream Timber) */}
         <mesh position={[0, 1.2, 0]} castShadow receiveShadow>
           <boxGeometry args={[3.2, 2.4, 2.8]} />
-          <meshStandardMaterial color="#2a2d33" roughness={0.8} />
+          <meshStandardMaterial color="#fef3c7" roughness={0.7} />
         </mesh>
-        {/* Pitched Roof */}
+        {/* Pitched Terracotta Red Roof */}
         <mesh position={[0, 2.9, 0]} rotation={[0, 0, 0]} castShadow>
           <coneGeometry args={[2.5, 1.4, 4]} />
-          <meshStandardMaterial color="#181a1e" roughness={0.6} />
+          <meshStandardMaterial color="#b91c1c" roughness={0.6} />
         </mesh>
-        {/* Chimney */}
+        {/* Brick Chimney */}
         <mesh position={[0.9, 3.1, 0.5]} castShadow>
           <boxGeometry args={[0.4, 1.0, 0.4]} />
-          <meshStandardMaterial color="#363942" roughness={0.9} />
+          <meshStandardMaterial color="#7f1d1d" roughness={0.9} />
         </mesh>
-        {/* Wooden Porch */}
+        {/* Natural Wooden Porch */}
         <mesh position={[0, 0.2, 1.6]} castShadow receiveShadow>
           <boxGeometry args={[3.4, 0.2, 0.8]} />
-          <meshStandardMaterial color="#1e2025" roughness={0.8} />
+          <meshStandardMaterial color="#92400e" roughness={0.8} />
         </mesh>
-        {/* Front Door */}
+        {/* Walnut Front Door */}
         <mesh position={[0, 0.9, 1.41]}>
           <boxGeometry args={[0.7, 1.4, 0.05]} />
-          <meshStandardMaterial color="#15171b" roughness={0.7} />
+          <meshStandardMaterial color="#78350f" roughness={0.7} />
         </mesh>
-        {/* Windows with soft warm interior glow */}
+        {/* Windows with warm glowing glass */}
         <mesh position={[-0.8, 1.3, 1.41]}>
           <boxGeometry args={[0.6, 0.6, 0.05]} />
-          <meshStandardMaterial color="#fef08a" roughness={0.2} emissive="#fef08a" emissiveIntensity={0.35} />
+          <meshStandardMaterial color="#38bdf8" roughness={0.2} emissive="#0284c7" emissiveIntensity={0.25} />
         </mesh>
         <mesh position={[0.8, 1.3, 1.41]}>
           <boxGeometry args={[0.6, 0.6, 0.05]} />
-          <meshStandardMaterial color="#fef08a" roughness={0.2} emissive="#fef08a" emissiveIntensity={0.35} />
+          <meshStandardMaterial color="#38bdf8" roughness={0.2} emissive="#0284c7" emissiveIntensity={0.25} />
         </mesh>
       </group>
 
-      {/* --- WEATHERED GRAPHITE BARN --- */}
+      {/* --- ICONIC CLASSIC RED BARN --- */}
       <group position={[7.5, 0, -6]} rotation={[0, -0.3, 0]}>
-        {/* Barn walls */}
+        {/* Barn walls (Vibrant Barn Red) */}
         <mesh position={[0, 1.8, 0]} castShadow receiveShadow>
           <boxGeometry args={[4.2, 3.6, 3.4]} />
-          <meshStandardMaterial color="#22252a" roughness={0.8} />
+          <meshStandardMaterial color="#dc2626" roughness={0.65} />
         </mesh>
         {/* Gambrel Barn Roof */}
         <mesh position={[0, 4.0, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
           <cylinderGeometry args={[2.4, 2.4, 4.4, 4]} />
-          <meshStandardMaterial color="#16181b" roughness={0.6} />
+          <meshStandardMaterial color="#991b1b" roughness={0.55} />
         </mesh>
-        {/* Big Sliding Barn Doors */}
+        {/* Big Sliding Barn Doors with White X Trim */}
         <mesh position={[0, 1.2, 1.72]}>
           <boxGeometry args={[1.8, 2.4, 0.06]} />
-          <meshStandardMaterial color="#131518" roughness={0.8} />
+          <meshStandardMaterial color="#7f1d1d" roughness={0.8} />
         </mesh>
         <mesh position={[0, 1.2, 1.76]}>
-          <boxGeometry args={[1.6, 0.08, 0.05]} />
-          <meshStandardMaterial color="#474d57" roughness={0.6} />
+          <boxGeometry args={[1.6, 0.1, 0.05]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.4} />
+        </mesh>
+        <mesh position={[0, 1.2, 1.76]} rotation={[0, 0, 0.6]}>
+          <boxGeometry args={[1.8, 0.08, 0.05]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.4} />
+        </mesh>
+        <mesh position={[0, 1.2, 1.76]} rotation={[0, 0, -0.6]}>
+          <boxGeometry args={[1.8, 0.08, 0.05]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.4} />
         </mesh>
       </group>
 
-      {/* --- STONE WINDMILL WITH ROTATING BLADES --- */}
+      {/* --- TRADITIONAL STONE WINDMILL --- */}
       <group position={[-7.5, 0, 6]}>
         {/* Tapered Stone Tower */}
         <mesh position={[0, 2.5, 0]} castShadow receiveShadow>
           <cylinderGeometry args={[0.8, 1.4, 5, 8]} />
-          <meshStandardMaterial color="#333740" roughness={0.85} />
+          <meshStandardMaterial color="#e2e8f0" roughness={0.8} />
         </mesh>
         {/* Cap Dome */}
         <mesh position={[0, 5.2, 0]} castShadow>
           <sphereGeometry args={[0.9, 8, 8]} />
-          <meshStandardMaterial color="#1f2228" roughness={0.6} />
+          <meshStandardMaterial color="#b45309" roughness={0.6} />
         </mesh>
         {/* Rotating Blades */}
         <group ref={windmillBladesRef} position={[0, 5.2, 0.95]}>
           {/* Center Hub */}
           <mesh position={[0, 0, 0]}>
             <cylinderGeometry args={[0.2, 0.2, 0.2, 8]} />
-            <meshStandardMaterial color="#181a1e" />
+            <meshStandardMaterial color="#78350f" />
           </mesh>
-          {/* 4 Weathered Sail Blades */}
+          {/* 4 Wooden Sail Blades */}
           {[0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].map((angle, idx) => (
             <group key={idx} rotation={[0, 0, angle]}>
               <mesh position={[0, 1.6, 0]}>
                 <boxGeometry args={[0.3, 2.8, 0.03]} />
-                <meshStandardMaterial color="#4b505c" roughness={0.7} />
+                <meshStandardMaterial color="#fef3c7" roughness={0.7} />
               </mesh>
               <mesh position={[0, 1.6, -0.01]}>
                 <boxGeometry args={[0.08, 3.2, 0.05]} />
-                <meshStandardMaterial color="#1c1e22" roughness={0.8} />
+                <meshStandardMaterial color="#78350f" roughness={0.8} />
               </mesh>
             </group>
           ))}
         </group>
       </group>
 
-      {/* --- WATER POND & DOCK --- */}
+      {/* --- NATURAL SPARKLING WATER POND & DOCK --- */}
       <group position={[7.5, 0, 5]}>
-        {/* Pond depression ring */}
+        {/* Pond depression ring bank */}
         <mesh position={[0, 0.02, 0]} receiveShadow>
           <cylinderGeometry args={[2.5, 2.8, 0.1, 16]} />
-          <meshStandardMaterial color="#1a1c21" roughness={0.8} />
+          <meshStandardMaterial color="#15803d" roughness={0.85} />
         </mesh>
-        {/* Shimmering Obsidian Water Surface */}
+        {/* Clear Blue Shimmering Water Surface */}
         <mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[2.3, 24]} />
           <meshStandardMaterial
-            color="#0f172a"
-            roughness={0.12}
-            metalness={0.85}
+            color="#0284c7"
+            roughness={0.08}
+            metalness={0.9}
             transparent
-            opacity={0.9}
+            opacity={0.88}
           />
         </mesh>
-        {/* Small Dark Wood Pier */}
+        {/* Natural Wooden Pier */}
         <mesh position={[-1.2, 0.14, 0]} castShadow receiveShadow>
           <boxGeometry args={[1.4, 0.08, 0.8]} />
-          <meshStandardMaterial color="#25282f" roughness={0.8} />
+          <meshStandardMaterial color="#92400e" roughness={0.8} />
         </mesh>
       </group>
 
-      {/* --- WOODEN POST FENCES (Dark Weathered Timber) --- */}
+      {/* --- NATURAL RUSTIC SPLIT-RAIL WOODEN FENCES --- */}
       {[-5.2, 5.2].map((x) =>
         [-4, -2, 0, 2, 4].map((z) => (
           <group key={`fence_v_${x}_${z}`} position={[x, 0.35, z]}>
             <mesh castShadow>
               <cylinderGeometry args={[0.05, 0.05, 0.7, 6]} />
-              <meshStandardMaterial color="#2d3037" roughness={0.8} />
+              <meshStandardMaterial color="#92400e" roughness={0.8} />
             </mesh>
             <mesh position={[0, 0.15, 0]}>
               <boxGeometry args={[0.04, 0.06, 2.0]} />
-              <meshStandardMaterial color="#24262c" roughness={0.8} />
+              <meshStandardMaterial color="#b45309" roughness={0.8} />
             </mesh>
             <mesh position={[0, -0.15, 0]}>
               <boxGeometry args={[0.04, 0.06, 2.0]} />
-              <meshStandardMaterial color="#24262c" roughness={0.8} />
+              <meshStandardMaterial color="#b45309" roughness={0.8} />
             </mesh>
           </group>
         ))
@@ -183,7 +191,7 @@ export const Environment: React.FC = () => {
         <LightTower position={[6.2, 0, 6.0]} targetPosition={[0, 0, 0]} />
       </group>
 
-      {/* --- STYLIZED PINE & OAK TREES (Muted Nordic Pine & Bark) --- */}
+      {/* --- LUSH NATURAL PINE & OAK TREES --- */}
       {[
         { x: -12, z: -10, scale: 1.3, type: 'pine' },
         { x: -14, z: -4, scale: 1.1, type: 'oak' },
@@ -195,38 +203,38 @@ export const Environment: React.FC = () => {
         { x: 9, z: 12, scale: 1.0, type: 'oak' },
       ].map((tree, i) => (
         <group key={`tree_${i}`} position={[tree.x, 0, tree.z]} scale={[tree.scale, tree.scale, tree.scale]}>
-          {/* Trunk */}
+          {/* Natural Wood Trunk */}
           <mesh position={[0, 0.8, 0]} castShadow>
             <cylinderGeometry args={[0.2, 0.3, 1.6, 6]} />
-            <meshStandardMaterial color="#1a1c20" roughness={0.9} />
+            <meshStandardMaterial color="#78350f" roughness={0.9} />
           </mesh>
           {tree.type === 'pine' ? (
-            // Layered Pine foliage
+            // Layered Vibrant Pine Foliage
             <>
               <mesh position={[0, 2.0, 0]} castShadow>
                 <coneGeometry args={[1.2, 1.4, 6]} />
-                <meshStandardMaterial color="#1c241e" roughness={0.8} />
+                <meshStandardMaterial color="#166534" roughness={0.7} />
               </mesh>
               <mesh position={[0, 2.8, 0]} castShadow>
                 <coneGeometry args={[0.9, 1.2, 6]} />
-                <meshStandardMaterial color="#222d25" roughness={0.8} />
+                <meshStandardMaterial color="#15803d" roughness={0.7} />
               </mesh>
               <mesh position={[0, 3.5, 0]} castShadow>
                 <coneGeometry args={[0.6, 1.0, 6]} />
-                <meshStandardMaterial color="#29362c" roughness={0.8} />
+                <meshStandardMaterial color="#22c55e" roughness={0.7} />
               </mesh>
             </>
           ) : (
-            // Round Oak foliage
+            // Round Lush Oak Foliage
             <mesh position={[0, 2.2, 0]} castShadow>
               <dodecahedronGeometry args={[1.4]} />
-              <meshStandardMaterial color="#243027" roughness={0.8} />
+              <meshStandardMaterial color="#15803d" roughness={0.7} />
             </mesh>
           )}
         </group>
       ))}
 
-      {/* --- SCATTERED FIELD ROCKS (Granite Slate) --- */}
+      {/* --- SCATTERED FIELD ROCKS (Natural Slate) --- */}
       {[
         { x: -6, z: 2, s: 0.3 },
         { x: 6, z: -2, s: 0.4 },
@@ -235,7 +243,7 @@ export const Environment: React.FC = () => {
       ].map((rock, i) => (
         <mesh key={`rock_${i}`} position={[rock.x, rock.s * 0.4, rock.z]} scale={[rock.s, rock.s * 0.7, rock.s]} castShadow>
           <dodecahedronGeometry args={[1]} />
-          <meshStandardMaterial color="#3f434d" roughness={0.9} />
+          <meshStandardMaterial color="#94a3b8" roughness={0.9} />
         </mesh>
       ))}
     </group>

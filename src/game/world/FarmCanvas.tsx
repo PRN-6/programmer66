@@ -27,7 +27,7 @@ export const FarmCanvas: React.FC = () => {
 
   // Dynamic background sky color calculation
   const isNight = timeOfDay < 5.5 || timeOfDay > 19.5;
-  const skyColor = isNight ? '#090a0e' : profile.skyColor;
+  const skyColor = isNight ? '#0b1120' : profile.skyColor;
 
   return (
     <div className="w-full h-full relative select-none">

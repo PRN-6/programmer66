@@ -105,7 +105,7 @@ export const TopHUD: React.FC<TopHUDProps> = ({
             <h1 className="text-sm font-bold tracking-tight text-white leading-none font-mono">
               programmer66
             </h1>
-            <span className="text-[10px] font-medium text-neutral-400">
+            <span className="text-[10px] font-semibold text-emerald-400">
               Autonomous Agriculture
             </span>
           </div>

@@ -28,11 +28,12 @@ export const WeatherEffects: React.FC = () => {
   const sunX = Math.cos(sunAngle) * 18;
   const isDay = sunY > -1;
 
-  // Soft natural silvery daylight
+  // Soft natural golden daylight
   const sunColor = useMemo(() => {
-    if (timeOfDay < 7.5 || timeOfDay > 17.5) return '#d4d4d8'; // muted dawn/dusk
+    if (weather === 'drought') return '#fef08a';
+    if (timeOfDay < 8 || timeOfDay > 17) return '#fdba74'; // sunset / sunrise golden glow
     return profile.sunColor;
-  }, [profile.sunColor, timeOfDay]);
+  }, [profile.sunColor, weather, timeOfDay]);
 
   // Lightning state for thunderstorms
   const [lightningIntensity, setLightningIntensity] = React.useState(0);
@@ -65,11 +66,11 @@ export const WeatherEffects: React.FC = () => {
 
   return (
     <>
-      {/* Dynamic Hemisphere Ambient Light (Cool gray & graphite ground) */}
+      {/* Dynamic Hemisphere Ambient Light (Warm sky & lush green bounce) */}
       <hemisphereLight
         args={[
-          isDay ? '#3f444e' : '#14161c',
-          isDay ? '#1a1c20' : '#090a0d',
+          isDay ? (weather === 'drought' ? '#fdba74' : '#bae6fd') : '#1e1b4b',
+          isDay ? '#3f6212' : '#090d16',
           (profile.ambientIntensity + lightningIntensity) * (isDay ? 1 : 0.35),
         ]}
       />
