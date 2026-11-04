@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { RobotState } from '../../types/game';
@@ -13,6 +13,7 @@ export const RobotRenderer: React.FC<RobotRendererProps> = ({ robot, gridWidth, 
   const groupRef = useRef<THREE.Group>(null);
   const rotorsRef = useRef<THREE.Group[]>([]);
   const toolGroupRef = useRef<THREE.Group>(null);
+  const isInitializedRef = useRef(false);
 
   const offsetX = (gridWidth - 1) * 0.5;
   const offsetZ = (gridHeight - 1) * 0.5;
@@ -20,8 +21,22 @@ export const RobotRenderer: React.FC<RobotRendererProps> = ({ robot, gridWidth, 
   const targetWorldX = (robot.x - offsetX) * 1.2;
   const targetWorldZ = (robot.y - offsetZ) * 1.2;
 
+  // Initialize position once on mount
+  useEffect(() => {
+    if (groupRef.current && !isInitializedRef.current) {
+      groupRef.current.position.set(targetWorldX, 0.88, targetWorldZ);
+      isInitializedRef.current = true;
+    }
+  }, [targetWorldX, targetWorldZ]);
+
   useFrame((state, delta) => {
     if (!groupRef.current) return;
+
+    if (!isInitializedRef.current) {
+      groupRef.current.position.set(targetWorldX, 0.88, targetWorldZ);
+      isInitializedRef.current = true;
+      return;
+    }
 
     const time = state.clock.getElapsedTime();
 
@@ -31,37 +46,64 @@ export const RobotRenderer: React.FC<RobotRendererProps> = ({ robot, gridWidth, 
 
     const diffX = targetWorldX - currentX;
     const diffZ = targetWorldZ - currentZ;
+    const dist = Math.hypot(diffX, diffZ);
 
-    const moveStep = Math.min(1, delta * robot.speed * 4.0);
-    groupRef.current.position.x += diffX * moveStep;
-    groupRef.current.position.z += diffZ * moveStep;
+    const isMoving = dist > 0.03;
 
-    const isMoving = Math.abs(diffX) > 0.02 || Math.abs(diffZ) > 0.02;
+    if (dist > 0.001) {
+      // Responsive, smooth flight interpolation
+      const lerpFactor = THREE.MathUtils.clamp(delta * 9.5, 0, 1);
+      groupRef.current.position.x += diffX * lerpFactor;
+      groupRef.current.position.z += diffZ * lerpFactor;
+    }
 
-    // Hover flight altitude & organic bobbing
-    const hoverY = 0.85;
-    const bob = isMoving ? Math.sin(time * 10) * 0.04 : Math.sin(time * 3) * 0.025;
+    // Hover flight altitude & dynamic bobbing
+    const hoverY = 0.88;
+    const bob = isMoving ? Math.sin(time * 14) * 0.045 : Math.sin(time * 3.5) * 0.025;
     groupRef.current.position.y = hoverY + bob;
 
     // Drone banking / tilt into direction of flight
     if (isMoving) {
       const targetAngle = Math.atan2(diffX, diffZ);
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetAngle, delta * 8);
+      // Smooth yaw rotation towards heading
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(
+        groupRef.current.rotation.y,
+        targetAngle,
+        THREE.MathUtils.clamp(delta * 10, 0, 1)
+      );
 
       // Pitch forward slightly while moving
-      const tiltPitch = Math.min(0.25, Math.hypot(diffX, diffZ) * 0.4);
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, tiltPitch, delta * 6);
+      const tiltPitch = Math.min(0.28, dist * 0.45);
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(
+        groupRef.current.rotation.x,
+        tiltPitch,
+        THREE.MathUtils.clamp(delta * 8, 0, 1)
+      );
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(
+        groupRef.current.rotation.z,
+        0,
+        THREE.MathUtils.clamp(delta * 8, 0, 1)
+      );
     } else {
       // Gentle idle sway
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, Math.sin(time * 2) * 0.03, delta * 4);
-      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, Math.cos(time * 2) * 0.03, delta * 4);
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(
+        groupRef.current.rotation.x,
+        Math.sin(time * 2) * 0.025,
+        THREE.MathUtils.clamp(delta * 4, 0, 1)
+      );
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(
+        groupRef.current.rotation.z,
+        Math.cos(time * 2) * 0.025,
+        THREE.MathUtils.clamp(delta * 4, 0, 1)
+      );
     }
 
     // High-speed rotor blade spinning animation
+    const rotorSpeed = isMoving || robot.currentTool !== 'idle' ? 50 : 32;
     rotorsRef.current.forEach((rotor, idx) => {
       if (rotor) {
         const dir = idx % 2 === 0 ? 1 : -1;
-        rotor.rotation.y += delta * 35 * dir;
+        rotor.rotation.y += delta * rotorSpeed * dir;
       }
     });
 
@@ -69,18 +111,24 @@ export const RobotRenderer: React.FC<RobotRendererProps> = ({ robot, gridWidth, 
     if (toolGroupRef.current) {
       if (robot.currentTool === 'watering') {
         toolGroupRef.current.scale.set(
-          1 + Math.sin(time * 12) * 0.08,
+          1 + Math.sin(time * 16) * 0.1,
           1,
-          1 + Math.sin(time * 12) * 0.08
+          1 + Math.sin(time * 16) * 0.1
         );
       } else if (robot.currentTool === 'harvesting') {
-        toolGroupRef.current.rotation.y += delta * 15;
+        toolGroupRef.current.rotation.y += delta * 18;
+      } else if (robot.currentTool === 'planting') {
+        toolGroupRef.current.scale.set(
+          1,
+          1 + Math.sin(time * 20) * 0.06,
+          1
+        );
       }
     }
   });
 
   return (
-    <group ref={groupRef} position={[targetWorldX, 0.85, targetWorldZ]}>
+    <group ref={groupRef}>
       {/* --- CENTRAL DRONE AVIONICS FUSELAGE --- */}
       <mesh castShadow>
         <boxGeometry args={[0.34, 0.14, 0.38]} />
@@ -257,6 +305,40 @@ export const RobotRenderer: React.FC<RobotRendererProps> = ({ robot, gridWidth, 
                 />
               </mesh>
             </group>
+          )}
+
+          {/* CLEARING ANIMATION: Ruby plasma pulse beam */}
+          {robot.currentTool === 'clearing' && (
+            <group position={[0, -0.38, 0]}>
+              <mesh position={[0, 0, 0]}>
+                <cylinderGeometry args={[0.025, 0.025, 0.75, 8]} />
+                <meshBasicMaterial color="#f43f5e" />
+              </mesh>
+              <mesh position={[0, -0.36, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.22, 0.32, 24]} />
+                <meshBasicMaterial color="#f43f5e" transparent opacity={0.8} />
+              </mesh>
+            </group>
+          )}
+
+          {/* Dynamic downward illumination during tool execution */}
+          {robot.currentTool !== 'idle' && (
+            <pointLight
+              position={[0, -0.2, 0]}
+              distance={2.5}
+              intensity={2.0}
+              color={
+                robot.currentTool === 'watering'
+                  ? '#38bdf8'
+                  : robot.currentTool === 'planting'
+                  ? '#4ade80'
+                  : robot.currentTool === 'harvesting'
+                  ? '#fbbf24'
+                  : robot.currentTool === 'fertilizing'
+                  ? '#c084fc'
+                  : '#f43f5e'
+              }
+            />
           )}
         </group>
       </group>

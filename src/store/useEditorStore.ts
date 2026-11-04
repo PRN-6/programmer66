@@ -194,8 +194,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     state.addLog('info', `>>> Running ${currentTab.name}...`);
 
     const speedDelays: Record<EditorState['speedMode'], number> = {
-      '1x': 240,
-      '2x': 100,
+      '1x': 250,
+      '2x': 110,
       '5x': 30,
       instant: 0,
     };

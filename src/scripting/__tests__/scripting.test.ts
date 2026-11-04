@@ -106,5 +106,72 @@ while True:
     const interpreter = new Interpreter({ maxSteps: 500, stepDelayMs: 0 });
     await expect(interpreter.run(ast)).rejects.toThrow('ExecutionLimitExceeded');
   });
+
+  it('controls autonomous drone through game API', async () => {
+    const { createGameAPI } = await import('../api');
+    const logs: string[] = [];
+    const api = createGameAPI({
+      getStepDelay: () => 0,
+      isCancelled: () => false,
+      onLog: (msg) => logs.push(msg),
+    });
+
+    const code = `
+# Fly drone to (2, 3)
+robot.move_to(2, 3)
+pos = robot.get_position()
+robot_x = pos.x
+robot_y = pos.y
+
+# Plant and water
+tile = farm.get_tile(2, 3)
+planted = tile.plant("wheat")
+watered = tile.water(50)
+is_empty = tile.is_empty()
+crop_name = tile.crop
+`;
+    const lexer = new Lexer(code);
+    const parser = new Parser(lexer.tokenize());
+    const ast = parser.parse();
+    const interpreter = new Interpreter({ stepDelayMs: 0 });
+    const env = interpreter.getGlobalEnv();
+    env.define('farm', api.farm);
+    env.define('robot', api.robot);
+    env.define('inventory', api.inventory);
+
+    await interpreter.run(ast);
+
+    expect(env.get('robot_x')).toBe(2);
+    expect(env.get('robot_y')).toBe(3);
+    expect(env.get('planted')).toBe(true);
+    expect(env.get('watered')).toBe(true);
+    expect(env.get('is_empty')).toBe(false);
+    expect(env.get('crop_name')).toBe('wheat');
+  });
+
+  it('supports iterating over farm.tiles and farm.get_tiles()', async () => {
+    const { createGameAPI } = await import('../api');
+    const api = createGameAPI({
+      getStepDelay: () => 0,
+      isCancelled: () => false,
+      onLog: () => {},
+    });
+
+    const code = `
+tiles_count = 0
+for t in farm.tiles:
+    tiles_count = tiles_count + 1
+`;
+    const lexer = new Lexer(code);
+    const parser = new Parser(lexer.tokenize());
+    const ast = parser.parse();
+    const interpreter = new Interpreter({ stepDelayMs: 0 });
+    const env = interpreter.getGlobalEnv();
+    env.define('farm', api.farm);
+    env.define('robot', api.robot);
+
+    await interpreter.run(ast);
+    expect(env.get('tiles_count')).toBe(36);
+  });
 });
 
