@@ -1,4 +1,4 @@
-// Web Audio API procedural sound synthesizer for FARMING 68
+// Web Audio API procedural sound synthesizer for programmer66
 
 class SoundManager {
   private ctx: AudioContext | null = null;

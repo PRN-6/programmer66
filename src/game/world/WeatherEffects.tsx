@@ -23,18 +23,16 @@ export const WeatherEffects: React.FC = () => {
   }, []);
 
   // Sun and Moon celestial calculation based on 24hr timeOfDay
-  // 6.0 = Sunrise (+X), 12.0 = Noon (+Y), 18.0 = Sunset (-X), 24.0/0.0 = Midnight (-Y)
   const sunAngle = ((timeOfDay - 6) / 24) * Math.PI * 2;
   const sunY = Math.sin(sunAngle) * 16;
   const sunX = Math.cos(sunAngle) * 18;
   const isDay = sunY > -1;
 
-  // Color temperature adjustments
+  // Soft natural silvery daylight
   const sunColor = useMemo(() => {
-    if (weather === 'drought') return '#fef08a';
-    if (timeOfDay < 8 || timeOfDay > 17) return '#fdba74'; // sunset / sunrise orange
-    return '#fffbeb';
-  }, [weather, timeOfDay]);
+    if (timeOfDay < 7.5 || timeOfDay > 17.5) return '#d4d4d8'; // muted dawn/dusk
+    return profile.sunColor;
+  }, [profile.sunColor, timeOfDay]);
 
   // Lightning state for thunderstorms
   const [lightningIntensity, setLightningIntensity] = React.useState(0);
@@ -67,11 +65,11 @@ export const WeatherEffects: React.FC = () => {
 
   return (
     <>
-      {/* Dynamic Hemisphere Ambient Light */}
+      {/* Dynamic Hemisphere Ambient Light (Cool gray & graphite ground) */}
       <hemisphereLight
         args={[
-          isDay ? (weather === 'drought' ? '#fdba74' : '#bae6fd') : '#1e1b4b',
-          isDay ? '#3f6212' : '#090d16',
+          isDay ? '#3f444e' : '#14161c',
+          isDay ? '#1a1c20' : '#090a0d',
           (profile.ambientIntensity + lightningIntensity) * (isDay ? 1 : 0.35),
         ]}
       />
@@ -80,7 +78,7 @@ export const WeatherEffects: React.FC = () => {
       {isDay && (
         <directionalLight
           position={[sunX, Math.max(2, sunY), 10]}
-          intensity={profile.sunIntensity * (weather === 'stormy' ? 0.3 : 1.2)}
+          intensity={profile.sunIntensity * (weather === 'stormy' ? 0.3 : 1.1)}
           color={sunColor}
           castShadow
           shadow-mapSize-width={1024}
@@ -94,12 +92,12 @@ export const WeatherEffects: React.FC = () => {
         />
       )}
 
-      {/* Moon Light at night */}
+      {/* Moon Light at night (Cool silvery gray) */}
       {!isDay && (
         <directionalLight
           position={[-sunX, Math.max(2, -sunY), -10]}
           intensity={0.4}
-          color="#93c5fd"
+          color="#94a3b8"
         />
       )}
 
@@ -108,28 +106,28 @@ export const WeatherEffects: React.FC = () => {
         <pointLight
           position={[0, 10, 0]}
           intensity={lightningIntensity * 4}
-          color="#e0f2fe"
+          color="#f4f4f5"
           distance={40}
         />
       )}
 
-      {/* Visual Sun Sphere */}
+      {/* Visual Sun Sphere - Soft Silvery White */}
       {isDay && (
         <mesh position={[sunX, Math.max(2, sunY), 10]}>
           <sphereGeometry args={[1.2, 16, 16]} />
-          <meshBasicMaterial color={sunColor} />
+          <meshBasicMaterial color="#f4f4f5" />
         </mesh>
       )}
 
-      {/* Visual Moon Sphere */}
+      {/* Visual Moon Sphere - Silver */}
       {!isDay && (
         <mesh position={[-sunX, Math.max(2, -sunY), -10]}>
           <sphereGeometry args={[0.9, 16, 16]} />
-          <meshBasicMaterial color="#e2e8f0" />
+          <meshBasicMaterial color="#d4d4d8" />
         </mesh>
       )}
 
-      {/* Falling Rain Particle Streaks */}
+      {/* Falling Rain Particle Streaks - Silver Gray */}
       {rainCount > 0 && (
         <points>
           <bufferGeometry ref={rainGeoRef}>
@@ -140,9 +138,9 @@ export const WeatherEffects: React.FC = () => {
           </bufferGeometry>
           <pointsMaterial
             size={0.12}
-            color="#93c5fd"
+            color="#cbd5e1"
             transparent
-            opacity={0.7}
+            opacity={0.65}
             depthWrite={false}
           />
         </points>
@@ -150,4 +148,3 @@ export const WeatherEffects: React.FC = () => {
     </>
   );
 };
-

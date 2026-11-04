@@ -6,7 +6,7 @@ export const INITIAL_MISSIONS: Mission[] = [
     title: 'MISSION 01: First Seeds',
     stage: 1,
     stageName: 'Stage 1: Beginner Farmer',
-    description: 'Welcome to FARMING 68! Begin by planting 5 wheat seeds manually or via script. Ensure your farm takes its first breath.',
+    description: 'Welcome to programmer66! Begin by planting 5 wheat seeds manually or via script. Ensure your farm takes its first breath.',
     objectives: [
       {
         id: 'plant_wheat_5',

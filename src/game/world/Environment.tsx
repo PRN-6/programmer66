@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { LightTower } from './LightTower';
 
 export const Environment: React.FC = () => {
   const windmillBladesRef = useRef<THREE.Group>(null);
@@ -171,6 +172,16 @@ export const Environment: React.FC = () => {
           </group>
         ))
       )}
+
+      {/* --- NIGHTTIME AGRICULTURAL FLOODLIGHT TOWERS --- */}
+      {/* North-West Perimeter Light Tower */}
+      <group rotation={[0, 0.65, 0]}>
+        <LightTower position={[-6.2, 0, -6.0]} targetPosition={[0, 0, 0]} />
+      </group>
+      {/* South-East Perimeter Light Tower */}
+      <group rotation={[0, Math.PI + 0.65, 0]}>
+        <LightTower position={[6.2, 0, 6.0]} targetPosition={[0, 0, 0]} />
+      </group>
 
       {/* --- STYLIZED PINE & OAK TREES (Muted Nordic Pine & Bark) --- */}
       {[

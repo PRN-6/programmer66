@@ -122,20 +122,20 @@ function createInitialTiles(): Record<string, TileState> {
 
 const INITIAL_ROBOTS: RobotState[] = [
   {
-    id: 'rusty_01',
-    name: 'Rusty-01',
-    type: 'basic',
+    id: 'drone_01',
+    name: 'AeroDrone-01',
+    type: 'drone',
     x: 0,
     y: 0,
     targetX: 0,
     targetY: 0,
-    color: '#0284c7', // vibrant cyan/blue
-    speed: 3.5,
+    color: '#27272a',
+    speed: 4.2,
     energy: 100,
     maxEnergy: 100,
     currentTool: 'idle',
-    currentTask: 'Standby',
-    inventoryCapacity: 40,
+    currentTask: 'Hovering - Standby',
+    inventoryCapacity: 50,
     inventory: {},
   },
 ];
@@ -170,7 +170,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   gridHeight: GRID_DEFAULT_HEIGHT,
   tiles: createInitialTiles(),
   robots: INITIAL_ROBOTS,
-  activeRobotId: 'rusty_01',
+  activeRobotId: 'drone_01',
 
   money: 120, // Starting capital
   inventory: INITIAL_INVENTORY,
@@ -750,7 +750,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         missions: state.missions,
         robotActionCount: state.robotActionCount,
       };
-      localStorage.setItem('farming68_save', JSON.stringify(saveData));
+      localStorage.setItem('programmer66_save', JSON.stringify(saveData));
     } catch (e) {
       console.warn('Failed to save to localStorage:', e);
     }
@@ -759,7 +759,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   loadGame: () => {
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
     try {
-      const saved = localStorage.getItem('farming68_save');
+      const saved = localStorage.getItem('programmer66_save') || localStorage.getItem('farming68_save');
       if (!saved) return false;
       const data = JSON.parse(saved);
       set({
@@ -786,6 +786,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   resetGame: () => {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
       try {
+        localStorage.removeItem('programmer66_save');
         localStorage.removeItem('farming68_save');
       } catch (e) {
         console.warn('Failed to clear localStorage:', e);

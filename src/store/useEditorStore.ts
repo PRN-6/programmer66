@@ -22,39 +22,37 @@ const DEFAULT_SCRIPTS: ScriptTab[] = [
   {
     id: 'main',
     name: 'main.py',
-    code: `# FARMING 68 - Agricultural Automation Script
-# Write Python code to control your farm and robots!
+    code: `# programmer66 - Autonomous Agricultural Drone
+# Write Python code to control your drone and automate the farm!
 
-print("Initiating farm inspection cycle...")
+print("Deploying AeroDrone-01...")
 
-# 1. Inspect every tile on the farm
-tiles = farm.get_tiles()
-print("Found", len(tiles), "farm plots.")
-
-for tile in tiles:
-    # Harvest mature crops
-    if tile.is_ready():
-        print("Harvesting mature crop at (", tile.x, ",", tile.y, ")")
-        tile.harvest()
-
-    # Plant wheat on empty soil
+# Loop through all farm plots
+for tile in farm.get_tiles():
+    # If the plot is empty, the drone flies over and plants wheat
     if tile.is_empty():
+        print("Drone planting wheat at (", tile.x, ",", tile.y, ")")
         tile.plant("wheat")
 
-    # Water dry tiles
+    # If the soil needs water, the drone sprays hydration mist
     if tile.needs_water():
+        print("Drone watering plot at (", tile.x, ",", tile.y, ")")
         tile.water()
 
-print("Automation routine finished successfully!")
+    # If the crop is ready, the drone harvests it
+    if tile.is_ready():
+        print("Drone harvesting mature crop at (", tile.x, ",", tile.y, ")")
+        tile.harvest()
+
+print("Routine complete. Drone returning to station.")
+robot.move_to(0, 0)
 `,
   },
   {
     id: 'robot_patrol',
     name: 'patrol.py',
-    code: `# Robot Physical Patrol Script
-# Commands Rusty-01 to traverse the farm and service plots
-
-print("Deploying Rusty-01 on field patrol...")
+    code: `# Autonomous Drone Grid Patrol
+print("AeroDrone-01 initiating area patrol...")
 
 for y in range(4):
     for x in range(4):
@@ -131,7 +129,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       id: 'init-1',
       timestamp: new Date().toLocaleTimeString(),
       type: 'info',
-      text: 'FARMING 68 Python Automation Runtime v2.0 ready.',
+      text: 'programmer66 Python Automation Runtime v2.0 ready.',
     },
     {
       id: 'init-2',

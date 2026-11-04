@@ -6,7 +6,7 @@ import { Lexer } from '../../../scripting/lexer';
 import { Parser } from '../../../scripting/parser';
 import { Interpreter } from '../../../scripting/interpreter';
 
-describe('FARMING 68 Simulation & Game Mechanics', () => {
+describe('programmer66 Simulation & Game Mechanics', () => {
   beforeEach(() => {
     useGameStore.getState().resetGame();
   });

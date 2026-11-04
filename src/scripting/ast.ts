@@ -1,4 +1,4 @@
-// AST definitions for FARMING 68 Python-like Automation Language
+// AST definitions for programmer66 Python-like Automation Language
 
 export type ASTNode =
   | Program

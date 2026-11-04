@@ -1,4 +1,4 @@
-// Lexer for FARMING 68 Python-like automation language
+// Lexer for programmer66 Python-like automation language
 
 export type TokenType =
   | 'NUMBER'

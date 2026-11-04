@@ -98,12 +98,12 @@ export const TopHUD: React.FC<TopHUDProps> = ({
       {/* Brand & Level */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-neutral-800 border border-neutral-700 flex items-center justify-center font-extrabold text-neutral-100 text-sm shadow-sm">
-            68
+          <div className="w-8 h-8 rounded-lg bg-neutral-800 border border-neutral-700 flex items-center justify-center font-extrabold text-neutral-100 text-sm shadow-sm font-mono">
+            66
           </div>
           <div>
-            <h1 className="text-sm font-bold tracking-tight text-white leading-none">
-              FARMING 68
+            <h1 className="text-sm font-bold tracking-tight text-white leading-none font-mono">
+              programmer66
             </h1>
             <span className="text-[10px] font-medium text-neutral-400">
               Autonomous Agriculture

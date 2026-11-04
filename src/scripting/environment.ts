@@ -1,4 +1,4 @@
-// Environment and scope manager for FARMING 68 scripting
+// Environment and scope manager for programmer66 scripting
 
 export class Environment {
   private values: Map<string, unknown> = new Map();
