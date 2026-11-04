@@ -247,6 +247,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const env = interpreter.getGlobalEnv();
       env.define('farm', api.farm);
       env.define('robot', api.robot);
+      env.define('drone', api.robot);
       env.define('inventory', api.inventory);
       env.define('fly_to', api.fly_to);
       env.define('move_to', api.move_to);
@@ -261,6 +262,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       env.define('get_weather', api.get_weather);
       env.define('get_money', api.get_money);
       env.define('sleep', api.sleep);
+      env.defineGetter('tile', () => api.wrapTile(api.robot.x, api.robot.y));
+      env.defineGetter('current_tile', () => api.wrapTile(api.robot.x, api.robot.y));
 
       // 4. Run execution
       await interpreter.run(ast);

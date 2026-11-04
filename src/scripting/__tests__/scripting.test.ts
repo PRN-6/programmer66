@@ -200,5 +200,31 @@ success_water = water(1, 2)
     expect(env.get('success_plant')).toBe(true);
     expect(env.get('success_water')).toBe(true);
   });
+
+  it('supports dynamic global tile and current_tile proxies', async () => {
+    const { createGameAPI } = await import('../api');
+    const api = createGameAPI({
+      getStepDelay: () => 0,
+      isCancelled: () => false,
+      onLog: () => {},
+    });
+
+    const code = `
+fly_to(0, 0)
+planted = tile.plant("wheat")
+watered = tile.water()
+`;
+    const lexer = new Lexer(code);
+    const parser = new Parser(lexer.tokenize());
+    const ast = parser.parse();
+    const interpreter = new Interpreter({ stepDelayMs: 0 });
+    const env = interpreter.getGlobalEnv();
+    env.define('fly_to', api.fly_to);
+    env.defineGetter('tile', () => api.wrapTile(api.robot.x, api.robot.y));
+
+    await interpreter.run(ast);
+    expect(env.get('planted')).toBe(true);
+    expect(env.get('watered')).toBe(true);
+  });
 });
 

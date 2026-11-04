@@ -16,6 +16,10 @@ import {
   Trophy,
   Send,
   Download,
+  Maximize2,
+  Minimize2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useEditorStore } from '../../store/useEditorStore';
@@ -53,12 +57,128 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
   const [isSubmittingChallenge, setIsSubmittingChallenge] = useState(false);
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
   const [showBeginnerGuide, setShowBeginnerGuide] = useState(false);
+
+  // --- Dynamic Panel Resizing & Maximizing ---
+  const [panelWidth, setPanelWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('prog66_editor_width');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 340) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return 540;
+  });
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [isDraggingWidth, setIsDraggingWidth] = useState(false);
+
+  // --- Dynamic Console Resizing & Minimizing ---
+  const [consoleHeight, setConsoleHeight] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('prog66_console_height');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 60) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return 190;
+  });
+  const [isConsoleCollapsed, setIsConsoleCollapsed] = useState(false);
+  const [isDraggingConsole, setIsDraggingConsole] = useState(false);
+
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
 
   useEffect(() => {
-    terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [consoleLogs]);
+    if (!isConsoleCollapsed) {
+      terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [consoleLogs, isConsoleCollapsed]);
+
+  // Automatically un-collapse console if runtime error occurs so user can see error log
+  useEffect(() => {
+    if (executionState === 'error') {
+      const timer = setTimeout(() => setIsConsoleCollapsed(false), 0);
+      return () => clearTimeout(timer);
+    }
+  }, [executionState]);
+
+  // Width drag handler
+  const handleStartResizeWidth = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingWidth(true);
+    const startX = e.clientX;
+    const startW = isMaximized ? Math.min(window.innerWidth - 60, 1100) : panelWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const delta = startX - moveEvent.clientX;
+      const minW = Math.min(340, window.innerWidth - 80);
+      const maxW = Math.max(minW, window.innerWidth - 60);
+      const nextW = Math.max(minW, Math.min(maxW, startW + delta));
+      setPanelWidth(nextW);
+      if (isMaximized) setIsMaximized(false);
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingWidth(false);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      setPanelWidth((curr) => {
+        try {
+          localStorage.setItem('prog66_editor_width', String(curr));
+        } catch {
+          // ignore
+        }
+        return curr;
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // Console height drag handler
+  const handleStartResizeConsole = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingConsole(true);
+    const startY = e.clientY;
+    const startH = isConsoleCollapsed ? 36 : consoleHeight;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const delta = startY - moveEvent.clientY;
+      const maxH = Math.max(120, Math.round(window.innerHeight * 0.7));
+      const nextH = Math.max(36, Math.min(maxH, startH + delta));
+
+      if (nextH <= 48) {
+        setIsConsoleCollapsed(true);
+      } else {
+        setIsConsoleCollapsed(false);
+        setConsoleHeight(nextH);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingConsole(false);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      setConsoleHeight((curr) => {
+        try {
+          localStorage.setItem('prog66_console_height', String(curr));
+        } catch {
+          // ignore
+        }
+        return curr;
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
 
   const handleCreateTab = () => {
     const name = prompt('Enter script name (e.g. harvest.py):', 'custom.py');
@@ -148,9 +268,27 @@ robot.move_to(0, 0)
 `;
 
   return (
-    <div className="w-full md:w-[460px] lg:w-[520px] xl:w-[580px] shrink-0 h-full bg-neutral-950 border-l border-neutral-800 flex flex-col z-20 shadow-2xl transition-all">
+    <div
+      style={{
+        width: isMaximized ? 'min(calc(100vw - 40px), 1200px)' : `${panelWidth}px`,
+      }}
+      className={`relative shrink-0 h-full bg-neutral-950 border-l border-neutral-800 flex flex-col z-20 shadow-2xl transition-[width] ${
+        isDraggingWidth ? 'select-none transition-none' : 'duration-150'
+      }`}
+    >
+      {/* Horizontal Resize Drag Handle on Left Border */}
+      <div
+        onMouseDown={handleStartResizeWidth}
+        className={`absolute -left-1.5 top-0 bottom-0 w-3 cursor-col-resize z-40 group flex items-center justify-center hover:bg-neutral-500/20 transition ${
+          isDraggingWidth ? 'bg-neutral-500/40' : ''
+        }`}
+        title="Drag left/right to resize Code Editor width"
+      >
+        <div className="w-1 h-10 rounded-full bg-neutral-600 group-hover:bg-neutral-300 group-hover:h-16 transition-all" />
+      </div>
+
       {/* Tab Bar */}
-      <div className="flex items-center justify-between bg-neutral-900 border-b border-neutral-800 px-2 pt-1.5 overflow-x-auto shrink-0">
+      <div className="flex items-center justify-between bg-neutral-900 border-b border-neutral-800 px-2 pt-1.5 overflow-x-auto shrink-0 select-none">
         <div className="flex items-center gap-1">
           {tabs.map((tab) => (
             <div
@@ -206,6 +344,16 @@ robot.move_to(0, 0)
           >
             <BookOpen className="w-4 h-4" />
           </button>
+
+          {/* Maximize / Restore Toggle */}
+          <button
+            onClick={() => setIsMaximized((prev) => !prev)}
+            className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+            title={isMaximized ? 'Restore editor size' : 'Maximize editor width'}
+          >
+            {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+
           <button
             onClick={onClose}
             className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
@@ -279,7 +427,7 @@ robot.move_to(0, 0)
         </div>
       </div>
 
-      {/* Active Competition Challenge Banner */}
+      {/* Active Competition Challenge Banner - Fixed single Level format */}
       {currentRoom && activeChallenge && (
         <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2">
@@ -287,7 +435,7 @@ robot.move_to(0, 0)
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-amber-300">
-                  Level {activeChallenge.level}: {activeChallenge.title}
+                  Level {activeChallenge.level}: {activeChallenge.title.replace(/^Level\s*\d+:\s*/i, '')}
                 </span>
                 <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded">
                   +{activeChallenge.points} pts
@@ -354,7 +502,7 @@ robot.move_to(0, 0)
 
       {/* Collapsible Beginner Guide Drawer */}
       {showBeginnerGuide && (
-        <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 text-xs text-neutral-300 space-y-2.5 max-h-60 overflow-y-auto shrink-0 animate-in slide-in-from-top-2 duration-150">
+        <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 text-xs text-neutral-300 space-y-2.5 max-h-56 overflow-y-auto shrink-0 animate-in slide-in-from-top-2 duration-150">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-white flex items-center gap-1.5 text-xs font-mono">
               <Lightbulb className="w-4 h-4 text-emerald-400" />
@@ -385,7 +533,7 @@ robot.move_to(0, 0)
               <div><code className="text-emerald-400">tile.plant("wheat")</code> - Plant crop</div>
               <div><code className="text-sky-400">tile.water()</code> - Spray water</div>
               <div><code className="text-amber-400">tile.harvest()</code> - Harvest ready crop</div>
-              <div><code className="text-purple-400">robot.move_to(x, y)</code> - Fly to plot</div>
+              <div><code className="text-purple-400">fly_to(x, y)</code> - Fly to plot</div>
             </div>
             <p className="text-[10px] text-neutral-500 pt-1">
               💡 As you type, the editor will automatically pop up suggestions with autocomplete!
@@ -395,7 +543,7 @@ robot.move_to(0, 0)
       )}
 
       {/* Monaco Code Editor */}
-      <div className="flex-1 relative min-h-[180px] bg-neutral-950">
+      <div className="flex-1 relative min-h-[140px] bg-neutral-950 overflow-hidden">
         <Editor
           height="100%"
           language="python"
@@ -423,46 +571,98 @@ robot.move_to(0, 0)
         />
       </div>
 
-      {/* Bottom Console / Terminal Log */}
-      <div className="h-48 bg-black border-t border-neutral-800 flex flex-col font-mono text-xs shrink-0">
+      {/* Bottom Console / Terminal Log (Resizable & Minimizable) */}
+      <div
+        style={{ height: isConsoleCollapsed ? '36px' : `${consoleHeight}px` }}
+        className={`bg-black border-t border-neutral-800 flex flex-col font-mono text-xs shrink-0 relative transition-[height] ${
+          isDraggingConsole ? 'select-none transition-none' : 'duration-150'
+        }`}
+      >
+        {/* Console Vertical Resize Drag Handle */}
+        <div
+          onMouseDown={handleStartResizeConsole}
+          className={`absolute -top-1.5 left-0 right-0 h-3 cursor-row-resize z-30 group flex items-center justify-center hover:bg-neutral-500/20 transition ${
+            isDraggingConsole ? 'bg-neutral-500/40' : ''
+          }`}
+          title="Drag up/down to resize Console"
+        >
+          <div className="h-1 w-12 rounded-full bg-neutral-600 group-hover:bg-neutral-300 group-hover:w-20 transition-all" />
+        </div>
+
         {/* Terminal Header */}
-        <div className="flex items-center justify-between bg-neutral-900/90 px-3 py-1.5 border-b border-neutral-800 text-neutral-400">
-          <div className="flex items-center gap-1.5 font-bold text-neutral-300">
+        <div
+          onClick={() => {
+            if (isConsoleCollapsed) setIsConsoleCollapsed(false);
+          }}
+          className={`flex items-center justify-between bg-neutral-900/90 px-3 py-1.5 border-b border-neutral-800 text-neutral-400 select-none ${
+            isConsoleCollapsed ? 'cursor-pointer hover:bg-neutral-800/80' : ''
+          }`}
+        >
+          <div className="flex items-center gap-2 font-bold text-neutral-300">
             <Terminal className="w-3.5 h-3.5 text-neutral-400" />
             <span>Farm Console</span>
             <span className="text-[10px] text-neutral-500">({consoleLogs.length} events)</span>
+            {isConsoleCollapsed && consoleLogs.length > 0 && (
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Logs available" />
+            )}
           </div>
-          <button
-            onClick={clearConsole}
-            className="flex items-center gap-1 text-[11px] hover:text-white p-1 rounded hover:bg-neutral-800 transition"
-            title="Clear output"
-          >
-            <Trash2 className="w-3 h-3" />
-            <span>Clear</span>
-          </button>
+
+          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+            {!isConsoleCollapsed && (
+              <button
+                onClick={clearConsole}
+                className="flex items-center gap-1 text-[11px] text-neutral-400 hover:text-white p-1 rounded hover:bg-neutral-800 transition"
+                title="Clear output"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>Clear</span>
+              </button>
+            )}
+
+            {/* Collapse / Expand Toggle Button */}
+            <button
+              onClick={() => setIsConsoleCollapsed((prev) => !prev)}
+              className="flex items-center gap-1 text-[11px] text-neutral-300 hover:text-white px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 transition"
+              title={isConsoleCollapsed ? 'Expand Console' : 'Minimize / Collapse Console'}
+            >
+              {isConsoleCollapsed ? (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5 text-neutral-300" />
+                  <span className="text-[10px] font-semibold">Expand</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5 text-neutral-300" />
+                  <span className="text-[10px] font-semibold">Minimize</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Terminal Message Stream */}
-        <div className="flex-1 overflow-y-auto p-2.5 space-y-1 bg-black">
-          {consoleLogs.map((log) => {
-            let textColor = 'text-neutral-300';
-            if (log.type === 'stderr') textColor = 'text-neutral-200 font-semibold underline decoration-neutral-500';
-            if (log.type === 'success') textColor = 'text-neutral-200 font-semibold';
-            if (log.type === 'info') textColor = 'text-neutral-400';
+        {/* Terminal Message Stream (Hidden when collapsed) */}
+        {!isConsoleCollapsed && (
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-1 bg-black min-h-0">
+            {consoleLogs.map((log) => {
+              let textColor = 'text-neutral-300';
+              if (log.type === 'stderr') textColor = 'text-red-400 font-semibold';
+              if (log.type === 'success') textColor = 'text-emerald-400 font-semibold';
+              if (log.type === 'info') textColor = 'text-neutral-400';
 
-            return (
-              <div key={log.id} className="flex items-start gap-2 leading-relaxed">
-                <span className="text-[10px] text-neutral-500 font-mono select-none shrink-0 whitespace-nowrap">
-                  {log.timestamp}
-                </span>
-                <span className={`flex-1 break-all whitespace-pre-wrap ${textColor}`}>
-                  {log.text}
-                </span>
-              </div>
-            );
-          })}
-          <div ref={terminalEndRef} />
-        </div>
+              return (
+                <div key={log.id} className="flex items-start gap-2 leading-relaxed">
+                  <span className="text-[10px] text-neutral-500 font-mono select-none shrink-0 whitespace-nowrap">
+                    {log.timestamp}
+                  </span>
+                  <span className={`flex-1 break-all whitespace-pre-wrap ${textColor}`}>
+                    {log.text}
+                  </span>
+                </div>
+              );
+            })}
+            <div ref={terminalEndRef} />
+          </div>
+        )}
       </div>
     </div>
   );

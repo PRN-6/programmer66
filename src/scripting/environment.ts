@@ -2,6 +2,7 @@
 
 export class Environment {
   private values: Map<string, unknown> = new Map();
+  private getters: Map<string, () => unknown> = new Map();
   private parent: Environment | null = null;
 
   constructor(parent: Environment | null = null) {
@@ -12,8 +13,12 @@ export class Environment {
     this.values.set(name, value);
   }
 
+  public defineGetter(name: string, getter: () => unknown) {
+    this.getters.set(name, getter);
+  }
+
   public set(name: string, value: unknown) {
-    if (this.values.has(name)) {
+    if (this.values.has(name) || this.getters.has(name)) {
       this.values.set(name, value);
       return;
     }
@@ -29,6 +34,9 @@ export class Environment {
     if (this.values.has(name)) {
       return this.values.get(name);
     }
+    if (this.getters.has(name)) {
+      return this.getters.get(name)!();
+    }
     if (this.parent) {
       return this.parent.get(name);
     }
@@ -36,7 +44,7 @@ export class Environment {
   }
 
   public has(name: string): boolean {
-    if (this.values.has(name)) return true;
+    if (this.values.has(name) || this.getters.has(name)) return true;
     if (this.parent) return this.parent.has(name);
     return false;
   }
