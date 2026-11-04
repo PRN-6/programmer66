@@ -181,15 +181,15 @@ export const Environment: React.FC = () => {
         ))
       )}
 
-      {/* --- NIGHTTIME AGRICULTURAL FLOODLIGHT TOWERS --- */}
-      {/* North-West Perimeter Light Tower */}
-      <group rotation={[0, 0.65, 0]}>
-        <LightTower position={[-6.2, 0, -6.0]} targetPosition={[0, 0, 0]} />
-      </group>
-      {/* South-East Perimeter Light Tower */}
-      <group rotation={[0, Math.PI + 0.65, 0]}>
-        <LightTower position={[6.2, 0, 6.0]} targetPosition={[0, 0, 0]} />
-      </group>
+      {/* --- 4 CORNER AGRICULTURAL STADIUM FLOODLIGHT TOWERS --- */}
+      {/* North-West Stadium Floodlight Tower */}
+      <LightTower position={[-6.8, 0, -6.8]} />
+      {/* North-East Stadium Floodlight Tower */}
+      <LightTower position={[6.8, 0, -6.8]} />
+      {/* South-West Stadium Floodlight Tower */}
+      <LightTower position={[-6.8, 0, 6.8]} />
+      {/* South-East Stadium Floodlight Tower */}
+      <LightTower position={[6.8, 0, 6.8]} />
 
       {/* --- LUSH NATURAL PINE & OAK TREES --- */}
       {[

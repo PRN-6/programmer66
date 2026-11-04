@@ -59,6 +59,8 @@ export interface GameState {
   setSelectedSeed: (crop: CropId) => void;
   setGameSpeed: (speed: number) => void;
   setPaused: (paused: boolean) => void;
+  setTimeOfDay: (time: number) => void;
+  toggleDayNight: () => void;
 
   // Farming actions
   plantCrop: (x: number, y: number, crop: CropId) => boolean;
@@ -345,6 +347,16 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setPaused: (paused) => {
     set({ isPaused: paused });
+  },
+
+  setTimeOfDay: (time) => {
+    set({ timeOfDay: Math.max(0, Math.min(24, time)) });
+  },
+
+  toggleDayNight: () => {
+    const cur = get().timeOfDay;
+    const newTime = cur >= 5.5 && cur <= 18.5 ? 21.5 : 11.0;
+    set({ timeOfDay: newTime });
   },
 
   plantCrop: (x: number, y: number, crop: CropId) => {

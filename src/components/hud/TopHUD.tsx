@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Coins,
   Sun,
+  Moon,
   Cloud,
   CloudRain,
   CloudLightning,
@@ -69,8 +70,11 @@ export const TopHUD: React.FC<TopHUDProps> = ({
     setPaused,
     setGameSpeed,
     toggleMute,
+    toggleDayNight,
     missions,
   } = useGameStore();
+
+  const isNight = timeOfDay < 5.5 || timeOfDay > 18.5;
 
   const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
 
@@ -134,11 +138,24 @@ export const TopHUD: React.FC<TopHUDProps> = ({
 
       {/* Center: Day, Time & Weather */}
       <div className="flex items-center gap-3">
-        {/* Day & Time */}
-        <div className="text-center bg-neutral-900 px-3 py-1 rounded-lg border border-neutral-800">
-          <div className="text-xs font-bold text-neutral-200">Day {day}</div>
-          <div className="text-[10px] font-mono text-neutral-400">{timeString}</div>
-        </div>
+        {/* Day & Time (Click to toggle Day / Night Stadium Lights) */}
+        <button
+          onClick={toggleDayNight}
+          className="text-left bg-neutral-900 hover:bg-neutral-800/90 px-3 py-1 rounded-lg border border-neutral-800 transition flex items-center gap-2 group cursor-pointer shadow-sm"
+          title={isNight ? 'Click to switch to Daytime' : 'Click to switch to Nighttime (Activate Stadium Floodlights)'}
+        >
+          <div>
+            <div className="text-xs font-bold text-neutral-200">Day {day}</div>
+            <div className="text-[10px] font-mono text-neutral-400">{timeString}</div>
+          </div>
+          <div className="p-1 rounded bg-neutral-800 group-hover:bg-neutral-700 text-neutral-300">
+            {isNight ? (
+              <Moon className="w-3.5 h-3.5 text-amber-300" />
+            ) : (
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+            )}
+          </div>
+        </button>
 
         {/* Weather card */}
         <div className="flex items-center gap-2 bg-neutral-900 px-3 py-1 rounded-lg border border-neutral-800">

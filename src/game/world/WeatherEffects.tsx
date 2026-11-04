@@ -99,13 +99,22 @@ export const WeatherEffects: React.FC = () => {
         />
       )}
 
-      {/* Moon Light at night (Cool silvery gray) */}
+      {/* Nighttime Moon & Stadium Field Illumination */}
       {!isDay && (
-        <directionalLight
-          position={[-sunX, Math.max(2, -sunY), -10]}
-          intensity={0.4}
-          color="#94a3b8"
-        />
+        <>
+          <directionalLight
+            position={[-sunX, Math.max(2, -sunY), -10]}
+            intensity={0.5}
+            color="#94a3b8"
+          />
+          {/* Overhead Field Flood Light (Simulating Stadium Arena Glow Across the Field) */}
+          <pointLight
+            position={[0, 9, 0]}
+            intensity={2.2}
+            distance={28}
+            color="#fffef0"
+          />
+        </>
       )}
 
       {/* Lightning Flash Light */}
