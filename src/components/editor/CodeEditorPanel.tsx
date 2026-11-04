@@ -20,10 +20,14 @@ import {
   Minimize2,
   ChevronDown,
   ChevronUp,
+  XCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
+import { useGameStore } from '../../store/useGameStore';
+import { soundManager } from '../../audio/soundEffects';
+import { evaluateChallenge } from '../../services/challengeEvaluator';
 import { registerProgrammer66Autocomplete } from './monacoAutocomplete';
 
 interface CodeEditorPanelProps {
@@ -47,6 +51,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
     clearConsole,
     runCode,
     stopCode,
+    addLog,
   } = useEditorStore();
 
   const currentRoom = useCompetitionStore((state) => state.currentRoom);
@@ -56,6 +61,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
 
   const [isSubmittingChallenge, setIsSubmittingChallenge] = useState(false);
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [showBeginnerGuide, setShowBeginnerGuide] = useState(false);
 
   // --- Dynamic Panel Resizing & Maximizing ---
@@ -192,22 +198,53 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
     updateCode(activeChallenge.starterCode);
   };
 
+  const isAlreadyCompleted = Boolean(
+    activeChallenge && currentTeam?.completedChallenges?.includes(activeChallenge.id)
+  );
+
   const handleSubmitSolution = async () => {
     if (!currentRoom || !currentTeam || !activeChallenge) return;
     setIsSubmittingChallenge(true);
+    setSubmissionError(null);
+
     try {
+      const gameState = useGameStore.getState();
+      const evaluation = evaluateChallenge(activeChallenge, gameState, activeTab.code);
+
+      if (!evaluation.passed) {
+        soundManager.playError();
+        setSubmissionError(evaluation.message);
+        addLog('stderr', `❌ Verification Failed: ${evaluation.message}`);
+
+        await submitChallengeSolution(
+          activeTab.code,
+          false,
+          evaluation.message
+        );
+        setTimeout(() => setSubmissionError(null), 7000);
+        return;
+      }
+
+      // Passed verification!
       await submitChallengeSolution(
         activeTab.code,
         true,
-        `Solution verified & submitted by ${currentTeam.name}`
+        evaluation.message
       );
+
+      soundManager.playSuccess();
       setSubmissionSuccess(true);
+      addLog(
+        'success',
+        `🏆 SUCCESS: ${evaluation.message} (+${activeChallenge.points} pts awarded to ${currentTeam.name})`
+      );
+
       confetti({
-        particleCount: 80,
-        spread: 60,
+        particleCount: 90,
+        spread: 70,
         origin: { y: 0.6 },
       });
-      setTimeout(() => setSubmissionSuccess(false), 3500);
+      setTimeout(() => setSubmissionSuccess(false), 4000);
     } finally {
       setIsSubmittingChallenge(false);
     }
@@ -460,25 +497,67 @@ robot.move_to(0, 0)
                 onClick={handleSubmitSolution}
                 disabled={isSubmittingChallenge}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition shadow-sm ${
-                  submissionSuccess
+                  isAlreadyCompleted
+                    ? 'bg-emerald-700/80 text-emerald-100 hover:bg-emerald-600'
+                    : submissionSuccess
                     ? 'bg-emerald-600 text-white'
+                    : submissionError
+                    ? 'bg-red-600 hover:bg-red-500 text-white'
                     : 'bg-amber-500 hover:bg-amber-400 text-neutral-950'
                 }`}
+                title={
+                  submissionError ||
+                  (isAlreadyCompleted
+                    ? 'Challenge already completed! Points earned.'
+                    : 'Verify code against farm criteria and submit')
+                }
               >
-                {submissionSuccess ? (
+                {isSubmittingChallenge ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <span>Grading...</span>
+                  </>
+                ) : isAlreadyCompleted ? (
                   <>
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Submitted!</span>
+                    <span>Solved (+{activeChallenge.points} pts)</span>
+                  </>
+                ) : submissionSuccess ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Passed!</span>
+                  </>
+                ) : submissionError ? (
+                  <>
+                    <XCircle className="w-3.5 h-3.5" />
+                    <span>Criteria Not Met</span>
                   </>
                 ) : (
                   <>
                     <Send className="w-3 h-3" />
-                    <span>{isSubmittingChallenge ? 'Grading...' : 'Submit Solution'}</span>
+                    <span>Submit Solution</span>
                   </>
                 )}
               </button>
             )}
           </div>
+
+          {/* Submission Failure Banner */}
+          {submissionError && (
+            <div className="w-full mt-1.5 bg-red-950/80 border border-red-500/50 rounded-lg px-2.5 py-1.5 text-[11px] text-red-200 flex items-center justify-between gap-2 animate-in fade-in duration-200">
+              <div className="flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                <span>{submissionError}</span>
+              </div>
+              <button
+                onClick={() => setSubmissionError(null)}
+                className="text-red-400 hover:text-white p-0.5 rounded transition"
+                title="Dismiss"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 

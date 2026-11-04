@@ -336,6 +336,10 @@ export class CompetitionService {
 
         if (currentTeam) {
           const completed = new Set(currentTeam.completed_challenges || []);
+          if (completed.has(challengeId)) {
+            // Already earned points for this challenge once
+            return;
+          }
           completed.add(challengeId);
 
           await supabase
@@ -359,6 +363,9 @@ export class CompetitionService {
     if (teamIndex !== -1) {
       const team = list[teamIndex];
       const completed = new Set(team.completedChallenges);
+      if (completed.has(challengeId)) {
+        return;
+      }
       completed.add(challengeId);
       list[teamIndex] = {
         ...team,
