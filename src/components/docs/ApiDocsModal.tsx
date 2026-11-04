@@ -9,6 +9,7 @@ import {
   Bot,
   Package,
   Code2,
+  Trophy,
 } from 'lucide-react';
 import { useEditorStore } from '../../store/useEditorStore';
 
@@ -128,6 +129,22 @@ export const ApiDocsModal: React.FC<ApiDocsModalProps> = ({ onClose }) => {
           sig: 'inventory.buy_seeds(crop_name, count)',
           desc: 'Purchases seeds directly from script if treasury has sufficient funds.',
           example: 'if inventory.count("corn_seed") == 0:\n    inventory.buy_seeds("corn", 5)',
+        },
+      ],
+    },
+    {
+      category: 'Multiplayer Competitions & Hackathons',
+      icon: <Trophy className="w-4 h-4 text-amber-400" />,
+      apis: [
+        {
+          sig: '🏆 Join Room Flow',
+          desc: 'Click "Join Event" in the top HUD, enter your 4-digit room code (e.g. PROG-8492) and your team name to enter a live competition.',
+          example: '# Example automated speed-run script for hackathons\nfor y in range(4):\n    for x in range(4):\n        robot.move_to(x, y)\n        robot.plant("carrot")\n        robot.water()',
+        },
+        {
+          sig: '🚀 Solution Submission & Scoring',
+          desc: 'When in a live competition, an active problem banner appears above the Python editor. Click "Load Starter" to load template code, and click "Submit Solution" to earn points on the live Admin Scoreboard.',
+          example: '# Verify ripe harvest before submitting:\nfor tile in farm.get_tiles():\n    if tile.is_ready():\n        tile.harvest()',
         },
       ],
     },
