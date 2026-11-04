@@ -27,7 +27,10 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     currentRoom,
     teams,
     submissions,
+    recentRooms,
     createRoom,
+    loadRoomAsAdmin,
+    fetchRecentRooms,
     startCompetition,
     pauseCompetition,
     endCompetition,
@@ -44,6 +47,8 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [newRoomTitle, setNewRoomTitle] = useState('');
   const [newRoomDuration, setNewRoomDuration] = useState(30);
+  const [resumeCode, setResumeCode] = useState('');
+  const [resumeError, setResumeError] = useState<string | null>(null);
 
   // New challenge form state
   const [showAddChallenge, setShowAddChallenge] = useState(false);
@@ -59,13 +64,24 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   // Inspected team code modal
   const [inspectedTeamCode, setInspectedTeamCode] = useState<{ teamName: string; code: string } | null>(null);
 
-  // Auto-refresh room data every 3 seconds for live leaderboard updates
+  // Auto-refresh room data and fetch recent rooms
   useEffect(() => {
+    fetchRecentRooms();
     const timer = setInterval(() => {
       refreshRoomData();
     }, 3000);
     return () => clearInterval(timer);
-  }, [refreshRoomData]);
+  }, [fetchRecentRooms, refreshRoomData]);
+
+  const handleResumeRoom = async (codeToResume?: string) => {
+    const code = codeToResume || resumeCode;
+    if (!code.trim()) return;
+    setResumeError(null);
+    const room = await loadRoomAsAdmin(code.trim().toUpperCase());
+    if (!room) {
+      setResumeError(`Room "${code}" not found.`);
+    }
+  };
 
   const handleCopyCode = () => {
     if (!currentRoom) return;
@@ -258,18 +274,74 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {!currentRoom ? (
-                <div className="max-w-xl mx-auto py-8 text-center space-y-4">
-                  <div className="w-16 h-16 mx-auto bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center text-amber-400">
-                    <Trophy className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-neutral-100">Create a New Competition Room</h3>
-                    <p className="text-xs text-neutral-400 mt-1">
-                      Generate a room code so student teams or hackathon participants can connect and compete.
-                    </p>
+                <div className="max-w-2xl mx-auto py-6 space-y-6">
+                  {/* Option 1: Resume / Connect to Existing Room */}
+                  <div className="p-5 bg-neutral-950 border border-neutral-800 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-neutral-100 flex items-center gap-2">
+                        <RotateCcw className="w-4 h-4 text-amber-400" />
+                        <span>Resume or Manage Existing Room</span>
+                      </h3>
+                      <span className="text-xs text-neutral-500">Already have a room code?</span>
+                    </div>
+
+                    {resumeError && (
+                      <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl">
+                        {resumeError}
+                      </p>
+                    )}
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter Room Code (e.g. PROG-9774)"
+                        value={resumeCode}
+                        onChange={(e) => setResumeCode(e.target.value.toUpperCase())}
+                        className="flex-1 bg-neutral-900 border border-neutral-700 rounded-xl px-3.5 py-2 font-mono text-sm tracking-wider text-amber-400 uppercase placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:border-amber-500"
+                      />
+                      <button
+                        onClick={() => handleResumeRoom()}
+                        disabled={!resumeCode.trim()}
+                        className="px-5 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-neutral-950 font-bold text-xs rounded-xl transition"
+                      >
+                        Open Dashboard
+                      </button>
+                    </div>
+
+                    {/* Quick list of recent rooms */}
+                    {recentRooms.length > 0 && (
+                      <div className="pt-2 border-t border-neutral-800/80 space-y-1.5">
+                        <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+                          Recent Rooms:
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {recentRooms.slice(0, 4).map((r) => (
+                            <button
+                              key={r.id}
+                              onClick={() => handleResumeRoom(r.code)}
+                              className="p-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-left flex items-center justify-between transition"
+                            >
+                              <div className="overflow-hidden">
+                                <div className="text-xs font-bold text-neutral-200 truncate">{r.title}</div>
+                                <span className="font-mono text-[11px] text-amber-400">{r.code}</span>
+                              </div>
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 uppercase font-semibold">
+                                {r.status}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="p-5 bg-neutral-950 border border-neutral-800 rounded-2xl text-left space-y-4">
+                  {/* Option 2: Create a New Competition Room */}
+                  <div className="p-5 bg-neutral-950 border border-neutral-800 rounded-2xl space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-amber-400" />
+                      <h3 className="text-sm font-bold text-neutral-100">Create a New Competition Event</h3>
+                    </div>
+
                     <div>
                       <label className="block text-xs font-medium text-neutral-400 mb-1">
                         Competition / Event Title

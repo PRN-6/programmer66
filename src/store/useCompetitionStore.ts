@@ -2,12 +2,47 @@ import { create } from 'zustand';
 import { Room, Team, Submission, Challenge, RoomSettings } from '../types/competition';
 import { CompetitionService } from '../services/competitionService';
 
+const SESSION_KEY = 'programmer66_competition_session';
+
+interface SavedSession {
+  roomCode: string;
+  teamId?: string;
+  isAdmin: boolean;
+}
+
+const saveSession = (session: SavedSession | null) => {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      if (session) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      } else {
+        localStorage.removeItem(SESSION_KEY);
+      }
+    }
+  } catch {
+    // ignore
+  }
+};
+
+const getSavedSession = (): SavedSession | null => {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const data = localStorage.getItem(SESSION_KEY);
+      return data ? JSON.parse(data) : null;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+};
+
 interface CompetitionState {
   currentRoom: Room | null;
   currentTeam: Team | null;
   teams: Team[];
   submissions: Submission[];
   activeChallenge: Challenge | null;
+  recentRooms: Room[];
   isAdmin: boolean;
   showAdminModal: boolean;
   showJoinModal: boolean;
@@ -21,14 +56,17 @@ interface CompetitionState {
   setShowScoreboardModal: (show: boolean) => void;
   setError: (err: string | null) => void;
 
+  initSession: () => Promise<void>;
   createRoom: (
     title: string,
     durationMinutes?: number,
     settings?: Partial<RoomSettings>,
     customChallenges?: Challenge[]
   ) => Promise<Room>;
+  loadRoomAsAdmin: (code: string) => Promise<Room | null>;
   joinRoom: (code: string, teamName: string, members: string[]) => Promise<void>;
   leaveRoom: () => void;
+  fetchRecentRooms: () => Promise<void>;
   refreshRoomData: () => Promise<void>;
   startCompetition: () => Promise<void>;
   pauseCompetition: () => Promise<void>;
@@ -51,6 +89,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
   teams: [],
   submissions: [],
   activeChallenge: null,
+  recentRooms: [],
   isAdmin: false,
   showAdminModal: false,
   showJoinModal: false,
@@ -62,6 +101,73 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
   setShowJoinModal: (show) => set({ showJoinModal: show }),
   setShowScoreboardModal: (show) => set({ showScoreboardModal: show }),
   setError: (err) => set({ error: err }),
+
+  initSession: async () => {
+    // 1. Check URL query param ?room=CODE
+    let targetCode: string | null = null;
+    let isExplicitAdmin = false;
+    let savedTeamId: string | undefined;
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlCode = params.get('room');
+      if (urlCode) {
+        targetCode = urlCode.toUpperCase();
+      }
+    }
+
+    // 2. Check localStorage session
+    if (!targetCode) {
+      const saved = getSavedSession();
+      if (saved?.roomCode) {
+        targetCode = saved.roomCode;
+        isExplicitAdmin = saved.isAdmin;
+        savedTeamId = saved.teamId;
+      }
+    }
+
+    if (!targetCode) return;
+
+    try {
+      const room = await CompetitionService.getRoomByCode(targetCode);
+      if (room) {
+        const teams = await CompetitionService.getTeams(room.id);
+        const submissions = await CompetitionService.getSubmissions(room.id);
+        const activeChallenge =
+          room.challenges.find((c) => c.id === room.activeChallengeId) ||
+          room.challenges[0] ||
+          null;
+
+        const currentTeam = savedTeamId ? teams.find((t) => t.id === savedTeamId) || null : null;
+
+        set({
+          currentRoom: room,
+          isAdmin: isExplicitAdmin,
+          currentTeam,
+          teams,
+          submissions,
+          activeChallenge,
+        });
+
+        saveSession({
+          roomCode: room.code,
+          isAdmin: isExplicitAdmin,
+          teamId: currentTeam?.id,
+        });
+      }
+    } catch (err) {
+      console.warn('initSession error:', err);
+    }
+  },
+
+  fetchRecentRooms: async () => {
+    try {
+      const list = await CompetitionService.getRecentRooms();
+      set({ recentRooms: list });
+    } catch (err) {
+      console.warn('fetchRecentRooms error:', err);
+    }
+  },
 
   createRoom: async (title, durationMinutes = 30, settings, customChallenges) => {
     set({ isLoading: true, error: null });
@@ -80,11 +186,54 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
         isLoading: false,
       });
 
+      saveSession({
+        roomCode: room.code,
+        isAdmin: true,
+      });
+
       return room;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to create room';
       set({ error: msg, isLoading: false });
       throw err;
+    }
+  },
+
+  loadRoomAsAdmin: async (code: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const room = await CompetitionService.getRoomByCode(code);
+      if (!room) {
+        throw new Error(`Room with code "${code}" not found.`);
+      }
+
+      const teams = await CompetitionService.getTeams(room.id);
+      const submissions = await CompetitionService.getSubmissions(room.id);
+      const activeChallenge =
+        room.challenges.find((c) => c.id === room.activeChallengeId) ||
+        room.challenges[0] ||
+        null;
+
+      set({
+        currentRoom: room,
+        isAdmin: true,
+        currentTeam: null,
+        teams,
+        submissions,
+        activeChallenge,
+        isLoading: false,
+      });
+
+      saveSession({
+        roomCode: room.code,
+        isAdmin: true,
+      });
+
+      return room;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to load room';
+      set({ error: msg, isLoading: false });
+      return null;
     }
   },
 
@@ -106,6 +255,12 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
         isLoading: false,
         showJoinModal: false,
       });
+
+      saveSession({
+        roomCode: room.code,
+        teamId: team.id,
+        isAdmin: false,
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to join room';
       set({ error: msg, isLoading: false });
@@ -114,6 +269,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
   },
 
   leaveRoom: () => {
+    saveSession(null);
     set({
       currentRoom: null,
       currentTeam: null,
@@ -125,7 +281,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
   },
 
   refreshRoomData: async () => {
-    const { currentRoom } = get();
+    const { currentRoom, currentTeam } = get();
     if (!currentRoom) return;
 
     try {
@@ -138,8 +294,11 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
           updatedRoom.challenges[0] ||
           null;
 
+        const updatedTeam = currentTeam ? teams.find((t) => t.id === currentTeam.id) || currentTeam : null;
+
         set({
           currentRoom: updatedRoom,
+          currentTeam: updatedTeam,
           teams,
           submissions,
           activeChallenge,
@@ -228,10 +387,8 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
     const { currentRoom, teams } = get();
     if (!currentRoom) return;
 
-    // Set team status to disqualified
     const updated = teams.map((t) => (t.id === teamId ? { ...t, status: 'disqualified' as const } : t));
     set({ teams: updated });
-    // In local or remote service, update the team status
   },
 
   submitChallengeSolution: async (code: string, passed: boolean, feedback: string) => {
@@ -252,4 +409,3 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
     await get().refreshRoomData();
   },
 }));
-

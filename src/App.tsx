@@ -34,10 +34,12 @@ export function App() {
   const setShowJoinModal = useCompetitionStore((state) => state.setShowJoinModal);
   const showScoreboardModal = useCompetitionStore((state) => state.showScoreboardModal);
   const setShowScoreboardModal = useCompetitionStore((state) => state.setShowScoreboardModal);
+  const initSession = useCompetitionStore((state) => state.initSession);
 
-  // Auto-load saved game on mount and start audio on first interaction
+  // Auto-load saved game and competition session on mount
   useEffect(() => {
     loadGame();
+    initSession();
 
     const handleFirstInteraction = () => {
       soundManager.startAmbience();
@@ -52,7 +54,7 @@ export function App() {
       window.removeEventListener('click', handleFirstInteraction);
       window.removeEventListener('keydown', handleFirstInteraction);
     };
-  }, [loadGame]);
+  }, [loadGame, initSession]);
 
   return (
     <div className="w-screen h-screen relative overflow-hidden bg-neutral-950 font-sans select-none flex flex-col">

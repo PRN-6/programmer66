@@ -184,6 +184,41 @@ export class CompetitionService {
     return found || null;
   }
 
+  static async getRecentRooms(): Promise<Room[]> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('rooms')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(8);
+
+        if (!error && data) {
+          return data.map((d) => ({
+            id: d.id,
+            code: d.code,
+            title: d.title,
+            status: d.status,
+            createdAt: d.created_at,
+            startedAt: d.started_at,
+            durationMinutes: d.duration_minutes,
+            remainingSeconds: d.remaining_seconds,
+            activeChallengeId: d.active_challenge_id,
+            settings: d.settings,
+            challenges: d.challenges,
+          }));
+        }
+      } catch (err) {
+        console.warn('Supabase getRecentRooms error:', err);
+      }
+    }
+
+    const rooms = this.getLocalRooms();
+    return Object.values(rooms).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
   static async updateRoom(roomId: string, updates: Partial<Room>): Promise<Room | null> {
     if (isSupabaseConfigured && supabase) {
       try {
