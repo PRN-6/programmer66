@@ -18,6 +18,7 @@ import {
   Database,
   ExternalLink,
   UserX,
+  Power,
 } from 'lucide-react';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { Challenge, ChallengeCriterion } from '../../types/competition';
@@ -35,6 +36,7 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     startCompetition,
     pauseCompetition,
     endCompetition,
+    closeRoom,
     setActiveChallenge,
     addCustomChallenge,
     deleteChallenge,
@@ -102,6 +104,17 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const handleKickTeam = async (teamId: string, teamName: string) => {
     if (window.confirm(`Are you sure you want to kick "${teamName}" from this competition? This will remove the team from the leaderboard and room.`)) {
       await kickTeam(teamId);
+    }
+  };
+
+  const handleCloseRoom = async () => {
+    if (!currentRoom) return;
+    if (
+      window.confirm(
+        `Are you sure you want to close competition room "${currentRoom.code}"? All connected participants will be disconnected from the event.`
+      )
+    ) {
+      await closeRoom();
     }
   };
 
@@ -243,6 +256,16 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   <span>Resume</span>
                 </button>
               )}
+
+              {/* Close Room Action Button */}
+              <button
+                onClick={handleCloseRoom}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 hover:bg-rose-950/80 border border-neutral-700 hover:border-rose-600/80 text-neutral-300 hover:text-rose-300 font-medium text-xs rounded-xl transition shadow-sm"
+                title="Close room and return to event manager"
+              >
+                <Power className="w-3.5 h-3.5 text-rose-400" />
+                <span>Close Room</span>
+              </button>
             </div>
           </div>
         )}
@@ -842,6 +865,24 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-1.5 text-xs text-neutral-200"
                       />
                     </div>
+                  </div>
+
+                  {/* Danger Zone: Close Room */}
+                  <div className="pt-4 border-t border-neutral-900 space-y-2.5">
+                    <div className="flex items-center gap-2 text-rose-400">
+                      <Power className="w-4 h-4" />
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-rose-300">Danger Zone</h4>
+                    </div>
+                    <p className="text-xs text-neutral-400">
+                      Close this competition event. All connected participants will be returned to the sandbox.
+                    </p>
+                    <button
+                      onClick={handleCloseRoom}
+                      className="px-4 py-2 bg-red-950/60 hover:bg-red-900/80 border border-red-700/60 text-red-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-2"
+                    >
+                      <Power className="w-3.5 h-3.5" />
+                      <span>Close & Terminate Room</span>
+                    </button>
                   </div>
                 </div>
               )}

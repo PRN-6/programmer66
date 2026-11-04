@@ -71,6 +71,7 @@ interface CompetitionState {
   startCompetition: () => Promise<void>;
   pauseCompetition: () => Promise<void>;
   endCompetition: () => Promise<void>;
+  closeRoom: () => Promise<void>;
   setActiveChallenge: (challengeId: string) => Promise<void>;
   updateRoomSettings: (settings: Partial<RoomSettings>) => Promise<void>;
   addCustomChallenge: (challenge: Challenge) => Promise<void>;
@@ -296,6 +297,21 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
 
         const updatedTeam = currentTeam ? teams.find((t) => t.id === currentTeam.id) || null : null;
 
+        // If room was closed by admin, notify participant and return to main game
+        if (updatedRoom.status === 'completed' && !get().isAdmin) {
+          saveSession(null);
+          set({
+            currentRoom: null,
+            currentTeam: null,
+            teams: [],
+            submissions: [],
+            activeChallenge: null,
+            isAdmin: false,
+          });
+          alert('Notice: The competition event was closed by the host.');
+          return;
+        }
+
         // If participant was kicked by the admin, remove local session & notify
         if (currentTeam && !updatedTeam && !get().isAdmin) {
           saveSession(null);
@@ -353,6 +369,25 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
       status: 'completed',
     });
     await get().refreshRoomData();
+  },
+
+  closeRoom: async () => {
+    const { currentRoom } = get();
+    if (!currentRoom) return;
+
+    await CompetitionService.updateRoom(currentRoom.id, {
+      status: 'completed',
+    });
+    saveSession(null);
+    set({
+      currentRoom: null,
+      currentTeam: null,
+      teams: [],
+      submissions: [],
+      activeChallenge: null,
+      isAdmin: false,
+    });
+    await get().fetchRecentRooms();
   },
 
   setActiveChallenge: async (challengeId: string) => {

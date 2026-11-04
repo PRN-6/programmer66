@@ -77,4 +77,14 @@ describe('CompetitionService', () => {
     expect(teams.length).toBe(1);
     expect(teams[0].id).toBe(team2.id);
   });
+
+  it('allows an admin to close a competition room', async () => {
+    const room = await CompetitionService.createRoom('Final Championship', 45);
+    expect(room.status).toBe('waiting');
+
+    await CompetitionService.updateRoom(room.id, { status: 'completed' });
+
+    const retrieved = await CompetitionService.getRoomByCode(room.code);
+    expect(retrieved?.status).toBe('completed');
+  });
 });
