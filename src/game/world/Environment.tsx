@@ -1,10 +1,17 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { LightTower } from './LightTower';
 
 export const Environment: React.FC = () => {
   const windmillBladesRef = useRef<THREE.Group>(null);
+
+  // Center target shared by all floodlight towers to guarantee exact spotlight aiming
+  const farmCenterTarget = useMemo(() => {
+    const obj = new THREE.Object3D();
+    obj.position.set(0, 0, 0);
+    return obj;
+  }, []);
 
   useFrame((_, delta) => {
     if (windmillBladesRef.current) {
@@ -181,15 +188,18 @@ export const Environment: React.FC = () => {
         ))
       )}
 
+      {/* Global anchor target object at the farm grid center */}
+      <primitive object={farmCenterTarget} />
+
       {/* --- 4 CORNER AGRICULTURAL STADIUM FLOODLIGHT TOWERS --- */}
       {/* North-West Stadium Floodlight Tower */}
-      <LightTower position={[-6.8, 0, -6.8]} />
+      <LightTower position={[-6.8, 0, -6.8]} target={farmCenterTarget} />
       {/* North-East Stadium Floodlight Tower */}
-      <LightTower position={[6.8, 0, -6.8]} />
+      <LightTower position={[6.8, 0, -6.8]} target={farmCenterTarget} />
       {/* South-West Stadium Floodlight Tower */}
-      <LightTower position={[-6.8, 0, 6.8]} />
+      <LightTower position={[-6.8, 0, 6.8]} target={farmCenterTarget} />
       {/* South-East Stadium Floodlight Tower */}
-      <LightTower position={[6.8, 0, 6.8]} />
+      <LightTower position={[6.8, 0, 6.8]} target={farmCenterTarget} />
 
       {/* --- LUSH NATURAL PINE & OAK TREES --- */}
       {[
