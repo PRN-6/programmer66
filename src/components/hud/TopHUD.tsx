@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useEditorStore } from '../../store/useEditorStore';
+import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { WEATHER_PROFILES } from '../../game/simulation/weatherConfig';
 import { CompetitionHUDWidget } from '../competition/CompetitionHUDWidget';
 
@@ -76,6 +77,9 @@ export const TopHUD: React.FC<TopHUDProps> = ({
   } = useGameStore();
 
   const isNight = timeOfDay < 5.5 || timeOfDay > 18.5;
+
+  const currentRoom = useCompetitionStore((state) => state.currentRoom);
+  const isCompeting = Boolean(currentRoom);
 
   const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
 
@@ -205,38 +209,43 @@ export const TopHUD: React.FC<TopHUDProps> = ({
         {/* Live Competition / Admin Widget */}
         <CompetitionHUDWidget />
 
-        {/* Marketplace */}
-        <button
-          onClick={onOpenMarket}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 text-xs font-semibold transition"
-          title="Marketplace & Supplies"
-        >
-          <ShoppingBag className="w-3.5 h-3.5 text-neutral-400" />
-          <span className="hidden sm:inline">Market</span>
-        </button>
+        {/* Casual Sandbox Buttons (Only shown when not competing to keep competition UI ultra-clean) */}
+        {!isCompeting && (
+          <>
+            {/* Marketplace */}
+            <button
+              onClick={onOpenMarket}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 text-xs font-semibold transition"
+              title="Marketplace & Supplies"
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-neutral-400" />
+              <span className="hidden sm:inline">Market</span>
+            </button>
 
-        {/* Missions / Objectives */}
-        <button
-          onClick={onOpenMissions}
-          className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 text-xs font-semibold transition"
-          title="Missions & Objectives"
-        >
-          <Target className="w-3.5 h-3.5 text-neutral-400" />
-          <span className="hidden sm:inline">Missions</span>
-          {uncompletedMissions > 0 && (
-            <span className="w-2 h-2 rounded-full bg-neutral-200 animate-ping absolute -top-0.5 -right-0.5" />
-          )}
-        </button>
+            {/* Missions / Objectives */}
+            <button
+              onClick={onOpenMissions}
+              className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 text-xs font-semibold transition"
+              title="Missions & Objectives"
+            >
+              <Target className="w-3.5 h-3.5 text-neutral-400" />
+              <span className="hidden sm:inline">Missions</span>
+              {uncompletedMissions > 0 && (
+                <span className="w-2 h-2 rounded-full bg-neutral-200 animate-ping absolute -top-0.5 -right-0.5" />
+              )}
+            </button>
 
-        {/* Robots */}
-        <button
-          onClick={onOpenRobots}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 text-xs font-semibold transition"
-          title="Robots & Drones"
-        >
-          <Bot className="w-3.5 h-3.5 text-neutral-400" />
-          <span className="hidden sm:inline">Robots</span>
-        </button>
+            {/* Robots */}
+            <button
+              onClick={onOpenRobots}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 text-xs font-semibold transition"
+              title="Robots & Drones"
+            >
+              <Bot className="w-3.5 h-3.5 text-neutral-400" />
+              <span className="hidden sm:inline">Robots</span>
+            </button>
+          </>
+        )}
 
         {/* API Docs */}
         <button

@@ -503,10 +503,105 @@ export function createGameAPI(options: {
     },
   };
 
+  // --- TOP-LEVEL BEGINNER & CHALLENGE GLOBAL SHORTCUTS ---
+  const fly_to = async (x: number, y: number) => {
+    return robot.move_to(x, y);
+  };
+
+  const move_to = async (x: number, y: number) => {
+    return robot.move_to(x, y);
+  };
+
+  const move = async (direction: string) => {
+    return robot.move(direction);
+  };
+
+  const plant = async (arg1: unknown, arg2?: unknown, arg3?: unknown) => {
+    // If called as plant(x, y, "carrot")
+    if (typeof arg1 === 'number' && typeof arg2 === 'number') {
+      const crop = typeof arg3 === 'string' ? arg3 : 'wheat';
+      await robot.move_to(arg1, arg2);
+      return robot.plant(crop);
+    }
+    // If called as plant("carrot") at current drone position
+    if (typeof arg1 === 'string') {
+      return robot.plant(arg1);
+    }
+    return false;
+  };
+
+  const water = async (arg1?: unknown, arg2?: unknown) => {
+    // If called as water(x, y)
+    if (typeof arg1 === 'number' && typeof arg2 === 'number') {
+      await robot.move_to(arg1, arg2);
+      return robot.water();
+    }
+    const amount = typeof arg1 === 'number' ? arg1 : 55;
+    return robot.water(amount);
+  };
+
+  const harvest = async (arg1?: unknown, arg2?: unknown) => {
+    // If called as harvest(x, y)
+    if (typeof arg1 === 'number' && typeof arg2 === 'number') {
+      await robot.move_to(arg1, arg2);
+      return robot.harvest();
+    }
+    return robot.harvest();
+  };
+
+  const fertilize = async (arg1?: unknown, arg2?: unknown) => {
+    if (typeof arg1 === 'number' && typeof arg2 === 'number') {
+      await robot.move_to(arg1, arg2);
+      return robot.fertilize();
+    }
+    return robot.fertilize();
+  };
+
+  const clear_weeds = async (arg1?: unknown, arg2?: unknown) => {
+    if (typeof arg1 === 'number' && typeof arg2 === 'number') {
+      await robot.move_to(arg1, arg2);
+      return robot.clear_weeds();
+    }
+    return robot.clear_weeds();
+  };
+
+  const get_tile = (x: number, y: number) => {
+    return farm.get_tile(x, y);
+  };
+
+  const get_tiles = () => {
+    return farm.get_tiles();
+  };
+
+  const get_weather = () => {
+    return farm.get_weather();
+  };
+
+  const get_money = () => {
+    return farm.get_money();
+  };
+
+  const apiSleep = async (seconds: number) => {
+    await sleep(Math.max(10, (seconds || 0.1) * 1000));
+  };
+
   return {
     farm,
     robot,
     inventory,
     wrapTile,
+    fly_to,
+    move_to,
+    move,
+    plant,
+    water,
+    harvest,
+    fertilize,
+    clear_weeds,
+    get_tile,
+    get_tiles,
+    get_weather,
+    get_money,
+    sleep: apiSleep,
   };
 }

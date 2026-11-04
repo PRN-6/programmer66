@@ -452,7 +452,9 @@ robot.move_to(0, 0)
 
             return (
               <div key={log.id} className="flex items-start gap-2 leading-relaxed">
-                <span className="text-[10px] text-neutral-600 select-none">{log.timestamp}</span>
+                <span className="text-[10px] text-neutral-500 font-mono select-none shrink-0 whitespace-nowrap">
+                  {log.timestamp}
+                </span>
                 <span className={`flex-1 break-all whitespace-pre-wrap ${textColor}`}>
                   {log.text}
                 </span>

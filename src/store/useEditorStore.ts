@@ -119,6 +119,12 @@ export interface EditorState {
   stopCode: () => void;
 }
 
+const formatTimestamp = () => {
+  const d = new Date();
+  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
+
 let cancellationFlag = false;
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -129,13 +135,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   consoleLogs: [
     {
       id: 'init-1',
-      timestamp: new Date().toLocaleTimeString(),
+      timestamp: formatTimestamp(),
       type: 'info',
       text: 'programmer66 Python Automation Runtime v2.0 ready.',
     },
     {
       id: 'init-2',
-      timestamp: new Date().toLocaleTimeString(),
+      timestamp: formatTimestamp(),
       type: 'info',
       text: 'Type scripts and click "Run Script" to automate the farm.',
     },
@@ -188,7 +194,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   addLog: (type, text) => {
     const id = `log_${Date.now()}_${Math.random()}`;
-    const timestamp = new Date().toLocaleTimeString();
+    const timestamp = formatTimestamp();
     set((prev) => ({
       consoleLogs: [...prev.consoleLogs.slice(-200), { id, timestamp, type, text }],
     }));
@@ -242,6 +248,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       env.define('farm', api.farm);
       env.define('robot', api.robot);
       env.define('inventory', api.inventory);
+      env.define('fly_to', api.fly_to);
+      env.define('move_to', api.move_to);
+      env.define('move', api.move);
+      env.define('plant', api.plant);
+      env.define('water', api.water);
+      env.define('harvest', api.harvest);
+      env.define('fertilize', api.fertilize);
+      env.define('clear_weeds', api.clear_weeds);
+      env.define('get_tile', api.get_tile);
+      env.define('get_tiles', api.get_tiles);
+      env.define('get_weather', api.get_weather);
+      env.define('get_money', api.get_money);
+      env.define('sleep', api.sleep);
 
       // 4. Run execution
       await interpreter.run(ast);

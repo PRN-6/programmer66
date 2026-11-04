@@ -173,5 +173,32 @@ for t in farm.tiles:
     await interpreter.run(ast);
     expect(env.get('tiles_count')).toBe(36);
   });
+
+  it('supports top-level global shortcuts: fly_to, plant, water, harvest', async () => {
+    const { createGameAPI } = await import('../api');
+    const api = createGameAPI({
+      getStepDelay: () => 0,
+      isCancelled: () => false,
+      onLog: () => {},
+    });
+
+    const code = `
+fly_to(1, 2)
+success_plant = plant(1, 2, "carrot")
+success_water = water(1, 2)
+`;
+    const lexer = new Lexer(code);
+    const parser = new Parser(lexer.tokenize());
+    const ast = parser.parse();
+    const interpreter = new Interpreter({ stepDelayMs: 0 });
+    const env = interpreter.getGlobalEnv();
+    env.define('fly_to', api.fly_to);
+    env.define('plant', api.plant);
+    env.define('water', api.water);
+
+    await interpreter.run(ast);
+    expect(env.get('success_plant')).toBe(true);
+    expect(env.get('success_water')).toBe(true);
+  });
 });
 
