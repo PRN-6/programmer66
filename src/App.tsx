@@ -9,8 +9,12 @@ import { MissionsModal } from './components/missions/MissionsModal';
 import { RobotsModal } from './components/game/RobotsModal';
 import { ApiDocsModal } from './components/docs/ApiDocsModal';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { AdminModal } from './components/admin/AdminModal';
+import { JoinCompetitionModal } from './components/competition/JoinCompetitionModal';
+import { ScoreboardModal } from './components/competition/ScoreboardModal';
 import { useEditorStore } from './store/useEditorStore';
 import { useGameStore } from './store/useGameStore';
+import { useCompetitionStore } from './store/useCompetitionStore';
 import { soundManager } from './audio/soundEffects';
 
 export function App() {
@@ -23,6 +27,13 @@ export function App() {
   const showDocsModal = useEditorStore((state) => state.showDocsModal);
   const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
   const loadGame = useGameStore((state) => state.loadGame);
+
+  const showAdminModal = useCompetitionStore((state) => state.showAdminModal);
+  const setShowAdminModal = useCompetitionStore((state) => state.setShowAdminModal);
+  const showJoinModal = useCompetitionStore((state) => state.showJoinModal);
+  const setShowJoinModal = useCompetitionStore((state) => state.setShowJoinModal);
+  const showScoreboardModal = useCompetitionStore((state) => state.showScoreboardModal);
+  const setShowScoreboardModal = useCompetitionStore((state) => state.setShowScoreboardModal);
 
   // Auto-load saved game on mount and start audio on first interaction
   useEffect(() => {
@@ -85,6 +96,9 @@ export function App() {
       {showRobots && <RobotsModal onClose={() => setShowRobots(false)} />}
       {showDocsModal && <ApiDocsModal onClose={() => setShowDocsModal(false)} />}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showAdminModal && <AdminModal onClose={() => setShowAdminModal(false)} />}
+      {showJoinModal && <JoinCompetitionModal onClose={() => setShowJoinModal(false)} />}
+      {showScoreboardModal && <ScoreboardModal onClose={() => setShowScoreboardModal(false)} />}
     </div>
   );
 }

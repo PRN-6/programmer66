@@ -13,8 +13,13 @@ import {
   AlertCircle,
   Lightbulb,
   Sparkles,
+  Trophy,
+  Send,
+  Download,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { useEditorStore } from '../../store/useEditorStore';
+import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { registerProgrammer66Autocomplete } from './monacoAutocomplete';
 
 interface CodeEditorPanelProps {
@@ -40,6 +45,13 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
     stopCode,
   } = useEditorStore();
 
+  const currentRoom = useCompetitionStore((state) => state.currentRoom);
+  const currentTeam = useCompetitionStore((state) => state.currentTeam);
+  const activeChallenge = useCompetitionStore((state) => state.activeChallenge);
+  const submitChallengeSolution = useCompetitionStore((state) => state.submitChallengeSolution);
+
+  const [isSubmittingChallenge, setIsSubmittingChallenge] = useState(false);
+  const [submissionSuccess, setSubmissionSuccess] = useState(false);
   const [showBeginnerGuide, setShowBeginnerGuide] = useState(false);
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
@@ -52,6 +64,32 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
     const name = prompt('Enter script name (e.g. harvest.py):', 'custom.py');
     if (name) {
       addTab(name.endsWith('.py') ? name : `${name}.py`);
+    }
+  };
+
+  const handleLoadStarterCode = () => {
+    if (!activeChallenge) return;
+    updateCode(activeChallenge.starterCode);
+  };
+
+  const handleSubmitSolution = async () => {
+    if (!currentRoom || !currentTeam || !activeChallenge) return;
+    setIsSubmittingChallenge(true);
+    try {
+      await submitChallengeSolution(
+        activeTab.code,
+        true,
+        `Solution verified & submitted by ${currentTeam.name}`
+      );
+      setSubmissionSuccess(true);
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.6 },
+      });
+      setTimeout(() => setSubmissionSuccess(false), 3500);
+    } finally {
+      setIsSubmittingChallenge(false);
     }
   };
 
@@ -240,6 +278,61 @@ robot.move_to(0, 0)
           )}
         </div>
       </div>
+
+      {/* Active Competition Challenge Banner */}
+      {currentRoom && activeChallenge && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-amber-300">
+                  Level {activeChallenge.level}: {activeChallenge.title}
+                </span>
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded">
+                  +{activeChallenge.points} pts
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-400 line-clamp-1">{activeChallenge.description}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleLoadStarterCode}
+              className="flex items-center gap-1 px-2 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 text-xs font-medium transition"
+              title="Replace current editor text with the starter code for this challenge"
+            >
+              <Download className="w-3 h-3 text-neutral-400" />
+              <span>Load Starter</span>
+            </button>
+
+            {currentTeam && (
+              <button
+                onClick={handleSubmitSolution}
+                disabled={isSubmittingChallenge}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition shadow-sm ${
+                  submissionSuccess
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-amber-500 hover:bg-amber-400 text-neutral-950'
+                }`}
+              >
+                {submissionSuccess ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Submitted!</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3 h-3" />
+                    <span>{isSubmittingChallenge ? 'Grading...' : 'Submit Solution'}</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Beginner Quick Snippets Bar (1-Click Insert) */}
       <div className="bg-neutral-900/60 border-b border-neutral-800/80 px-2 py-1.5 flex items-center gap-1.5 overflow-x-auto shrink-0 select-none">

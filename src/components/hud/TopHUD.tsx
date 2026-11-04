@@ -21,6 +21,7 @@ import {
 import { useGameStore } from '../../store/useGameStore';
 import { useEditorStore } from '../../store/useEditorStore';
 import { WEATHER_PROFILES } from '../../game/simulation/weatherConfig';
+import { CompetitionHUDWidget } from '../competition/CompetitionHUDWidget';
 
 interface TopHUDProps {
   onOpenMarket: () => void;
@@ -201,6 +202,9 @@ export const TopHUD: React.FC<TopHUDProps> = ({
 
       {/* Right Controls: Navigation Buttons */}
       <div className="flex items-center gap-2">
+        {/* Live Competition / Admin Widget */}
+        <CompetitionHUDWidget />
+
         {/* Marketplace */}
         <button
           onClick={onOpenMarket}
