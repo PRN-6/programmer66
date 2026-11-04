@@ -6,8 +6,6 @@ import {
   IfStmt,
   WhileStmt,
   ForStmt,
-  BreakStmt,
-  ContinueStmt,
   AssignStmt,
   ExpressionStmt,
   BinaryExpr,

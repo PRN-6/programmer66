@@ -156,18 +156,20 @@ export function createGameAPI(options: {
         return false;
       }
 
-      useGameStore.getState().setRobotTool(botId, 'planting', `Planting ${crop} at (${bot.x}, ${bot.y})`);
-      const delay = options.getStepDelay();
-      if (delay > 0) await sleep(Math.max(140, delay * 1.5));
+      try {
+        useGameStore.getState().setRobotTool(botId, 'planting', `Planting ${crop} at (${bot.x}, ${bot.y})`);
+        const delay = options.getStepDelay();
+        if (delay > 0) await sleep(Math.max(140, delay * 1.5));
 
-      const res = useGameStore.getState().plantCrop(bot.x, bot.y, cropLower);
-      useGameStore.getState().incrementRobotAction();
-      useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
-
-      if (!res) {
-        options.onLog(`Warning: Failed to plant "${crop}" at (${bot.x}, ${bot.y}). Check seed inventory or tile status.`);
+        const res = useGameStore.getState().plantCrop(bot.x, bot.y, cropLower);
+        useGameStore.getState().incrementRobotAction();
+        if (!res) {
+          options.onLog(`Warning: Failed to plant "${crop}" at (${bot.x}, ${bot.y}). Check seed inventory or tile status.`);
+        }
+        return res;
+      } finally {
+        useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
       }
-      return res;
     },
     water: async (amount?: number) => {
       const state = useGameStore.getState();
@@ -175,14 +177,17 @@ export function createGameAPI(options: {
       const bot = state.robots.find((r) => r.id === botId) || state.robots[0];
       if (!bot) return false;
 
-      useGameStore.getState().setRobotTool(botId, 'watering', `Watering plot (${bot.x}, ${bot.y})`);
-      const delay = options.getStepDelay();
-      if (delay > 0) await sleep(Math.max(140, delay * 1.5));
+      try {
+        useGameStore.getState().setRobotTool(botId, 'watering', `Watering plot (${bot.x}, ${bot.y})`);
+        const delay = options.getStepDelay();
+        if (delay > 0) await sleep(Math.max(140, delay * 1.5));
 
-      const res = useGameStore.getState().waterTile(bot.x, bot.y, amount);
-      useGameStore.getState().incrementRobotAction();
-      useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
-      return res;
+        const res = useGameStore.getState().waterTile(bot.x, bot.y, amount);
+        useGameStore.getState().incrementRobotAction();
+        return res;
+      } finally {
+        useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
+      }
     },
     harvest: async () => {
       const state = useGameStore.getState();
@@ -190,18 +195,21 @@ export function createGameAPI(options: {
       const bot = state.robots.find((r) => r.id === botId) || state.robots[0];
       if (!bot) return false;
 
-      useGameStore.getState().setRobotTool(botId, 'harvesting', `Harvesting crop at (${bot.x}, ${bot.y})`);
-      const delay = options.getStepDelay();
-      if (delay > 0) await sleep(Math.max(140, delay * 1.5));
+      try {
+        useGameStore.getState().setRobotTool(botId, 'harvesting', `Harvesting crop at (${bot.x}, ${bot.y})`);
+        const delay = options.getStepDelay();
+        if (delay > 0) await sleep(Math.max(140, delay * 1.5));
 
-      const res = useGameStore.getState().harvestTile(bot.x, bot.y);
-      useGameStore.getState().incrementRobotAction();
-      useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
+        const res = useGameStore.getState().harvestTile(bot.x, bot.y);
+        useGameStore.getState().incrementRobotAction();
 
-      if (!res) {
-        options.onLog(`Warning: Cannot harvest plot at (${bot.x}, ${bot.y}). Crop is not mature.`);
+        if (!res) {
+          options.onLog(`Warning: Cannot harvest plot at (${bot.x}, ${bot.y}). Crop is not mature.`);
+        }
+        return res;
+      } finally {
+        useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
       }
-      return res;
     },
     fertilize: async () => {
       const state = useGameStore.getState();
@@ -209,14 +217,17 @@ export function createGameAPI(options: {
       const bot = state.robots.find((r) => r.id === botId) || state.robots[0];
       if (!bot) return false;
 
-      useGameStore.getState().setRobotTool(botId, 'fertilizing', `Fertilizing plot (${bot.x}, ${bot.y})`);
-      const delay = options.getStepDelay();
-      if (delay > 0) await sleep(Math.max(140, delay * 1.5));
+      try {
+        useGameStore.getState().setRobotTool(botId, 'fertilizing', `Fertilizing plot (${bot.x}, ${bot.y})`);
+        const delay = options.getStepDelay();
+        if (delay > 0) await sleep(Math.max(140, delay * 1.5));
 
-      const res = useGameStore.getState().fertilizeTile(bot.x, bot.y);
-      useGameStore.getState().incrementRobotAction();
-      useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
-      return res;
+        const res = useGameStore.getState().fertilizeTile(bot.x, bot.y);
+        useGameStore.getState().incrementRobotAction();
+        return res;
+      } finally {
+        useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
+      }
     },
     clear_weeds: async () => {
       const state = useGameStore.getState();
@@ -224,14 +235,17 @@ export function createGameAPI(options: {
       const bot = state.robots.find((r) => r.id === botId) || state.robots[0];
       if (!bot) return false;
 
-      useGameStore.getState().setRobotTool(botId, 'clearing', `Clearing weeds at (${bot.x}, ${bot.y})`);
-      const delay = options.getStepDelay();
-      if (delay > 0) await sleep(Math.max(140, delay * 1.5));
+      try {
+        useGameStore.getState().setRobotTool(botId, 'clearing', `Clearing weeds at (${bot.x}, ${bot.y})`);
+        const delay = options.getStepDelay();
+        if (delay > 0) await sleep(Math.max(140, delay * 1.5));
 
-      const res = useGameStore.getState().clearWeeds(bot.x, bot.y);
-      useGameStore.getState().incrementRobotAction();
-      useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
-      return res;
+        const res = useGameStore.getState().clearWeeds(bot.x, bot.y);
+        useGameStore.getState().incrementRobotAction();
+        return res;
+      } finally {
+        useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
+      }
     },
     recharge: async () => {
       const state = useGameStore.getState();
@@ -279,19 +293,22 @@ export function createGameAPI(options: {
 
         // 2. Play planting animation & injector laser
         const botId = useGameStore.getState().activeRobotId;
-        useGameStore.getState().setRobotTool(botId, 'planting', `Planting ${crop} at (${x}, ${y})`);
+        try {
+          useGameStore.getState().setRobotTool(botId, 'planting', `Planting ${crop} at (${x}, ${y})`);
 
-        const delay = options.getStepDelay();
-        if (delay > 0) await sleep(Math.max(140, delay * 1.5));
+          const delay = options.getStepDelay();
+          if (delay > 0) await sleep(Math.max(140, delay * 1.5));
 
-        const res = useGameStore.getState().plantCrop(x, y, cropLower);
-        useGameStore.getState().incrementRobotAction();
-        useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
+          const res = useGameStore.getState().plantCrop(x, y, cropLower);
+          useGameStore.getState().incrementRobotAction();
 
-        if (!res) {
-          options.onLog(`Warning: Failed to plant "${crop}" at (${x}, ${y}). Check seed inventory or tile occupancy.`);
+          if (!res) {
+            options.onLog(`Warning: Failed to plant "${crop}" at (${x}, ${y}). Check seed inventory or tile occupancy.`);
+          }
+          return res;
+        } finally {
+          useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
         }
-        return res;
       },
       water: async (amount?: number) => {
         // 1. Drone flies to the target tile
@@ -299,15 +316,18 @@ export function createGameAPI(options: {
 
         // 2. Play watering spray mist animation
         const botId = useGameStore.getState().activeRobotId;
-        useGameStore.getState().setRobotTool(botId, 'watering', `Watering plot (${x}, ${y})`);
+        try {
+          useGameStore.getState().setRobotTool(botId, 'watering', `Watering plot (${x}, ${y})`);
 
-        const delay = options.getStepDelay();
-        if (delay > 0) await sleep(Math.max(140, delay * 1.5));
+          const delay = options.getStepDelay();
+          if (delay > 0) await sleep(Math.max(140, delay * 1.5));
 
-        const res = useGameStore.getState().waterTile(x, y, amount);
-        useGameStore.getState().incrementRobotAction();
-        useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
-        return res;
+          const res = useGameStore.getState().waterTile(x, y, amount);
+          useGameStore.getState().incrementRobotAction();
+          return res;
+        } finally {
+          useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
+        }
       },
       harvest: async () => {
         // 1. Drone flies to the target tile
@@ -315,45 +335,54 @@ export function createGameAPI(options: {
 
         // 2. Play harvesting tractor beam animation
         const botId = useGameStore.getState().activeRobotId;
-        useGameStore.getState().setRobotTool(botId, 'harvesting', `Harvesting crop at (${x}, ${y})`);
+        try {
+          useGameStore.getState().setRobotTool(botId, 'harvesting', `Harvesting crop at (${x}, ${y})`);
 
-        const delay = options.getStepDelay();
-        if (delay > 0) await sleep(Math.max(140, delay * 1.5));
+          const delay = options.getStepDelay();
+          if (delay > 0) await sleep(Math.max(140, delay * 1.5));
 
-        const res = useGameStore.getState().harvestTile(x, y);
-        useGameStore.getState().incrementRobotAction();
-        useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
+          const res = useGameStore.getState().harvestTile(x, y);
+          useGameStore.getState().incrementRobotAction();
 
-        if (!res) {
-          options.onLog(`Warning: Cannot harvest tile at (${x}, ${y}). Crop is not mature.`);
+          if (!res) {
+            options.onLog(`Warning: Cannot harvest tile at (${x}, ${y}). Crop is not mature.`);
+          }
+          return res;
+        } finally {
+          useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
         }
-        return res;
       },
       fertilize: async () => {
         await robot.move_to(x, y);
         const botId = useGameStore.getState().activeRobotId;
-        useGameStore.getState().setRobotTool(botId, 'fertilizing', `Fertilizing plot (${x}, ${y})`);
+        try {
+          useGameStore.getState().setRobotTool(botId, 'fertilizing', `Fertilizing plot (${x}, ${y})`);
 
-        const delay = options.getStepDelay();
-        if (delay > 0) await sleep(Math.max(140, delay * 1.5));
+          const delay = options.getStepDelay();
+          if (delay > 0) await sleep(Math.max(140, delay * 1.5));
 
-        const res = useGameStore.getState().fertilizeTile(x, y);
-        useGameStore.getState().incrementRobotAction();
-        useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
-        return res;
+          const res = useGameStore.getState().fertilizeTile(x, y);
+          useGameStore.getState().incrementRobotAction();
+          return res;
+        } finally {
+          useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
+        }
       },
       clear_weeds: async () => {
         await robot.move_to(x, y);
         const botId = useGameStore.getState().activeRobotId;
-        useGameStore.getState().setRobotTool(botId, 'clearing', `Clearing weeds at (${x}, ${y})`);
+        try {
+          useGameStore.getState().setRobotTool(botId, 'clearing', `Clearing weeds at (${x}, ${y})`);
 
-        const delay = options.getStepDelay();
-        if (delay > 0) await sleep(Math.max(140, delay * 1.5));
+          const delay = options.getStepDelay();
+          if (delay > 0) await sleep(Math.max(140, delay * 1.5));
 
-        const res = useGameStore.getState().clearWeeds(x, y);
-        useGameStore.getState().incrementRobotAction();
-        useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
-        return res;
+          const res = useGameStore.getState().clearWeeds(x, y);
+          useGameStore.getState().incrementRobotAction();
+          return res;
+        } finally {
+          useGameStore.getState().setRobotTool(botId, 'idle', 'Hovering - Standby');
+        }
       },
       is_empty: () => {
         const tile = useGameStore.getState().tiles[`${x}_${y}`];

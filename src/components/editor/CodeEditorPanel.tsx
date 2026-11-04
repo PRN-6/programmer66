@@ -12,14 +12,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Lightbulb,
-  Sprout,
-  Droplets,
-  Wheat,
-  Plane,
-  RotateCcw,
   Sparkles,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import { useEditorStore } from '../../store/useEditorStore';
 import { registerProgrammer66Autocomplete } from './monacoAutocomplete';

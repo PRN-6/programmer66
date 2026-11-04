@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import {
   CropId,
-  GrowthStage,
   WeatherType,
   TileState,
   RobotState,

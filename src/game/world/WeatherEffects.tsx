@@ -4,6 +4,21 @@ import * as THREE from 'three';
 import { useGameStore } from '../../store/useGameStore';
 import { WEATHER_PROFILES } from '../simulation/weatherConfig';
 
+const generateRainPositions = () => {
+  const pos = new Float32Array(600 * 3);
+  for (let i = 0; i < 600; i++) {
+    const u = (i * 0.6180339887) % 1;
+    const v = (i * 0.4142135623) % 1;
+    const w = (i * 0.7320508075) % 1;
+    pos[i * 3] = (u - 0.5) * 24;
+    pos[i * 3 + 1] = v * 12;
+    pos[i * 3 + 2] = (w - 0.5) * 24;
+  }
+  return pos;
+};
+
+const INITIAL_RAIN_POSITIONS = generateRainPositions();
+
 export const WeatherEffects: React.FC = () => {
   const { weather, timeOfDay } = useGameStore();
   const profile = WEATHER_PROFILES[weather];
@@ -11,16 +26,7 @@ export const WeatherEffects: React.FC = () => {
   // Rain particles system
   const rainCount = weather === 'stormy' ? 600 : weather === 'rainy' ? 350 : 0;
   const rainGeoRef = useRef<THREE.BufferGeometry>(null);
-
-  const rainPositions = useMemo(() => {
-    const pos = new Float32Array(600 * 3);
-    for (let i = 0; i < 600; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 24;
-      pos[i * 3 + 1] = Math.random() * 12;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 24;
-    }
-    return pos;
-  }, []);
+  const rainPositions = INITIAL_RAIN_POSITIONS;
 
   // Sun and Moon celestial calculation based on 24hr timeOfDay
   const sunAngle = ((timeOfDay - 6) / 24) * Math.PI * 2;

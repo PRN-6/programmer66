@@ -30,6 +30,23 @@ interface TopHUDProps {
   editorOpen: boolean;
 }
 
+const WeatherIcon: React.FC<{ weather: string }> = ({ weather }) => {
+  switch (weather) {
+    case 'sunny':
+      return <Sun className="w-4 h-4 text-neutral-300" />;
+    case 'cloudy':
+      return <Cloud className="w-4 h-4 text-neutral-400" />;
+    case 'rainy':
+      return <CloudRain className="w-4 h-4 text-neutral-300" />;
+    case 'stormy':
+      return <CloudLightning className="w-4 h-4 text-neutral-200" />;
+    case 'drought':
+      return <Flame className="w-4 h-4 text-neutral-300" />;
+    default:
+      return <Sun className="w-4 h-4 text-neutral-300" />;
+  }
+};
+
 export const TopHUD: React.FC<TopHUDProps> = ({
   onOpenMarket,
   onOpenMissions,
@@ -75,23 +92,6 @@ export const TopHUD: React.FC<TopHUDProps> = ({
   const xpProgress = Math.min(100, Math.max(0, ((xp - currentLevelBase) / (nextLevelXp - currentLevelBase)) * 100));
 
   const uncompletedMissions = missions.filter((m) => !m.completed).length;
-
-  const WeatherIcon = () => {
-    switch (weather) {
-      case 'sunny':
-        return <Sun className="w-4 h-4 text-neutral-300" />;
-      case 'cloudy':
-        return <Cloud className="w-4 h-4 text-neutral-400" />;
-      case 'rainy':
-        return <CloudRain className="w-4 h-4 text-neutral-300" />;
-      case 'stormy':
-        return <CloudLightning className="w-4 h-4 text-neutral-200" />;
-      case 'drought':
-        return <Flame className="w-4 h-4 text-neutral-300" />;
-      default:
-        return <Sun className="w-4 h-4 text-neutral-300" />;
-    }
-  };
 
   return (
     <header className="h-14 shrink-0 w-full z-40 bg-neutral-950/95 backdrop-blur-md border-b border-neutral-800/80 px-4 flex items-center justify-between shadow-md">
@@ -142,7 +142,7 @@ export const TopHUD: React.FC<TopHUDProps> = ({
 
         {/* Weather card */}
         <div className="flex items-center gap-2 bg-neutral-900 px-3 py-1 rounded-lg border border-neutral-800">
-          <WeatherIcon />
+          <WeatherIcon weather={weather} />
           <div>
             <div className="text-xs font-semibold text-neutral-200 flex items-center gap-1.5">
               <span>{profile.name}</span>

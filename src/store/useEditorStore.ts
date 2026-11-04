@@ -4,6 +4,7 @@ import { Parser } from '../scripting/parser';
 import { Interpreter } from '../scripting/interpreter';
 import { createGameAPI } from '../scripting/api';
 import { soundManager } from '../audio/soundEffects';
+import { useGameStore } from './useGameStore';
 
 export interface ConsoleMessage {
   id: string;
@@ -263,12 +264,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const message = err instanceof Error ? err.message : String(err);
       get().addLog('stderr', `Runtime Error: ${message}`);
       set({ executionState: 'error' });
+    } finally {
+      const state = useGameStore.getState();
+      state.setRobotTool(state.activeRobotId, 'idle', 'Hovering - Standby');
     }
   },
 
   stopCode: () => {
     cancellationFlag = true;
+    const state = useGameStore.getState();
+    state.setRobotTool(state.activeRobotId, 'idle', 'Hovering - Standby');
     set({ executionState: 'idle' });
-    get().addLog('info', '[Execution stopped]');
+    get().addLog('info', '[Execution stopped by user]');
   },
 }));

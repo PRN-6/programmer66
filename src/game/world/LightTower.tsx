@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../../store/useGameStore';
@@ -15,7 +15,11 @@ export const LightTower: React.FC<LightTowerProps> = ({
   const timeOfDay = useGameStore((state) => state.timeOfDay);
   const beaconRef = useRef<THREE.Mesh>(null);
   const spotLightRef = useRef<THREE.SpotLight>(null);
-  const targetObjectRef = useRef<THREE.Object3D>(new THREE.Object3D());
+  const targetObject = useMemo(() => {
+    const obj = new THREE.Object3D();
+    obj.position.set(...targetPosition);
+    return obj;
+  }, [targetPosition]);
 
   // Night condition: 6:30 PM (18.5) to 5:30 AM (5.5)
   const isNight = timeOfDay < 5.5 || timeOfDay > 18.5;
@@ -31,16 +35,15 @@ export const LightTower: React.FC<LightTowerProps> = ({
     }
 
     // SpotLight targeting center of farm
-    if (spotLightRef.current && targetObjectRef.current) {
-      targetObjectRef.current.position.set(...targetPosition);
-      spotLightRef.current.target = targetObjectRef.current;
+    if (spotLightRef.current) {
+      spotLightRef.current.target = targetObject;
     }
   });
 
   return (
     <group position={position}>
       {/* Target anchor for the spotlight */}
-      <primitive object={targetObjectRef.current} />
+      <primitive object={targetObject} />
 
       {/* Concrete Foundation Base */}
       <mesh position={[0, 0.1, 0]} castShadow receiveShadow>
