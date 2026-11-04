@@ -62,4 +62,19 @@ describe('CompetitionService', () => {
     expect(teams[0].score).toBe(100);
     expect(teams[0].completedChallenges).toContain('chal-1');
   });
+
+  it('allows an admin to kick and remove a team from a room', async () => {
+    const room = await CompetitionService.createRoom('Elimination Round', 20);
+    const { team: team1 } = await CompetitionService.joinRoom(room.code, 'Team One', ['Alice']);
+    const { team: team2 } = await CompetitionService.joinRoom(room.code, 'Team Two', ['Bob']);
+
+    let teams = await CompetitionService.getTeams(room.id);
+    expect(teams.length).toBe(2);
+
+    await CompetitionService.kickTeam(room.id, team1.id);
+
+    teams = await CompetitionService.getTeams(room.id);
+    expect(teams.length).toBe(1);
+    expect(teams[0].id).toBe(team2.id);
+  });
 });

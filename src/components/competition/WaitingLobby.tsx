@@ -316,3 +316,4 @@ export const WaitingLobby: React.FC<WaitingLobbyProps> = ({
 };
 
 export default WaitingLobby;
+

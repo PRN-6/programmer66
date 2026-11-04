@@ -294,7 +294,22 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
           updatedRoom.challenges[0] ||
           null;
 
-        const updatedTeam = currentTeam ? teams.find((t) => t.id === currentTeam.id) || currentTeam : null;
+        const updatedTeam = currentTeam ? teams.find((t) => t.id === currentTeam.id) || null : null;
+
+        // If participant was kicked by the admin, remove local session & notify
+        if (currentTeam && !updatedTeam && !get().isAdmin) {
+          saveSession(null);
+          set({
+            currentRoom: null,
+            currentTeam: null,
+            teams: [],
+            submissions: [],
+            activeChallenge: null,
+            isAdmin: false,
+          });
+          alert('Notice: Your team was removed from the event by the host.');
+          return;
+        }
 
         set({
           currentRoom: updatedRoom,
@@ -384,11 +399,11 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
   },
 
   kickTeam: async (teamId: string) => {
-    const { currentRoom, teams } = get();
+    const { currentRoom } = get();
     if (!currentRoom) return;
 
-    const updated = teams.map((t) => (t.id === teamId ? { ...t, status: 'disqualified' as const } : t));
-    set({ teams: updated });
+    await CompetitionService.kickTeam(currentRoom.id, teamId);
+    await get().refreshRoomData();
   },
 
   submitChallengeSolution: async (code: string, passed: boolean, feedback: string) => {

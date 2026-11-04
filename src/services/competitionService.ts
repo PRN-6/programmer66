@@ -299,6 +299,7 @@ export class CompetitionService {
           .from('teams')
           .select('*')
           .eq('room_id', roomId)
+          .neq('status', 'kicked')
           .order('score', { ascending: false });
 
         if (!error && data) {
@@ -321,7 +322,7 @@ export class CompetitionService {
     }
 
     const allTeams = this.getLocalTeams();
-    const list = allTeams[roomId] || [];
+    const list = (allTeams[roomId] || []).filter((t) => t.status !== 'kicked');
     return list.sort((a, b) => b.score - a.score);
   }
 
@@ -377,6 +378,35 @@ export class CompetitionService {
       allTeams[roomId] = list;
       this.saveLocalTeams(allTeams);
     }
+  }
+
+  static async kickTeam(roomId: string, teamId: string): Promise<void> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase
+          .from('teams')
+          .update({ status: 'kicked' })
+          .eq('id', teamId)
+          .eq('room_id', roomId);
+
+        await supabase.from('teams').delete().eq('id', teamId).eq('room_id', roomId);
+        await supabase.from('submissions').delete().eq('team_id', teamId).eq('room_id', roomId);
+      } catch (err) {
+        console.warn('Supabase kickTeam error:', err);
+      }
+    }
+
+    // Local remove
+    const allTeams = this.getLocalTeams();
+    const list = allTeams[roomId] || [];
+    allTeams[roomId] = list.filter((t) => t.id !== teamId);
+    this.saveLocalTeams(allTeams);
+
+    // Also remove local submissions
+    const allSubs = this.getLocalSubmissions();
+    const roomSubs = allSubs[roomId] || [];
+    allSubs[roomId] = roomSubs.filter((s) => s.teamId !== teamId);
+    this.saveLocalSubmissions(allSubs);
   }
 
   // --- SUBMISSIONS & LOGS ---

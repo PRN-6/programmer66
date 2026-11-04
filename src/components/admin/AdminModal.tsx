@@ -17,6 +17,7 @@ import {
   Settings as SettingsIcon,
   Database,
   ExternalLink,
+  UserX,
 } from 'lucide-react';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { Challenge, ChallengeCriterion } from '../../types/competition';
@@ -96,6 +97,12 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const handleKickTeam = async (teamId: string, teamName: string) => {
+    if (window.confirm(`Are you sure you want to kick "${teamName}" from this competition? This will remove the team from the leaderboard and room.`)) {
+      await kickTeam(teamId);
+    }
   };
 
   const handleCreateNewRoom = async () => {
@@ -533,14 +540,24 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right">
-                              {team.submittedCode && (
+                              <div className="flex items-center justify-end gap-2">
+                                {team.submittedCode && (
+                                  <button
+                                    onClick={() => setInspectedTeamCode({ teamName: team.name, code: team.submittedCode || '' })}
+                                    className="px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 text-xs transition"
+                                  >
+                                    Inspect Code
+                                  </button>
+                                )}
                                 <button
-                                  onClick={() => setInspectedTeamCode({ teamName: team.name, code: team.submittedCode || '' })}
-                                  className="px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 text-xs transition"
+                                  onClick={() => handleKickTeam(team.id, team.name)}
+                                  className="flex items-center gap-1 px-2.5 py-1 bg-red-950/60 hover:bg-red-900/80 border border-red-700/60 text-red-300 hover:text-white rounded-lg text-xs transition"
+                                  title="Kick and remove this team from the competition"
                                 >
-                                  Inspect Code
+                                  <UserX className="w-3.5 h-3.5" />
+                                  <span>Kick</span>
                                 </button>
-                              )}
+                              </div>
                             </td>
                           </tr>
                         );
@@ -753,10 +770,12 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                           Joined: {new Date(t.joinedAt).toLocaleTimeString()}
                         </span>
                         <button
-                          onClick={() => kickTeam(t.id)}
-                          className="text-rose-400 hover:text-rose-300 font-medium"
+                          onClick={() => handleKickTeam(t.id, t.name)}
+                          className="flex items-center gap-1.5 px-3 py-1 bg-red-950/60 hover:bg-red-900/80 border border-red-700/60 text-red-300 hover:text-white rounded-lg text-xs font-semibold transition"
+                          title="Kick and remove this team from the competition"
                         >
-                          {t.status === 'disqualified' ? 'Disqualified' : 'Disqualify Team'}
+                          <UserX className="w-3.5 h-3.5" />
+                          <span>Kick Team</span>
                         </button>
                       </div>
                     </div>

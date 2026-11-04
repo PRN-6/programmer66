@@ -34,7 +34,7 @@ export interface Team {
   members: string[];
   score: number;
   completedChallenges: string[];
-  status: 'active' | 'idle' | 'disqualified';
+  status: 'active' | 'idle' | 'disqualified' | 'kicked';
   joinedAt: string;
   lastSubmissionTime?: string;
   submittedCode?: string;

@@ -86,22 +86,28 @@ ALTER TABLE public.submissions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public read access on rooms" ON public.rooms;
 DROP POLICY IF EXISTS "Allow public insert on rooms" ON public.rooms;
 DROP POLICY IF EXISTS "Allow public update on rooms" ON public.rooms;
+DROP POLICY IF EXISTS "Allow public delete on rooms" ON public.rooms;
 
 DROP POLICY IF EXISTS "Allow public read access on teams" ON public.teams;
 DROP POLICY IF EXISTS "Allow public insert on teams" ON public.teams;
 DROP POLICY IF EXISTS "Allow public update on teams" ON public.teams;
+DROP POLICY IF EXISTS "Allow public delete on teams" ON public.teams;
 
 DROP POLICY IF EXISTS "Allow public read access on submissions" ON public.submissions;
 DROP POLICY IF EXISTS "Allow public insert on submissions" ON public.submissions;
+DROP POLICY IF EXISTS "Allow public delete on submissions" ON public.submissions;
 
 -- Create Policies
 CREATE POLICY "Allow public read access on rooms" ON public.rooms FOR SELECT USING (true);
 CREATE POLICY "Allow public insert on rooms" ON public.rooms FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update on rooms" ON public.rooms FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete on rooms" ON public.rooms FOR DELETE USING (true);
 
 CREATE POLICY "Allow public read access on teams" ON public.teams FOR SELECT USING (true);
 CREATE POLICY "Allow public insert on teams" ON public.teams FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update on teams" ON public.teams FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete on teams" ON public.teams FOR DELETE USING (true);
 
 CREATE POLICY "Allow public read access on submissions" ON public.submissions FOR SELECT USING (true);
 CREATE POLICY "Allow public insert on submissions" ON public.submissions FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public delete on submissions" ON public.submissions FOR DELETE USING (true);
