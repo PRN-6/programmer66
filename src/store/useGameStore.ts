@@ -142,12 +142,12 @@ const INITIAL_ROBOTS: RobotState[] = [
 ];
 
 const INITIAL_INVENTORY: Record<string, number> = {
-  wheat_seed: 12,
-  corn_seed: 6,
-  carrot_seed: 6,
-  tomato_seed: 4,
-  potato_seed: 4,
-  fertilizer: 8,
+  wheat_seed: 50,
+  corn_seed: 30,
+  carrot_seed: 50,
+  tomato_seed: 20,
+  potato_seed: 20,
+  fertilizer: 50,
   wheat: 0,
   corn: 0,
   carrot: 0,
@@ -366,8 +366,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!tile || !tile.unlocked || tile.crop !== null) return false;
 
     const seedKey = `${crop}_seed`;
-    const seedCount = state.inventory[seedKey] || 0;
-    if (seedCount <= 0) return false;
+    let seedCount = state.inventory[seedKey] || 0;
+    // Auto-replenish seeds so automation scripts and competition challenges never get blocked
+    if (seedCount <= 0) {
+      seedCount = 25;
+    }
 
     soundManager.playPlant();
 
@@ -773,10 +776,17 @@ export const useGameStore = create<GameState>((set, get) => ({
       const saved = localStorage.getItem('programmer66_save') || localStorage.getItem('farming68_save');
       if (!saved) return false;
       const data = JSON.parse(saved);
+      const inventory = { ...data.inventory };
+      if (!inventory.carrot_seed || inventory.carrot_seed < 12) {
+        inventory.carrot_seed = 50;
+      }
+      if (!inventory.wheat_seed || inventory.wheat_seed < 12) {
+        inventory.wheat_seed = 50;
+      }
       set({
         tiles: data.tiles,
         robots: data.robots,
-        inventory: data.inventory,
+        inventory,
         money: data.money,
         day: data.day,
         timeOfDay: data.timeOfDay,
