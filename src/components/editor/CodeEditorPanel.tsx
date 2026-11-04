@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import {
   Play,
@@ -11,8 +11,18 @@ import {
   FastForward,
   CheckCircle2,
   AlertCircle,
+  Lightbulb,
+  Sprout,
+  Droplets,
+  Wheat,
+  Plane,
+  RotateCcw,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useEditorStore } from '../../store/useEditorStore';
+import { registerProgrammer66Autocomplete } from './monacoAutocomplete';
 
 interface CodeEditorPanelProps {
   onClose: () => void;
@@ -27,6 +37,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
     consoleLogs,
     setActiveTab,
     updateCode,
+    insertSnippet,
     addTab,
     closeTab,
     setSpeedMode,
@@ -36,6 +47,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
     stopCode,
   } = useEditorStore();
 
+  const [showBeginnerGuide, setShowBeginnerGuide] = useState(false);
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
 
@@ -49,6 +61,60 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
       addTab(name.endsWith('.py') ? name : `${name}.py`);
     }
   };
+
+  const QUICK_SNIPPETS = [
+    {
+      label: '🌱 Plant All',
+      title: 'Dispatches drone to plant wheat on all empty plots',
+      code: `# Dispatches drone to plant wheat on all empty plots\nfor tile in farm.tiles:\n    if tile.is_empty():\n        tile.plant("wheat")`,
+    },
+    {
+      label: '💧 Water All',
+      title: 'Dispatches drone to spray water mist on thirsty plots',
+      code: `# Dispatches drone to spray water mist on dry soil\nfor tile in farm.tiles:\n    if tile.needs_water():\n        tile.water()`,
+    },
+    {
+      label: '🌾 Harvest Ready',
+      title: 'Dispatches drone to harvest all mature crops',
+      code: `# Dispatches drone to harvest mature crops\nfor tile in farm.tiles:\n    if tile.is_ready():\n        tile.harvest()`,
+    },
+    {
+      label: '🚁 Fly to (0, 0)',
+      title: 'Send drone back to base coordinates',
+      code: `# Send drone back to base station\nrobot.move_to(0, 0)`,
+    },
+    {
+      label: '🔁 4x4 Area Patrol',
+      title: 'Drone patrols a 4x4 grid area',
+      code: `# Drone patrols a 4x4 grid area\nfor y in range(4):\n    for x in range(4):\n        robot.move_to(x, y)\n        tile = farm.get_tile(x, y)\n        if tile.is_empty():\n            robot.plant("wheat")\n        elif tile.needs_water():\n            robot.water()`,
+    },
+  ];
+
+  const STARTER_TUTORIAL = `# programmer66 - Beginner Starter Script
+# Click "Run Script" to watch your drone fly and automate the farm!
+
+print("AeroDrone-01 initiating farm routine...")
+
+# Loop through every soil plot on your farm
+for tile in farm.tiles:
+    # 1. If plot is empty, fly over and plant wheat
+    if tile.is_empty():
+        print("Drone planting wheat at (", tile.x, ",", tile.y, ")")
+        tile.plant("wheat")
+
+    # 2. If soil is dry, spray hydration mist
+    if tile.needs_water():
+        print("Drone watering plot at (", tile.x, ",", tile.y, ")")
+        tile.water()
+
+    # 3. If crop is fully grown, harvest it!
+    if tile.is_ready():
+        print("Drone harvesting mature crop at (", tile.x, ",", tile.y, ")")
+        tile.harvest()
+
+print("Routine complete! Returning to base.")
+robot.move_to(0, 0)
+`;
 
   return (
     <div className="w-full md:w-[460px] lg:w-[520px] xl:w-[580px] shrink-0 h-full bg-neutral-950 border-l border-neutral-800 flex flex-col z-20 shadow-2xl transition-all">
@@ -90,6 +156,18 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
         </div>
 
         <div className="flex items-center gap-1 mb-1">
+          <button
+            onClick={() => setShowBeginnerGuide((prev) => !prev)}
+            className={`p-1.5 rounded text-xs flex items-center gap-1 border transition ${
+              showBeginnerGuide
+                ? 'bg-neutral-800 text-emerald-400 border-emerald-500/50'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-800 border-neutral-700'
+            }`}
+            title="Toggle Beginner Guide"
+          >
+            <Lightbulb className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline font-semibold">Guide</span>
+          </button>
           <button
             onClick={() => setShowDocsModal(true)}
             className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
@@ -152,32 +230,95 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
           {executionState === 'running' && (
             <span className="flex items-center gap-1 text-xs text-neutral-300 animate-pulse font-medium">
               <span className="w-2 h-2 rounded-full bg-neutral-300" />
-              Running...
+              Flying & Working...
             </span>
           )}
           {executionState === 'success' && (
             <span className="flex items-center gap-1 text-xs text-neutral-200 font-medium">
               <CheckCircle2 className="w-3.5 h-3.5 text-neutral-300" />
-              Done
+              Completed
             </span>
           )}
           {executionState === 'error' && (
             <span className="flex items-center gap-1 text-xs text-neutral-300 font-medium">
               <AlertCircle className="w-3.5 h-3.5 text-neutral-400" />
-              Error
+              Check Error Log
             </span>
           )}
         </div>
       </div>
 
+      {/* Beginner Quick Snippets Bar (1-Click Insert) */}
+      <div className="bg-neutral-900/60 border-b border-neutral-800/80 px-2 py-1.5 flex items-center gap-1.5 overflow-x-auto shrink-0 select-none">
+        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1 pl-1 shrink-0">
+          <Sparkles className="w-3 h-3 text-emerald-400" />
+          <span>Insert:</span>
+        </span>
+        {QUICK_SNIPPETS.map((snip, idx) => (
+          <button
+            key={idx}
+            onClick={() => insertSnippet(snip.code)}
+            title={snip.title}
+            className="px-2 py-1 rounded-md bg-neutral-800/80 hover:bg-neutral-700 hover:text-white text-[11px] font-mono text-neutral-300 border border-neutral-700/60 whitespace-nowrap transition shrink-0 active:scale-95"
+          >
+            {snip.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Collapsible Beginner Guide Drawer */}
+      {showBeginnerGuide && (
+        <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 text-xs text-neutral-300 space-y-2.5 max-h-60 overflow-y-auto shrink-0 animate-in slide-in-from-top-2 duration-150">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-white flex items-center gap-1.5 text-xs font-mono">
+              <Lightbulb className="w-4 h-4 text-emerald-400" />
+              <span>Beginner Programming Guide</span>
+            </h3>
+            <button
+              onClick={() => updateCode(STARTER_TUTORIAL)}
+              className="text-[10px] text-emerald-400 hover:text-emerald-300 bg-neutral-800 hover:bg-neutral-700 px-2 py-1 rounded border border-neutral-700 font-mono transition"
+            >
+              Reset to Starter Code
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-neutral-400">
+            <div className="bg-neutral-950 p-2.5 rounded-lg border border-neutral-800 space-y-1">
+              <b className="text-neutral-200">Rule 1: Colons (:)</b>
+              <p>Every <code className="text-neutral-300">if</code>, <code className="text-neutral-300">for</code>, and <code className="text-neutral-300">while</code> line must end with a colon <code className="text-neutral-200">:</code>.</p>
+            </div>
+            <div className="bg-neutral-950 p-2.5 rounded-lg border border-neutral-800 space-y-1">
+              <b className="text-neutral-200">Rule 2: Indentation (Tab)</b>
+              <p>Lines inside loops or <code className="text-neutral-300">if</code> conditions must be indented using the <code className="text-neutral-200">Tab</code> key.</p>
+            </div>
+          </div>
+
+          <div className="bg-neutral-950 p-2.5 rounded-lg border border-neutral-800 space-y-1.5 text-[11px]">
+            <b className="text-neutral-200">Essential Drone Commands:</b>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1 font-mono text-[10px]">
+              <div><code className="text-emerald-400">tile.plant("wheat")</code> - Plant crop</div>
+              <div><code className="text-sky-400">tile.water()</code> - Spray water</div>
+              <div><code className="text-amber-400">tile.harvest()</code> - Harvest ready crop</div>
+              <div><code className="text-purple-400">robot.move_to(x, y)</code> - Fly to plot</div>
+            </div>
+            <p className="text-[10px] text-neutral-500 pt-1">
+              💡 As you type, the editor will automatically pop up suggestions with autocomplete!
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Monaco Code Editor */}
-      <div className="flex-1 relative min-h-[200px] bg-neutral-950">
+      <div className="flex-1 relative min-h-[180px] bg-neutral-950">
         <Editor
           height="100%"
           language="python"
           theme="vs-dark"
           value={activeTab.code}
           onChange={(val) => updateCode(val || '')}
+          onMount={(editor, monaco) => {
+            registerProgrammer66Autocomplete(monaco);
+          }}
           options={{
             minimap: { enabled: false },
             fontSize: 13,
@@ -187,6 +328,9 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
             automaticLayout: true,
             tabSize: 4,
             insertSpaces: true,
+            suggestOnTriggerCharacters: true,
+            quickSuggestions: true,
+            wordBasedSuggestions: 'currentDocument',
             renderLineHighlight: 'all',
             padding: { top: 10, bottom: 10 },
           }}
@@ -194,7 +338,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
       </div>
 
       {/* Bottom Console / Terminal Log */}
-      <div className="h-52 bg-black border-t border-neutral-800 flex flex-col font-mono text-xs shrink-0">
+      <div className="h-48 bg-black border-t border-neutral-800 flex flex-col font-mono text-xs shrink-0">
         {/* Terminal Header */}
         <div className="flex items-center justify-between bg-neutral-900/90 px-3 py-1.5 border-b border-neutral-800 text-neutral-400">
           <div className="flex items-center gap-1.5 font-bold text-neutral-300">

@@ -8,7 +8,9 @@ import {
   Layers,
   Bot,
   Package,
+  Code2,
 } from 'lucide-react';
+import { useEditorStore } from '../../store/useEditorStore';
 
 interface ApiDocsModalProps {
   onClose: () => void;
@@ -16,6 +18,7 @@ interface ApiDocsModalProps {
 
 export const ApiDocsModal: React.FC<ApiDocsModalProps> = ({ onClose }) => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const insertSnippet = useEditorStore((state) => state.insertSnippet);
 
   const copySnippet = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
@@ -172,26 +175,39 @@ export const ApiDocsModal: React.FC<ApiDocsModalProps> = ({ onClose }) => {
                       key={api.sig}
                       className="bg-neutral-900/60 border border-neutral-800 p-3.5 rounded-xl space-y-2"
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
                         <code className="text-xs font-mono font-bold text-neutral-200 bg-neutral-800 px-2 py-0.5 rounded border border-neutral-700">
                           {api.sig}
                         </code>
-                        <button
-                          onClick={() => copySnippet(api.example, currentSnippetId)}
-                          className="flex items-center gap-1 text-[11px] text-neutral-400 hover:text-white px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 transition"
-                        >
-                          {copiedIndex === currentSnippetId ? (
-                            <>
-                              <Check className="w-3 h-3 text-neutral-200" />
-                              <span className="text-neutral-200">Copied</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3" />
-                              <span>Copy Example</span>
-                            </>
-                          )}
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              insertSnippet(api.example);
+                              onClose();
+                            }}
+                            className="flex items-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300 px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 transition"
+                            title="Insert code directly into active editor tab"
+                          >
+                            <Code2 className="w-3 h-3" />
+                            <span>Insert into Script</span>
+                          </button>
+                          <button
+                            onClick={() => copySnippet(api.example, currentSnippetId)}
+                            className="flex items-center gap-1 text-[11px] text-neutral-400 hover:text-white px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 transition"
+                          >
+                            {copiedIndex === currentSnippetId ? (
+                              <>
+                                <Check className="w-3 h-3 text-neutral-200" />
+                                <span className="text-neutral-200">Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       <p className="text-xs text-neutral-300 leading-relaxed">{api.desc}</p>

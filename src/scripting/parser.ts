@@ -511,7 +511,19 @@ export class Parser {
   private consume(type: TokenType, errorMessage: string): Token {
     if (this.check(type)) return this.advance();
     const token = this.peek();
-    throw new Error(`${errorMessage} at line ${token.line}, column ${token.column} (got '${token.value || token.type}')`);
+
+    let tip = '';
+    if (type === 'COLON') {
+      tip = ' 💡 Tip: Python statements like if, else, for, while, and def must end with a colon (:). Example: if tile.is_empty():';
+    } else if (type === 'INDENT') {
+      tip = ' 💡 Tip: Code inside an if block, for loop, or function must be indented with Tab or 4 spaces.';
+    } else if (type === 'RPAREN') {
+      tip = ' 💡 Tip: Make sure every "(" has a matching ")".';
+    } else if (type === 'RBRACKET') {
+      tip = ' 💡 Tip: Make sure every "[" has a matching "]".';
+    }
+
+    throw new Error(`${errorMessage} at line ${token.line}, column ${token.column} (got '${token.value || token.type}').${tip}`);
   }
 
   private skipNewlines() {

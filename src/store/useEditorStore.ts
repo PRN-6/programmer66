@@ -105,6 +105,7 @@ export interface EditorState {
   // Actions
   setActiveTab: (tabId: string) => void;
   updateCode: (code: string) => void;
+  insertSnippet: (snippet: string) => void;
   addTab: (name: string, code?: string) => void;
   closeTab: (tabId: string) => void;
   setSpeedMode: (mode: EditorState['speedMode']) => void;
@@ -149,6 +150,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         tab.id === prev.activeTabId ? { ...tab, code: newCode } : tab
       ),
     }));
+  },
+
+  insertSnippet: (snippet: string) => {
+    const state = get();
+    const currentTab = state.tabs.find((t) => t.id === state.activeTabId);
+    if (!currentTab) return;
+    const curCode = currentTab.code.trim();
+    const newCode = curCode.length === 0 ? snippet : `${curCode}\n\n${snippet}\n`;
+    state.updateCode(newCode);
+    state.addLog('info', '💡 Code snippet inserted into editor.');
   },
 
   addTab: (name, code = '# New script\nprint("Hello Farm!")\n') => {
