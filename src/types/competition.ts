@@ -67,3 +67,4 @@ export interface Room {
   challenges: Challenge[];
   adminPasscode?: string;
 }
+

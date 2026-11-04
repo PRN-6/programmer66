@@ -1,7 +1,7 @@
 -- ========================================================
 -- PROGRAMMER66 - SUPABASE COMPETITION & MULTI-TEAM SCHEMA
 -- ========================================================
--- Paste this entire script into your Supabase SQL Editor and click "Run"
+-- Safe & idempotent script. You can run this multiple times without error.
 
 -- 1. Create Rooms Table
 CREATE TABLE IF NOT EXISTS public.rooms (
@@ -52,16 +52,49 @@ CREATE INDEX IF NOT EXISTS idx_teams_room_id ON public.teams(room_id);
 CREATE INDEX IF NOT EXISTS idx_teams_score ON public.teams(score DESC);
 CREATE INDEX IF NOT EXISTS idx_submissions_room_id ON public.submissions(room_id);
 
--- 5. Enable Realtime Replication on All Competition Tables
-ALTER PUBLICATION supabase_realtime ADD TABLE public.rooms;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.teams;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.submissions;
+-- 5. Safe Realtime Replication (Checks before adding to avoid duplicate relation error)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'rooms'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.rooms;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'teams'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.teams;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'submissions'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.submissions;
+  END IF;
+END $$;
 
 -- 6. Enable Row Level Security (RLS) with Public Access Policies
 ALTER TABLE public.rooms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.submissions ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they already exist to prevent duplicate errors
+DROP POLICY IF EXISTS "Allow public read access on rooms" ON public.rooms;
+DROP POLICY IF EXISTS "Allow public insert on rooms" ON public.rooms;
+DROP POLICY IF EXISTS "Allow public update on rooms" ON public.rooms;
+
+DROP POLICY IF EXISTS "Allow public read access on teams" ON public.teams;
+DROP POLICY IF EXISTS "Allow public insert on teams" ON public.teams;
+DROP POLICY IF EXISTS "Allow public update on teams" ON public.teams;
+
+DROP POLICY IF EXISTS "Allow public read access on submissions" ON public.submissions;
+DROP POLICY IF EXISTS "Allow public insert on submissions" ON public.submissions;
+
+-- Create Policies
 CREATE POLICY "Allow public read access on rooms" ON public.rooms FOR SELECT USING (true);
 CREATE POLICY "Allow public insert on rooms" ON public.rooms FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update on rooms" ON public.rooms FOR UPDATE USING (true);

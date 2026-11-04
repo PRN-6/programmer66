@@ -110,3 +110,4 @@ export const ScoreboardModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
     </div>
   );
 };
+

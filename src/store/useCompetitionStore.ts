@@ -252,3 +252,4 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
     await get().refreshRoomData();
   },
 }));
+
