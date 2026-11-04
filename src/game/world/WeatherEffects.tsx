@@ -1,0 +1,153 @@
+import React, { useRef, useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
+import { useGameStore } from '../../store/useGameStore';
+import { WEATHER_PROFILES } from '../simulation/weatherConfig';
+
+export const WeatherEffects: React.FC = () => {
+  const { weather, timeOfDay } = useGameStore();
+  const profile = WEATHER_PROFILES[weather];
+
+  // Rain particles system
+  const rainCount = weather === 'stormy' ? 600 : weather === 'rainy' ? 350 : 0;
+  const rainGeoRef = useRef<THREE.BufferGeometry>(null);
+
+  const rainPositions = useMemo(() => {
+    const pos = new Float32Array(600 * 3);
+    for (let i = 0; i < 600; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 24;
+      pos[i * 3 + 1] = Math.random() * 12;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 24;
+    }
+    return pos;
+  }, []);
+
+  // Sun and Moon celestial calculation based on 24hr timeOfDay
+  // 6.0 = Sunrise (+X), 12.0 = Noon (+Y), 18.0 = Sunset (-X), 24.0/0.0 = Midnight (-Y)
+  const sunAngle = ((timeOfDay - 6) / 24) * Math.PI * 2;
+  const sunY = Math.sin(sunAngle) * 16;
+  const sunX = Math.cos(sunAngle) * 18;
+  const isDay = sunY > -1;
+
+  // Color temperature adjustments
+  const sunColor = useMemo(() => {
+    if (weather === 'drought') return '#fef08a';
+    if (timeOfDay < 8 || timeOfDay > 17) return '#fdba74'; // sunset / sunrise orange
+    return '#fffbeb';
+  }, [weather, timeOfDay]);
+
+  // Lightning state for thunderstorms
+  const [lightningIntensity, setLightningIntensity] = React.useState(0);
+
+  useFrame((_, delta) => {
+    // Rain falling animation
+    if (rainCount > 0 && rainGeoRef.current) {
+      const positions = rainGeoRef.current.attributes.position.array as Float32Array;
+      const speed = weather === 'stormy' ? 18 : 12;
+      for (let i = 0; i < rainCount; i++) {
+        positions[i * 3 + 1] -= speed * delta;
+        if (positions[i * 3 + 1] < 0) {
+          positions[i * 3 + 1] = 12;
+        }
+      }
+      rainGeoRef.current.attributes.position.needsUpdate = true;
+    }
+
+    // Occasional lightning in storm
+    if (weather === 'stormy') {
+      if (Math.random() < 0.008) {
+        setLightningIntensity(2.5);
+      } else if (lightningIntensity > 0) {
+        setLightningIntensity((prev) => Math.max(0, prev - delta * 6));
+      }
+    } else if (lightningIntensity > 0) {
+      setLightningIntensity(0);
+    }
+  });
+
+  return (
+    <>
+      {/* Dynamic Hemisphere Ambient Light */}
+      <hemisphereLight
+        args={[
+          isDay ? (weather === 'drought' ? '#fdba74' : '#bae6fd') : '#1e1b4b',
+          isDay ? '#3f6212' : '#090d16',
+          (profile.ambientIntensity + lightningIntensity) * (isDay ? 1 : 0.35),
+        ]}
+      />
+
+      {/* Main Directional Sunlight (Casts Shadows) */}
+      {isDay && (
+        <directionalLight
+          position={[sunX, Math.max(2, sunY), 10]}
+          intensity={profile.sunIntensity * (weather === 'stormy' ? 0.3 : 1.2)}
+          color={sunColor}
+          castShadow
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+          shadow-camera-near={0.5}
+          shadow-camera-far={45}
+          shadow-camera-left={-12}
+          shadow-camera-right={12}
+          shadow-camera-top={12}
+          shadow-camera-bottom={-12}
+        />
+      )}
+
+      {/* Moon Light at night */}
+      {!isDay && (
+        <directionalLight
+          position={[-sunX, Math.max(2, -sunY), -10]}
+          intensity={0.4}
+          color="#93c5fd"
+        />
+      )}
+
+      {/* Lightning Flash Light */}
+      {lightningIntensity > 0 && (
+        <pointLight
+          position={[0, 10, 0]}
+          intensity={lightningIntensity * 4}
+          color="#e0f2fe"
+          distance={40}
+        />
+      )}
+
+      {/* Visual Sun Sphere */}
+      {isDay && (
+        <mesh position={[sunX, Math.max(2, sunY), 10]}>
+          <sphereGeometry args={[1.2, 16, 16]} />
+          <meshBasicMaterial color={sunColor} />
+        </mesh>
+      )}
+
+      {/* Visual Moon Sphere */}
+      {!isDay && (
+        <mesh position={[-sunX, Math.max(2, -sunY), -10]}>
+          <sphereGeometry args={[0.9, 16, 16]} />
+          <meshBasicMaterial color="#e2e8f0" />
+        </mesh>
+      )}
+
+      {/* Falling Rain Particle Streaks */}
+      {rainCount > 0 && (
+        <points>
+          <bufferGeometry ref={rainGeoRef}>
+            <bufferAttribute
+              attach="attributes-position"
+              args={[rainPositions, 3]}
+            />
+          </bufferGeometry>
+          <pointsMaterial
+            size={0.12}
+            color="#93c5fd"
+            transparent
+            opacity={0.7}
+            depthWrite={false}
+          />
+        </points>
+      )}
+    </>
+  );
+};
+
