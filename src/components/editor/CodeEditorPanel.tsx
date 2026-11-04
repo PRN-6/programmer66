@@ -467,3 +467,5 @@ robot.move_to(0, 0)
     </div>
   );
 };
+
+export default CodeEditorPanel;
