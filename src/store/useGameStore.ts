@@ -94,6 +94,7 @@ export interface GameState {
   saveGame: () => void;
   loadGame: () => boolean;
   resetGame: () => void;
+  resetFarmPlots: () => void;
 }
 
 const GRID_DEFAULT_WIDTH = 6;
@@ -802,6 +803,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       console.warn('Failed to load save:', e);
       return false;
     }
+  },
+
+  resetFarmPlots: () => {
+    set({
+      tiles: createInitialTiles(),
+    });
   },
 
   resetGame: () => {

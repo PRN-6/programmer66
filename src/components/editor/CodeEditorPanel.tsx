@@ -300,18 +300,18 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
       label: '🌱 Plant Target',
       title: 'Plant target crop on current plot or coordinate',
       code: activeChallenge?.targetCrop
-        ? `tile.plant("${activeChallenge.targetCrop}")`
-        : `tile.plant("carrot")`,
+        ? `plant(x, y, "${activeChallenge.targetCrop}")`
+        : `plant(x, y, "carrot")`,
     },
     {
       label: '💧 Water Plot',
-      title: 'Spray water mist on current plot',
-      code: `tile.water()`,
+      title: 'Spray water mist on plot',
+      code: `water(x, y)`,
     },
     {
       label: '🌾 Harvest Plot',
-      title: 'Harvest mature crop from current plot',
-      code: `tile.harvest()`,
+      title: 'Harvest mature crop from plot',
+      code: `harvest(x, y)`,
     },
     {
       label: '🚁 fly_to(x, y)',
@@ -642,12 +642,24 @@ robot.move_to(0, 0)
               <Lightbulb className="w-4 h-4 text-emerald-400" />
               <span>Beginner Programming Guide</span>
             </h3>
-            <button
-              onClick={() => updateCode(isCompeting && activeChallenge ? activeChallenge.starterCode : STARTER_TUTORIAL)}
-              className="text-[10px] text-emerald-400 hover:text-emerald-300 bg-neutral-800 hover:bg-neutral-700 px-2 py-1 rounded border border-neutral-700 font-mono transition"
-            >
-              Reset to Starter Code
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  useGameStore.getState().resetFarmPlots();
+                  addLog('info', '🧹 Farm plots cleared to empty soil.');
+                }}
+                className="text-[10px] text-amber-400 hover:text-amber-300 bg-neutral-800 hover:bg-neutral-700 px-2 py-1 rounded border border-neutral-700 font-mono transition"
+                title="Clear all crops and start with fresh empty soil"
+              >
+                🧹 Clear Soil
+              </button>
+              <button
+                onClick={() => updateCode(isCompeting && activeChallenge ? activeChallenge.starterCode : STARTER_TUTORIAL)}
+                className="text-[10px] text-emerald-400 hover:text-emerald-300 bg-neutral-800 hover:bg-neutral-700 px-2 py-1 rounded border border-neutral-700 font-mono transition"
+              >
+                Reset to Starter Code
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-neutral-400">
@@ -664,9 +676,9 @@ robot.move_to(0, 0)
           <div className="bg-neutral-950 p-2.5 rounded-lg border border-neutral-800 space-y-1.5 text-[11px]">
             <b className="text-neutral-200">Essential Drone Commands:</b>
             <div className="grid grid-cols-2 gap-x-2 gap-y-1 font-mono text-[10px]">
-              <div><code className="text-emerald-400">tile.plant("wheat")</code> - Plant crop</div>
-              <div><code className="text-sky-400">tile.water()</code> - Spray water</div>
-              <div><code className="text-amber-400">tile.harvest()</code> - Harvest ready crop</div>
+              <div><code className="text-emerald-400">plant(x, y, "carrot")</code> - Plant crop</div>
+              <div><code className="text-sky-400">water(x, y)</code> - Spray water</div>
+              <div><code className="text-amber-400">harvest(x, y)</code> - Harvest ready crop</div>
               <div><code className="text-purple-400">fly_to(x, y)</code> - Fly to plot</div>
             </div>
             <p className="text-[10px] text-neutral-500 pt-1">

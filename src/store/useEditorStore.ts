@@ -261,6 +261,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       env.define('get_tiles', api.get_tiles);
       env.define('get_weather', api.get_weather);
       env.define('get_money', api.get_money);
+      env.define('clear_farm', api.clear_farm);
       env.define('sleep', api.sleep);
       env.defineGetter('tile', () => api.wrapTile(api.robot.x, api.robot.y));
       env.defineGetter('current_tile', () => api.wrapTile(api.robot.x, api.robot.y));

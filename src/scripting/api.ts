@@ -472,6 +472,11 @@ export function createGameAPI(options: {
     unlock_tile: (x: number, y: number) => {
       return useGameStore.getState().unlockTile(x, y);
     },
+    clear: () => {
+      useGameStore.getState().resetFarmPlots();
+      options.onLog('Farm cleared to fresh soil plots.');
+      return true;
+    },
   };
 
   const inventory = {
@@ -581,6 +586,10 @@ export function createGameAPI(options: {
     return farm.get_money();
   };
 
+  const clear_farm = () => {
+    return farm.clear();
+  };
+
   const apiSleep = async (seconds: number) => {
     await sleep(Math.max(10, (seconds || 0.1) * 1000));
   };
@@ -602,6 +611,7 @@ export function createGameAPI(options: {
     get_tiles,
     get_weather,
     get_money,
+    clear_farm,
     sleep: apiSleep,
   };
 }
