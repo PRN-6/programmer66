@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import { FarmCanvas } from './game/world/FarmCanvas';
 import { TopHUD } from './components/hud/TopHUD';
 import { FarmToolbar } from './components/game/FarmToolbar';
@@ -12,6 +13,7 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { AdminModal } from './components/admin/AdminModal';
 import { JoinCompetitionModal } from './components/competition/JoinCompetitionModal';
 import { ScoreboardModal } from './components/competition/ScoreboardModal';
+import { WaitingLobby } from './components/competition/WaitingLobby';
 import { useEditorStore } from './store/useEditorStore';
 import { useGameStore } from './store/useGameStore';
 import { useCompetitionStore } from './store/useCompetitionStore';
@@ -35,6 +37,32 @@ export function App() {
   const showScoreboardModal = useCompetitionStore((state) => state.showScoreboardModal);
   const setShowScoreboardModal = useCompetitionStore((state) => state.setShowScoreboardModal);
   const initSession = useCompetitionStore((state) => state.initSession);
+  const currentRoom = useCompetitionStore((state) => state.currentRoom);
+  const currentTeam = useCompetitionStore((state) => state.currentTeam);
+  const isAdmin = useCompetitionStore((state) => state.isAdmin);
+
+  const prevStatusRef = useRef<string | null>(null);
+
+  // Check if participant is waiting for host to start competition
+  const isWaitingForAdmin = Boolean(
+    currentRoom &&
+    currentTeam &&
+    !isAdmin &&
+    currentRoom.status === 'waiting'
+  );
+
+  // Play celebration sound & burst confetti when room status shifts from waiting to active
+  useEffect(() => {
+    if (prevStatusRef.current === 'waiting' && currentRoom?.status === 'active' && !isAdmin) {
+      soundManager.playSuccess();
+      confetti({
+        particleCount: 100,
+        spread: 80,
+        origin: { y: 0.5 },
+      });
+    }
+    prevStatusRef.current = currentRoom?.status || null;
+  }, [currentRoom?.status, isAdmin]);
 
   // Auto-load saved game and competition session on mount
   useEffect(() => {
@@ -101,6 +129,14 @@ export function App() {
       {showAdminModal && <AdminModal onClose={() => setShowAdminModal(false)} />}
       {showJoinModal && <JoinCompetitionModal onClose={() => setShowJoinModal(false)} />}
       {showScoreboardModal && <ScoreboardModal onClose={() => setShowScoreboardModal(false)} />}
+
+      {/* Fullscreen Waiting Lobby for Participants when Room is in 'waiting' status */}
+      {isWaitingForAdmin && (
+        <WaitingLobby
+          onOpenScoreboard={() => setShowScoreboardModal(true)}
+          onOpenDocs={() => setShowDocsModal(true)}
+        />
+      )}
     </div>
   );
 }
