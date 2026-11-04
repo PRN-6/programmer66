@@ -17,6 +17,7 @@ import {
   Settings,
   BookOpen,
   Code2,
+  Trophy,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useEditorStore } from '../../store/useEditorStore';
@@ -79,6 +80,7 @@ export const TopHUD: React.FC<TopHUDProps> = ({
   const isNight = timeOfDay < 5.5 || timeOfDay > 18.5;
 
   const currentRoom = useCompetitionStore((state) => state.currentRoom);
+  const activeChallenge = useCompetitionStore((state) => state.activeChallenge);
   const isCompeting = Boolean(currentRoom);
 
   const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
@@ -120,88 +122,108 @@ export const TopHUD: React.FC<TopHUDProps> = ({
           </div>
         </div>
 
-        {/* Level & XP bar */}
-        <div className="hidden sm:flex flex-col gap-0.5 bg-neutral-900 px-3 py-1 rounded-lg border border-neutral-800">
-          <div className="flex items-center justify-between text-xs text-neutral-300 gap-3 font-semibold">
-            <span>Level {level}</span>
-            <span className="text-[10px] text-neutral-500 font-mono">{xp} / {nextLevelXp} XP</span>
-          </div>
-          <div className="w-24 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-neutral-400 transition-all duration-300"
-              style={{ width: `${xpProgress}%` }}
-            />
-          </div>
-        </div>
+        {/* Level & XP bar (Sandbox only) */}
+        {!isCompeting && (
+          <>
+            <div className="hidden sm:flex flex-col gap-0.5 bg-neutral-900 px-3 py-1 rounded-lg border border-neutral-800">
+              <div className="flex items-center justify-between text-xs text-neutral-300 gap-3 font-semibold">
+                <span>Level {level}</span>
+                <span className="text-[10px] text-neutral-500 font-mono">{xp} / {nextLevelXp} XP</span>
+              </div>
+              <div className="w-24 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-neutral-400 transition-all duration-300"
+                  style={{ width: `${xpProgress}%` }}
+                />
+              </div>
+            </div>
 
-        {/* Money / Treasury */}
-        <div className="flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 px-3 py-1.5 rounded-lg text-neutral-100 font-bold text-xs shadow-inner">
-          <Coins className="w-3.5 h-3.5 text-neutral-400" />
-          <span>${money}</span>
-        </div>
+            {/* Money / Treasury */}
+            <div className="flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 px-3 py-1.5 rounded-lg text-neutral-100 font-bold text-xs shadow-inner">
+              <Coins className="w-3.5 h-3.5 text-neutral-400" />
+              <span>${money}</span>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Center: Day, Time & Weather */}
+      {/* Center Display: Competition Round vs Sandbox Day/Time/Weather */}
       <div className="flex items-center gap-3">
-        {/* Day & Time (Click to toggle Day / Night Stadium Lights) */}
-        <button
-          onClick={toggleDayNight}
-          className="text-left bg-neutral-900 hover:bg-neutral-800/90 px-3 py-1 rounded-lg border border-neutral-800 transition flex items-center gap-2 group cursor-pointer shadow-sm"
-          title={isNight ? 'Click to switch to Daytime' : 'Click to switch to Nighttime (Activate Stadium Floodlights)'}
-        >
-          <div>
-            <div className="text-xs font-bold text-neutral-200">Day {day}</div>
-            <div className="text-[10px] font-mono text-neutral-400">{timeString}</div>
-          </div>
-          <div className="p-1 rounded bg-neutral-800 group-hover:bg-neutral-700 text-neutral-300">
-            {isNight ? (
-              <Moon className="w-3.5 h-3.5 text-amber-300" />
-            ) : (
-              <Sun className="w-3.5 h-3.5 text-amber-400" />
-            )}
-          </div>
-        </button>
-
-        {/* Weather card */}
-        <div className="flex items-center gap-2 bg-neutral-900 px-3 py-1 rounded-lg border border-neutral-800">
-          <WeatherIcon weather={weather} />
-          <div>
-            <div className="text-xs font-semibold text-neutral-200 flex items-center gap-1.5">
-              <span>{profile.name}</span>
-              <span className="text-[10px] font-mono text-neutral-400">{profile.temperatureC}°C</span>
+        {isCompeting ? (
+          activeChallenge && (
+            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-3.5 py-1.5 rounded-xl shadow-sm">
+              <Trophy className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-bold text-amber-300">
+                Round {activeChallenge.level}: {activeChallenge.title.replace(/^Level\s*\d+:\s*/i, '')}
+              </span>
+              <span className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">
+                +{activeChallenge.points} pts
+              </span>
             </div>
-            <div className="text-[10px] text-neutral-500">
-              Next: {nextProfile.name}
-            </div>
-          </div>
-        </div>
-
-        {/* Simulation Speed & Pause */}
-        <div className="hidden md:flex items-center gap-1 bg-neutral-900 p-1 rounded-lg border border-neutral-800">
-          <button
-            onClick={() => setPaused(!isPaused)}
-            className={`p-1.5 rounded transition ${isPaused ? 'bg-neutral-200 text-neutral-950 font-bold' : 'text-neutral-400 hover:text-white hover:bg-neutral-800'}`}
-            title={isPaused ? 'Resume simulation' : 'Pause simulation'}
-          >
-            {isPaused ? <Play className="w-3.5 h-3.5 fill-current" /> : <Pause className="w-3.5 h-3.5" />}
-          </button>
-          {[1, 2, 5].map((speed) => (
+          )
+        ) : (
+          <>
+            {/* Day & Time (Click to toggle Day / Night Stadium Lights) */}
             <button
-              key={speed}
-              onClick={() => {
-                setGameSpeed(speed);
-                if (isPaused) setPaused(false);
-              }}
-              className={`px-2 py-0.5 text-xs font-bold rounded transition ${
-                !isPaused && gameSpeed === speed
-                  ? 'bg-neutral-700 text-white border border-neutral-600'
-                  : 'text-neutral-500 hover:text-white hover:bg-neutral-800'
-              }`}
+              onClick={toggleDayNight}
+              className="text-left bg-neutral-900 hover:bg-neutral-800/90 px-3 py-1 rounded-lg border border-neutral-800 transition flex items-center gap-2 group cursor-pointer shadow-sm"
+              title={isNight ? 'Click to switch to Daytime' : 'Click to switch to Nighttime (Activate Stadium Floodlights)'}
             >
-              {speed}x
+              <div>
+                <div className="text-xs font-bold text-neutral-200">Day {day}</div>
+                <div className="text-[10px] font-mono text-neutral-400">{timeString}</div>
+              </div>
+              <div className="p-1 rounded bg-neutral-800 group-hover:bg-neutral-700 text-neutral-300">
+                {isNight ? (
+                  <Moon className="w-3.5 h-3.5 text-amber-300" />
+                ) : (
+                  <Sun className="w-3.5 h-3.5 text-amber-400" />
+                )}
+              </div>
             </button>
-          ))}
-        </div>
+
+            {/* Weather card */}
+            <div className="flex items-center gap-2 bg-neutral-900 px-3 py-1 rounded-lg border border-neutral-800">
+              <WeatherIcon weather={weather} />
+              <div>
+                <div className="text-xs font-semibold text-neutral-200 flex items-center gap-1.5">
+                  <span>{profile.name}</span>
+                  <span className="text-[10px] font-mono text-neutral-400">{profile.temperatureC}°C</span>
+                </div>
+                <div className="text-[10px] text-neutral-500">
+                  Next: {nextProfile.name}
+                </div>
+              </div>
+            </div>
+
+            {/* Simulation Speed & Pause */}
+            <div className="hidden md:flex items-center gap-1 bg-neutral-900 p-1 rounded-lg border border-neutral-800">
+              <button
+                onClick={() => setPaused(!isPaused)}
+                className={`p-1.5 rounded transition ${isPaused ? 'bg-neutral-200 text-neutral-950 font-bold' : 'text-neutral-400 hover:text-white hover:bg-neutral-800'}`}
+                title={isPaused ? 'Resume simulation' : 'Pause simulation'}
+              >
+                {isPaused ? <Play className="w-3.5 h-3.5 fill-current" /> : <Pause className="w-3.5 h-3.5" />}
+              </button>
+              {[1, 2, 5].map((speed) => (
+                <button
+                  key={speed}
+                  onClick={() => {
+                    setGameSpeed(speed);
+                    if (isPaused) setPaused(false);
+                  }}
+                  className={`px-2 py-0.5 text-xs font-bold rounded transition ${
+                    !isPaused && gameSpeed === speed
+                      ? 'bg-neutral-700 text-white border border-neutral-600'
+                      : 'text-neutral-500 hover:text-white hover:bg-neutral-800'
+                  }`}
+                >
+                  {speed}x
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Right Controls: Navigation Buttons */}

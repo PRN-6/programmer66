@@ -98,6 +98,23 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
 
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
+  const isCompeting = Boolean(currentRoom);
+
+  // Auto-populate challenge starter code on competition enter / round switch
+  const lastLoadedChallengeIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (isCompeting && activeChallenge && lastLoadedChallengeIdRef.current !== activeChallenge.id) {
+      lastLoadedChallengeIdRef.current = activeChallenge.id;
+      const currentCode = activeTab?.code || '';
+      if (
+        !currentCode.trim() ||
+        currentCode.includes('Deploying AeroDrone-01...') ||
+        currentCode.includes('# programmer66 - Autonomous Agricultural Drone')
+      ) {
+        updateCode(activeChallenge.starterCode);
+      }
+    }
+  }, [isCompeting, activeChallenge, activeTab?.code, updateCode]);
 
   useEffect(() => {
     if (!isConsoleCollapsed) {
@@ -278,6 +295,42 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
     },
   ];
 
+  const COMPETITION_SNIPPETS = [
+    {
+      label: '🌱 Plant Target',
+      title: 'Plant target crop on current plot or coordinate',
+      code: activeChallenge?.targetCrop
+        ? `tile.plant("${activeChallenge.targetCrop}")`
+        : `tile.plant("carrot")`,
+    },
+    {
+      label: '💧 Water Plot',
+      title: 'Spray water mist on current plot',
+      code: `tile.water()`,
+    },
+    {
+      label: '🌾 Harvest Plot',
+      title: 'Harvest mature crop from current plot',
+      code: `tile.harvest()`,
+    },
+    {
+      label: '🚁 fly_to(x, y)',
+      title: 'Fly drone to target coordinate',
+      code: `fly_to(x, y)`,
+    },
+  ];
+
+  const snippetsToDisplay = isCompeting ? COMPETITION_SNIPPETS : QUICK_SNIPPETS;
+
+  const visibleTabs = isCompeting
+    ? [
+        {
+          id: activeTabId,
+          name: activeChallenge ? `level_${activeChallenge.level}_solution.py` : 'solution.py',
+        },
+      ]
+    : tabs;
+
   const STARTER_TUTORIAL = `# programmer66 - Beginner Starter Script
 # Click "Run Script" to watch your drone fly and automate the farm!
 
@@ -327,7 +380,7 @@ robot.move_to(0, 0)
       {/* Tab Bar */}
       <div className="flex items-center justify-between bg-neutral-900 border-b border-neutral-800 px-2 pt-1.5 overflow-x-auto shrink-0 select-none">
         <div className="flex items-center gap-1">
-          {tabs.map((tab) => (
+          {visibleTabs.map((tab) => (
             <div
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -338,7 +391,7 @@ robot.move_to(0, 0)
               }`}
             >
               <span>{tab.name}</span>
-              {tabs.length > 1 && (
+              {!isCompeting && tabs.length > 1 && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -352,13 +405,15 @@ robot.move_to(0, 0)
             </div>
           ))}
 
-          <button
-            onClick={handleCreateTab}
-            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 text-xs flex items-center gap-1"
-            title="Create new script file"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
+          {!isCompeting && (
+            <button
+              onClick={handleCreateTab}
+              className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 text-xs flex items-center gap-1"
+              title="Create new script file"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-1 mb-1">
@@ -567,7 +622,7 @@ robot.move_to(0, 0)
           <Sparkles className="w-3 h-3 text-emerald-400" />
           <span>Insert:</span>
         </span>
-        {QUICK_SNIPPETS.map((snip, idx) => (
+        {snippetsToDisplay.map((snip, idx) => (
           <button
             key={idx}
             onClick={() => insertSnippet(snip.code)}
@@ -588,7 +643,7 @@ robot.move_to(0, 0)
               <span>Beginner Programming Guide</span>
             </h3>
             <button
-              onClick={() => updateCode(STARTER_TUTORIAL)}
+              onClick={() => updateCode(isCompeting && activeChallenge ? activeChallenge.starterCode : STARTER_TUTORIAL)}
               className="text-[10px] text-emerald-400 hover:text-emerald-300 bg-neutral-800 hover:bg-neutral-700 px-2 py-1 rounded border border-neutral-700 font-mono transition"
             >
               Reset to Starter Code

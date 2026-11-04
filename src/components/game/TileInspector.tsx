@@ -8,9 +8,12 @@ import {
   Heart,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
+import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { CROPS } from '../../game/simulation/cropConfig';
 
 export const TileInspector: React.FC = () => {
+  const currentRoom = useCompetitionStore((state) => state.currentRoom);
+  const isCompeting = Boolean(currentRoom);
   const {
     selectedTileCoord,
     tiles,
@@ -139,56 +142,62 @@ export const TileInspector: React.FC = () => {
         )}
       </div>
 
-      {/* Manual Quick Actions */}
-      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-800">
-        {tile.crop === null ? (
+      {/* Manual Quick Actions (Sandbox only) vs Automated Telemetry (Competition Mode) */}
+      {!isCompeting ? (
+        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-800">
+          {tile.crop === null ? (
+            <button
+              onClick={() => plantCrop(tile.x, tile.y, selectedSeed)}
+              disabled={seedCount <= 0}
+              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs transition border ${
+                seedCount > 0
+                  ? 'bg-neutral-800 hover:bg-neutral-700 text-white border-neutral-700 shadow-sm'
+                  : 'bg-neutral-900 text-neutral-600 border-neutral-800 cursor-not-allowed'
+              }`}
+            >
+              <Sprout className="w-3.5 h-3.5" />
+              <span>Plant ({seedCount})</span>
+            </button>
+          ) : tile.stage === 'mature' ? (
+            <button
+              onClick={() => harvestTile(tile.x, tile.y)}
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs bg-neutral-200 hover:bg-white text-neutral-950 shadow-md animate-pulse"
+            >
+              <Scissors className="w-3.5 h-3.5" />
+              <span>Harvest!</span>
+            </button>
+          ) : (
+            <div className="flex items-center justify-center text-xs text-neutral-500 font-medium py-2">
+              Growing...
+            </div>
+          )}
+
           <button
-            onClick={() => plantCrop(tile.x, tile.y, selectedSeed)}
-            disabled={seedCount <= 0}
-            className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs transition border ${
-              seedCount > 0
-                ? 'bg-neutral-800 hover:bg-neutral-700 text-white border-neutral-700 shadow-sm'
+            onClick={() => waterTile(tile.x, tile.y)}
+            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 transition shadow-sm"
+          >
+            <Droplets className="w-3.5 h-3.5" />
+            <span>Water</span>
+          </button>
+
+          <button
+            onClick={() => fertilizeTile(tile.x, tile.y)}
+            disabled={fertCount <= 0}
+            className={`col-span-2 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl font-bold text-xs transition border ${
+              fertCount > 0
+                ? 'bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border-neutral-700'
                 : 'bg-neutral-900 text-neutral-600 border-neutral-800 cursor-not-allowed'
             }`}
           >
-            <Sprout className="w-3.5 h-3.5" />
-            <span>Plant ({seedCount})</span>
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Fertilize Soil ({fertCount} in stock)</span>
           </button>
-        ) : tile.stage === 'mature' ? (
-          <button
-            onClick={() => harvestTile(tile.x, tile.y)}
-            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs bg-neutral-200 hover:bg-white text-neutral-950 shadow-md animate-pulse"
-          >
-            <Scissors className="w-3.5 h-3.5" />
-            <span>Harvest!</span>
-          </button>
-        ) : (
-          <div className="flex items-center justify-center text-xs text-neutral-500 font-medium py-2">
-            Growing...
-          </div>
-        )}
-
-        <button
-          onClick={() => waterTile(tile.x, tile.y)}
-          className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 transition shadow-sm"
-        >
-          <Droplets className="w-3.5 h-3.5" />
-          <span>Water</span>
-        </button>
-
-        <button
-          onClick={() => fertilizeTile(tile.x, tile.y)}
-          disabled={fertCount <= 0}
-          className={`col-span-2 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl font-bold text-xs transition border ${
-            fertCount > 0
-              ? 'bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border-neutral-700'
-              : 'bg-neutral-900 text-neutral-600 border-neutral-800 cursor-not-allowed'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Fertilize Soil ({fertCount} in stock)</span>
-        </button>
-      </div>
+        </div>
+      ) : (
+        <div className="pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-400 font-mono text-center bg-neutral-900/60 p-2 rounded-xl">
+          🤖 Drone Target: <code className="text-emerald-400">fly_to({tile.x}, {tile.y})</code>
+        </div>
+      )}
     </div>
   );
 };

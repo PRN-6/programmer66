@@ -8,10 +8,12 @@ import {
   Shovel,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
+import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { CROPS } from '../../game/simulation/cropConfig';
 import type { CropId } from '../../types/game';
 
 export const FarmToolbar: React.FC = () => {
+  const currentRoom = useCompetitionStore((state) => state.currentRoom);
   const {
     activeTool,
     setActiveTool,
@@ -19,6 +21,8 @@ export const FarmToolbar: React.FC = () => {
     setSelectedSeed,
     inventory,
   } = useGameStore();
+
+  if (currentRoom) return null;
 
   const tools: { id: typeof activeTool; label: string; icon: React.ReactNode }[] = [
     { id: 'inspect', label: 'Select / Inspect', icon: <MousePointer className="w-4 h-4 text-neutral-300" /> },
