@@ -34,9 +34,9 @@ export const MissionsTrackerWidget: React.FC<MissionsTrackerWidgetProps> = ({
   // Hidden in competition rooms (competition mode has its own dedicated tournament round challenges)
   if (currentRoom) return null;
 
-  const activeMissions = missions.filter((m) => !m.completed);
+  const activeMissions = missions.filter((m) => !m.completed || !m.rewardClaimed);
   const hasClaimableReward = activeMissions.some((m) =>
-    m.objectives.every((obj) => obj.completed)
+    m.objectives.every((obj) => obj.completed) && !m.rewardClaimed
   );
 
   const handleClaim = (missionId: string) => {
@@ -158,7 +158,7 @@ export const MissionsTrackerWidget: React.FC<MissionsTrackerWidgetProps> = ({
           </div>
         ) : (
           activeMissions.slice(0, 2).map((mission) => {
-            const isReadyToClaim = mission.objectives.every((obj) => obj.completed);
+            const isReadyToClaim = mission.objectives.every((obj) => obj.completed) && !mission.rewardClaimed;
 
             return (
               <div

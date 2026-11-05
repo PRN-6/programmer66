@@ -731,13 +731,18 @@ export const useGameStore = create<GameState>((set, get) => ({
   claimMissionReward: (missionId: string) => {
     const state = get();
     const mission = state.missions.find((m) => m.id === missionId);
-    if (!mission || !mission.completed) return;
+    // Strictly enforce claiming reward only once
+    if (!mission || !mission.completed || mission.rewardClaimed) return;
 
     soundManager.playSuccess();
     set((prev) => ({
       money: prev.money + mission.rewardMoney,
+      missions: prev.missions.map((m) =>
+        m.id === missionId ? { ...m, rewardClaimed: true } : m
+      ),
     }));
     get().addXp(mission.rewardXp);
+    get().saveGame();
   },
 
   toggleMute: () => {

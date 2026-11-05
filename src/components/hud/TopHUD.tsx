@@ -93,7 +93,7 @@ export const TopHUD: React.FC<TopHUDProps> = ({
         isPaused: s.isPaused,
         gameSpeed: s.gameSpeed,
         soundMuted: s.soundMuted,
-        uncompletedMissions: s.missions.filter((m) => !m.completed).length,
+        uncompletedMissions: s.missions.filter((m) => !m.rewardClaimed).length,
       };
     })
   );

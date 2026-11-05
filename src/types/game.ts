@@ -84,6 +84,7 @@ export interface Mission {
   rewardMoney: number;
   rewardXp: number;
   completed: boolean;
+  rewardClaimed?: boolean;
 }
 
 export interface ResearchTech {

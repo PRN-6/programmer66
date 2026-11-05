@@ -11,6 +11,7 @@ import {
   Lightbulb,
   ChevronDown,
   ChevronUp,
+  Sparkles,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useEditorStore } from '../../store/useEditorStore';
@@ -101,11 +102,15 @@ export const MissionsModal: React.FC<MissionsModalProps> = ({ onClose, onOpenEdi
                       <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-700">
                         {mission.stageName}
                       </span>
-                      {isCompleted && (
-                        <span className="flex items-center gap-1 text-[11px] font-bold text-neutral-200">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-neutral-300" /> Completed
+                      {mission.rewardClaimed ? (
+                        <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Claimed
                         </span>
-                      )}
+                      ) : isCompleted ? (
+                        <span className="flex items-center gap-1 text-[11px] font-bold text-amber-400">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Reward Ready
+                        </span>
+                      ) : null}
                     </div>
                     <h3 className="text-base font-bold text-neutral-100 mt-1">{mission.title}</h3>
                   </div>
@@ -186,14 +191,20 @@ export const MissionsModal: React.FC<MissionsModalProps> = ({ onClose, onOpenEdi
                     )}
                   </div>
 
-                  {isCompleted && (
+                  {mission.rewardClaimed ? (
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 border border-neutral-800 text-emerald-400 font-semibold rounded-lg text-xs">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Reward Claimed</span>
+                    </span>
+                  ) : isCompleted ? (
                     <button
                       onClick={() => handleClaim(mission.id)}
-                      className="px-4 py-1.5 bg-neutral-200 hover:bg-white text-neutral-950 font-bold rounded-lg text-xs shadow-md transition"
+                      className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs shadow-md transition flex items-center gap-1.5 animate-pulse"
                     >
-                      Claim Rewards
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Claim Rewards</span>
                     </button>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Expandable Hints */}
