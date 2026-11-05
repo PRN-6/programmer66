@@ -21,6 +21,7 @@ import {
   Trophy,
   UploadCloud,
   LogOut,
+  Shield,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useEditorStore } from '../../store/useEditorStore';
@@ -108,10 +109,11 @@ export const TopHUD: React.FC<TopHUDProps> = ({
 
   const currentRoom = useCompetitionStore((state) => state.currentRoom);
   const activeChallenge = useCompetitionStore((state) => state.activeChallenge);
+  const setShowAdminModal = useCompetitionStore((state) => state.setShowAdminModal);
   const isCompeting = Boolean(currentRoom);
 
   const [showUserMenu, setShowUserMenu] = React.useState(false);
-  const { user, profile: playerProfile, isSyncing, syncToCloud, signOut, setShowAuthModal } = useAuthStore();
+  const { user, profile: playerProfile, isSyncing, isSuperAdmin, syncToCloud, signOut, setShowAuthModal } = useAuthStore();
 
   const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
 
@@ -312,14 +314,22 @@ export const TopHUD: React.FC<TopHUDProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowUserMenu((prev) => !prev)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-800 text-xs font-semibold transition"
-              title="Cloud Profile & Sync"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+                isSuperAdmin
+                  ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm'
+                  : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-800'
+              }`}
+              title={isSuperAdmin ? 'Super Admin Profile & Controls' : 'Cloud Profile & Sync'}
             >
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  isSyncing ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'
-                }`}
-              />
+              {isSuperAdmin ? (
+                <Shield className="w-3.5 h-3.5 text-amber-400" />
+              ) : (
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    isSyncing ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'
+                  }`}
+                />
+              )}
               <span className="font-mono text-xs max-w-[90px] truncate">
                 {playerProfile?.displayName || user.email?.split('@')[0]}
               </span>
@@ -328,24 +338,54 @@ export const TopHUD: React.FC<TopHUDProps> = ({
             {showUserMenu && (
               <div className="absolute right-0 top-full mt-2 w-56 bg-neutral-950 border border-neutral-800 rounded-xl shadow-2xl p-3 z-50 text-xs flex flex-col gap-2.5 animate-in fade-in duration-100">
                 <div className="border-b border-neutral-800 pb-2">
-                  <div className="font-bold text-white truncate">{playerProfile?.displayName}</div>
-                  <div className="text-[11px] text-neutral-400 truncate">{user.email}</div>
-                  <div className="text-[10px] text-emerald-400 flex items-center gap-1 mt-1 font-mono">
-                    <Cloud className="w-3 h-3" />
-                    <span>{isSyncing ? 'Syncing...' : 'Cloud Synced'}</span>
+                  <div className="font-bold text-white truncate flex items-center justify-between">
+                    <span>{playerProfile?.displayName}</span>
+                    {isSuperAdmin && (
+                      <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1 rounded font-mono font-bold">
+                        ADMIN
+                      </span>
+                    )}
                   </div>
+                  <div className="text-[11px] text-neutral-400 truncate">{user.email}</div>
+                  {isSuperAdmin ? (
+                    <div className="text-[10px] text-amber-400 flex items-center gap-1 mt-1 font-mono">
+                      <Shield className="w-3 h-3" />
+                      <span>Organizer Privileges Active</span>
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-emerald-400 flex items-center gap-1 mt-1 font-mono">
+                      <Cloud className="w-3 h-3" />
+                      <span>{isSyncing ? 'Syncing...' : 'Cloud Synced'}</span>
+                    </div>
+                  )}
                 </div>
 
-                <button
-                  onClick={() => {
-                    syncToCloud();
-                    setShowUserMenu(false);
-                  }}
-                  className="w-full text-left px-2.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-200 transition font-medium flex items-center justify-between"
-                >
-                  <span>Sync Farm to Cloud</span>
-                  <UploadCloud className="w-3.5 h-3.5 text-neutral-400" />
-                </button>
+                {/* Organizer Dashboard Quick Action */}
+                {isSuperAdmin && (
+                  <button
+                    onClick={() => {
+                      setShowAdminModal(true);
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition font-bold flex items-center justify-between"
+                  >
+                    <span>Admin Dashboard</span>
+                    <Shield className="w-3.5 h-3.5 text-amber-400" />
+                  </button>
+                )}
+
+                {!isSuperAdmin && (
+                  <button
+                    onClick={() => {
+                      syncToCloud();
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-200 transition font-medium flex items-center justify-between"
+                  >
+                    <span>Sync Farm to Cloud</span>
+                    <UploadCloud className="w-3.5 h-3.5 text-neutral-400" />
+                  </button>
+                )}
 
                 <button
                   onClick={() => {
@@ -364,10 +404,22 @@ export const TopHUD: React.FC<TopHUDProps> = ({
           <button
             onClick={() => setShowAuthModal(true)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-sky-950/60 hover:bg-sky-900/70 text-sky-200 border border-sky-800/80 text-xs font-semibold transition"
-            title="Sign in to save farm progress across computers"
+            title="Sign in or authenticate as Super Admin"
           >
             <Cloud className="w-3.5 h-3.5 text-sky-400" />
             <span className="hidden sm:inline">Sign In</span>
+          </button>
+        )}
+
+        {/* Super Admin Quick Direct Button */}
+        {isSuperAdmin && (
+          <button
+            onClick={() => setShowAdminModal(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition shadow-sm"
+            title="Open Event Organizer & Competition Dashboard"
+          >
+            <Shield className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden md:inline">Admin Dashboard</span>
           </button>
         )}
 

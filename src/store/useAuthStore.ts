@@ -2,7 +2,51 @@ import { create } from 'zustand';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
 import { useGameStore } from './useGameStore';
+import { useCompetitionStore } from './useCompetitionStore';
 import { soundManager } from '../audio/soundEffects';
+
+const SUPER_ADMIN_EMAIL = (import.meta.env.VITE_SUPER_ADMIN_EMAIL || 'admin@programmer66.com').toLowerCase().trim();
+const SUPER_ADMIN_USERNAME = (import.meta.env.VITE_SUPER_ADMIN_USERNAME || 'admin').toLowerCase().trim();
+const SUPER_ADMIN_PASSWORD = (import.meta.env.VITE_SUPER_ADMIN_PASSWORD || 'admin123').trim();
+
+function getSessionItem(key: string): string | null {
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      return window.sessionStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function setSessionItem(key: string, val: string): void {
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      window.sessionStorage.setItem(key, val);
+    } catch {
+      // Ignore
+    }
+  }
+}
+
+function removeSessionItem(key: string): void {
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      window.sessionStorage.removeItem(key);
+    } catch {
+      // Ignore
+    }
+  }
+}
+
+export function isSuperAdminCredential(identifier: string, pass: string): boolean {
+  const cleanId = identifier.toLowerCase().trim();
+  const cleanPass = pass.trim();
+  const isMatchId = cleanId === SUPER_ADMIN_EMAIL || cleanId === SUPER_ADMIN_USERNAME;
+  const isMatchPass = cleanPass === SUPER_ADMIN_PASSWORD;
+  return Boolean(isMatchId && isMatchPass);
+}
 
 export interface PlayerProfile {
   id: string;
@@ -17,6 +61,7 @@ interface AuthState {
   profile: PlayerProfile | null;
   isLoading: boolean;
   isSyncing: boolean;
+  isSuperAdmin: boolean;
   lastSyncTime: number | null;
   showAuthModal: boolean;
   error: string | null;
@@ -24,6 +69,7 @@ interface AuthState {
   setShowAuthModal: (show: boolean) => void;
   setError: (err: string | null) => void;
   initAuth: () => Promise<void>;
+  loginAsSuperAdmin: (identifier: string, pass: string) => boolean;
   signUp: (email: string, pass: string, displayName: string) => Promise<boolean>;
   signIn: (email: string, pass: string) => Promise<boolean>;
   signInWithGoogle: () => Promise<void>;
@@ -38,6 +84,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
   isLoading: false,
   isSyncing: false,
+  isSuperAdmin: false,
   lastSyncTime: null,
   showAuthModal: false,
   error: null,
@@ -46,6 +93,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setError: (err: string | null) => set({ error: err }),
 
   initAuth: async () => {
+    // Check if session storage has an active super admin session
+    if (getSessionItem('programmer66_super_admin') === 'true') {
+      const adminUser = {
+        id: 'super-admin-001',
+        email: SUPER_ADMIN_EMAIL,
+        app_metadata: { role: 'super_admin' },
+        user_metadata: { display_name: 'Super Admin' },
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+      } as unknown as User;
+
+      set({
+        user: adminUser,
+        profile: {
+          id: 'super-admin-001',
+          email: SUPER_ADMIN_EMAIL,
+          displayName: 'Super Admin 👑',
+        },
+        isSuperAdmin: true,
+      });
+
+      useCompetitionStore.setState({
+        isAdmin: true,
+      });
+    }
+
     if (!isSupabaseConfigured || !supabase) return;
 
     try {
@@ -131,7 +204,52 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  loginAsSuperAdmin: (identifier: string, pass: string) => {
+    if (isSuperAdminCredential(identifier, pass)) {
+      const adminUser = {
+        id: 'super-admin-001',
+        email: SUPER_ADMIN_EMAIL,
+        app_metadata: { role: 'super_admin' },
+        user_metadata: { display_name: 'Super Admin' },
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+      } as unknown as User;
+
+      set({
+        user: adminUser,
+        profile: {
+          id: 'super-admin-001',
+          email: SUPER_ADMIN_EMAIL,
+          displayName: 'Super Admin 👑',
+        },
+        isSuperAdmin: true,
+        isLoading: false,
+        showAuthModal: false,
+        error: null,
+      });
+
+      setSessionItem('programmer66_super_admin', 'true');
+
+      // Grant competition admin privileges and launch the Admin Dashboard
+      useCompetitionStore.setState({
+        isAdmin: true,
+        showAdminModal: true,
+      });
+
+      soundManager.playSuccess();
+      return true;
+    }
+
+    set({ error: 'Invalid Super Admin credentials. Check your .env configuration.' });
+    return false;
+  },
+
   signIn: async (email: string, pass: string) => {
+    // First, verify if user entered super admin credentials
+    if (isSuperAdminCredential(email, pass)) {
+      return get().loginAsSuperAdmin(email, pass);
+    }
+
     if (!isSupabaseConfigured || !supabase) {
       set({ error: 'Supabase is not configured.' });
       return false;
@@ -186,17 +304,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    if (!isSupabaseConfigured || !supabase) return;
-    try {
-      await supabase.auth.signOut();
-      set({ user: null, session: null, profile: null, lastSyncTime: null });
-      soundManager.playCoin();
-    } catch (err) {
-      console.warn('Sign out error:', err);
+    removeSessionItem('programmer66_super_admin');
+    set({ user: null, session: null, profile: null, lastSyncTime: null, isSuperAdmin: false });
+    useCompetitionStore.setState({ isAdmin: false, showAdminModal: false });
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.warn('Sign out error:', err);
+      }
     }
+    soundManager.playCoin();
   },
 
   syncToCloud: async () => {
+    if (get().isSuperAdmin) {
+      return true;
+    }
+
     const { user } = get();
     if (!user || !isSupabaseConfigured || !supabase) return false;
 
@@ -233,6 +358,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   loadFromCloud: async () => {
+    if (get().isSuperAdmin) {
+      return true;
+    }
+
     const { user } = get();
     if (!user || !isSupabaseConfigured || !supabase) return false;
 
@@ -312,3 +441,4 @@ async function fetchProfile(user: User) {
     console.warn('fetchProfile error:', e);
   }
 }
+
