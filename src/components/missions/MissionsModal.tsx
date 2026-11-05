@@ -84,7 +84,7 @@ export const MissionsModal: React.FC<MissionsModalProps> = ({ onClose, onOpenEdi
         {/* Missions List */}
         <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4">
           {missions.map((mission) => {
-            const isCompleted = mission.completed;
+            const isCompleted = mission.completed || mission.objectives.every((obj) => obj.completed);
 
             return (
               <div

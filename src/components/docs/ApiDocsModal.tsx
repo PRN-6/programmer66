@@ -10,6 +10,7 @@ import {
   Package,
   Code2,
   Trophy,
+  Sparkles,
 } from 'lucide-react';
 import { useEditorStore } from '../../store/useEditorStore';
 
@@ -28,6 +29,42 @@ export const ApiDocsModal: React.FC<ApiDocsModalProps> = ({ onClose }) => {
   };
 
   const sections = [
+    {
+      category: 'Fast Drone Commands (Competition & Global API)',
+      icon: <Sparkles className="w-4 h-4 text-amber-400" />,
+      apis: [
+        {
+          sig: 'fly_to(x, y)',
+          desc: 'Dispatches the aerial drone to coordinates (x, y) across the farm grid.',
+          example: 'fly_to(2, 3)\nprint("Drone at target plot.")',
+        },
+        {
+          sig: 'plant(x, y, crop_name)',
+          desc: 'Flies to (x, y) and plants crop ("wheat", "carrot", "corn", "tomato", "potato").',
+          example: 'for x in range(4):\n    plant(x, 0, "carrot")',
+        },
+        {
+          sig: 'water(x, y)',
+          desc: 'Flies to (x, y) and hydrates the soil to promote crop growth.',
+          example: 'for x in range(4):\n    water(x, 0)',
+        },
+        {
+          sig: 'harvest(x, y)',
+          desc: 'Flies to (x, y) and harvests mature crop (growth >= 100).',
+          example: 't = get_tile(0, 0)\nif t and t["growth"] >= 100:\n    harvest(0, 0)',
+        },
+        {
+          sig: 'fertilize(x, y) / clear_weeds(x, y)',
+          desc: 'Applies organic fertilizer (+50% nutrients) or removes invasive weeds.',
+          example: 'clear_weeds(1, 1)\nfertilize(1, 1)',
+        },
+        {
+          sig: 'get_tile(x, y)',
+          desc: 'Inspects plot state at (x, y). Returns {"crop", "growth", "moisture", "nutrients", "weedLevel"}.',
+          example: 't = get_tile(0, 0)\nif t and t["moisture"] < 60:\n    water(0, 0)',
+        },
+      ],
+    },
     {
       category: 'Farm Grid & Environment',
       icon: <Layers className="w-4 h-4 text-neutral-300" />,
