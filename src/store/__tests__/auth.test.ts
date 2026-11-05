@@ -66,4 +66,38 @@ describe('Super Admin Authentication', () => {
     expect(useAuthStore.getState().user).toBeNull();
     expect(useCompetitionStore.getState().isAdmin).toBe(false);
   });
+
+  it('allows players to register with username, email, and password', async () => {
+    const success = await useAuthStore.getState().signUp('test1@gmail.com', '123456', 'test1');
+    expect(success).toBe(true);
+
+    const authState = useAuthStore.getState();
+    expect(authState.user).not.toBeNull();
+    expect(authState.profile?.displayName).toBe('test1');
+  });
+
+  it('allows players to sign in using either username or email', async () => {
+    // Register test account
+    await useAuthStore.getState().signUp('test1@gmail.com', '123456', 'test1');
+    await useAuthStore.getState().signOut();
+
+    // 1. Sign in with username
+    const successUser = await useAuthStore.getState().signIn('test1', '123456');
+    expect(successUser).toBe(true);
+    expect(useAuthStore.getState().profile?.displayName).toBe('test1');
+    await useAuthStore.getState().signOut();
+
+    // 2. Sign in with email
+    const successEmail = await useAuthStore.getState().signIn('test1@gmail.com', '123456');
+    expect(successEmail).toBe(true);
+    expect(useAuthStore.getState().profile?.displayName).toBe('test1');
+  });
+
+  it('supports one-click Google dev sign in without blocking', async () => {
+    await useAuthStore.getState().signInWithGoogle();
+
+    const authState = useAuthStore.getState();
+    expect(authState.user).not.toBeNull();
+    expect(authState.profile?.email).toBe('farmer.demo@gmail.com');
+  });
 });

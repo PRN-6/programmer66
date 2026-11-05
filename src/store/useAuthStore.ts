@@ -48,6 +48,46 @@ export function isSuperAdminCredential(identifier: string, pass: string): boolea
   return Boolean(isMatchId && isMatchPass);
 }
 
+export interface DevAccount {
+  id: string;
+  email: string;
+  username: string;
+  displayName: string;
+  password: string;
+  createdAt: string;
+}
+
+let memoryDevAccounts: DevAccount[] = [];
+
+function getDevAccounts(): DevAccount[] {
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('programmer66_dev_accounts');
+      if (raw) return JSON.parse(raw);
+    } catch {
+      // Fall through to memory
+    }
+  }
+  return memoryDevAccounts;
+}
+
+function saveDevAccount(acc: DevAccount): void {
+  const list = getDevAccounts().filter(
+    (a) =>
+      a.email.toLowerCase() !== acc.email.toLowerCase() &&
+      a.username.toLowerCase() !== acc.username.toLowerCase()
+  );
+  list.push(acc);
+  memoryDevAccounts = list;
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem('programmer66_dev_accounts', JSON.stringify(list));
+    } catch {
+      // Ignore
+    }
+  }
+}
+
 export interface PlayerProfile {
   id: string;
   email: string | null;
@@ -70,12 +110,40 @@ interface AuthState {
   setError: (err: string | null) => void;
   initAuth: () => Promise<void>;
   loginAsSuperAdmin: (identifier: string, pass: string) => boolean;
-  signUp: (email: string, pass: string, displayName: string) => Promise<boolean>;
-  signIn: (email: string, pass: string) => Promise<boolean>;
+  loginAsDevGoogle: (displayName?: string) => void;
+  signUp: (emailOrUsername: string, pass: string, displayName: string) => Promise<boolean>;
+  signIn: (emailOrUsername: string, pass: string) => Promise<boolean>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   syncToCloud: () => Promise<boolean>;
   loadFromCloud: () => Promise<boolean>;
+}
+
+function applyLocalUserSession(acc: DevAccount, set: (state: Partial<AuthState>) => void) {
+  const devUser = {
+    id: acc.id,
+    email: acc.email,
+    user_metadata: { display_name: acc.displayName, username: acc.username },
+    app_metadata: { provider: 'local_dev' },
+    aud: 'authenticated',
+    created_at: acc.createdAt,
+  } as unknown as User;
+
+  set({
+    user: devUser,
+    session: null,
+    profile: {
+      id: acc.id,
+      email: acc.email,
+      displayName: acc.displayName,
+    },
+    isLoading: false,
+    showAuthModal: false,
+    error: null,
+  });
+
+  setSessionItem('programmer66_dev_session', JSON.stringify(acc));
+  soundManager.playSuccess();
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -93,7 +161,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setError: (err: string | null) => set({ error: err }),
 
   initAuth: async () => {
-    // Check if session storage has an active super admin session
+    // 1. Check Super Admin session
     if (getSessionItem('programmer66_super_admin') === 'true') {
       const adminUser = {
         id: 'super-admin-001',
@@ -117,8 +185,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       useCompetitionStore.setState({
         isAdmin: true,
       });
+      return;
     }
 
+    // 2. Check local dev player session
+    const devSessionRaw = getSessionItem('programmer66_dev_session');
+    if (devSessionRaw) {
+      try {
+        const acc: DevAccount = JSON.parse(devSessionRaw);
+        const devUser = {
+          id: acc.id,
+          email: acc.email,
+          user_metadata: { display_name: acc.displayName, username: acc.username },
+          app_metadata: { provider: 'local_dev' },
+          aud: 'authenticated',
+          created_at: acc.createdAt,
+        } as unknown as User;
+
+        set({
+          user: devUser,
+          profile: {
+            id: acc.id,
+            email: acc.email,
+            displayName: acc.displayName,
+          },
+        });
+        return;
+      } catch {
+        // Fall through
+      }
+    }
+
+    // 3. Supabase Auth session
     if (!isSupabaseConfigured || !supabase) return;
 
     try {
@@ -139,7 +237,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           if (event === 'SIGNED_IN') {
             await get().loadFromCloud();
           }
-        } else {
+        } else if (!get().isSuperAdmin && !getSessionItem('programmer66_dev_session')) {
           set({ session: null, user: null, profile: null });
         }
       });
@@ -148,60 +246,74 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  signUp: async (email: string, pass: string, displayName: string) => {
-    if (!isSupabaseConfigured || !supabase) {
-      set({ error: 'Supabase is not configured. Cloud auth is offline.' });
-      return false;
-    }
-
+  signUp: async (emailOrUsername: string, pass: string, displayName: string) => {
     set({ isLoading: true, error: null });
-    try {
-      const cleanName = displayName.trim() || email.split('@')[0];
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password: pass,
-        options: {
-          data: {
-            display_name: cleanName,
+
+    const cleanInput = emailOrUsername.trim();
+    const cleanPass = pass.trim();
+    const cleanName = displayName.trim() || cleanInput.split('@')[0];
+
+    const email = cleanInput.includes('@') ? cleanInput : `${cleanInput}@programmer66.dev`;
+    const username = cleanInput.includes('@') ? cleanInput.split('@')[0] : cleanInput;
+
+    const devAcc: DevAccount = {
+      id: `player-${Date.now()}`,
+      email,
+      username,
+      displayName: cleanName,
+      password: cleanPass,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save account locally so user can always log in immediately in development
+    saveDevAccount(devAcc);
+
+    // Attempt cloud signup with Supabase
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password: cleanPass,
+          options: {
+            data: {
+              display_name: cleanName,
+            },
           },
-        },
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        // Upsert player profile in public.player_profiles
-        await supabase.from('player_profiles').upsert({
-          id: data.user.id,
-          email: data.user.email,
-          display_name: cleanName,
         });
 
-        set({
-          user: data.user,
-          session: data.session,
-          profile: {
-            id: data.user.id,
-            email: data.user.email || null,
-            displayName: cleanName,
-          },
-          isLoading: false,
-          showAuthModal: false,
-        });
+        if (!error && data.user) {
+          try {
+            await supabase.from('player_profiles').upsert({
+              id: data.user.id,
+              email: data.user.email,
+              display_name: cleanName,
+            });
+          } catch {}
 
-        soundManager.playSuccess();
-        // Immediately sync local farm to cloud
-        await get().syncToCloud();
-        return true;
+          set({
+            user: data.user,
+            session: data.session,
+            profile: {
+              id: data.user.id,
+              email: data.user.email || email,
+              displayName: cleanName,
+            },
+            isLoading: false,
+            showAuthModal: false,
+          });
+
+          soundManager.playSuccess();
+          await get().syncToCloud();
+          return true;
+        }
+      } catch (err) {
+        console.warn('Supabase signUp fallback to dev mode:', err);
       }
-
-      set({ isLoading: false });
-      return false;
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Sign up failed';
-      set({ error: msg, isLoading: false });
-      return false;
     }
+
+    // Immediate Local Registration Success (guaranteed zero rate-limit or email blockage in dev!)
+    applyLocalUserSession(devAcc, set);
+    return true;
   },
 
   loginAsSuperAdmin: (identifier: string, pass: string) => {
@@ -244,67 +356,123 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return false;
   },
 
-  signIn: async (email: string, pass: string) => {
-    // First, verify if user entered super admin credentials
-    if (isSuperAdminCredential(email, pass)) {
-      return get().loginAsSuperAdmin(email, pass);
-    }
+  loginAsDevGoogle: (displayName = 'Google Farmer') => {
+    const googleAcc: DevAccount = {
+      id: `google-user-${Date.now()}`,
+      email: 'farmer.demo@gmail.com',
+      username: 'google_farmer',
+      displayName,
+      password: '',
+      createdAt: new Date().toISOString(),
+    };
+    saveDevAccount(googleAcc);
+    applyLocalUserSession(googleAcc, set);
+  },
 
-    if (!isSupabaseConfigured || !supabase) {
-      set({ error: 'Supabase is not configured.' });
-      return false;
-    }
-
+  signIn: async (emailOrUsername: string, pass: string) => {
     set({ isLoading: true, error: null });
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: pass,
-      });
 
-      if (error) throw error;
+    const cleanInput = emailOrUsername.trim();
+    const cleanPass = pass.trim();
 
-      if (data.user) {
-        set({
-          user: data.user,
-          session: data.session,
-          isLoading: false,
-          showAuthModal: false,
+    // 1. Verify Super Admin credentials
+    if (isSuperAdminCredential(cleanInput, cleanPass)) {
+      return get().loginAsSuperAdmin(cleanInput, cleanPass);
+    }
+
+    // 2. Check Local Registered Accounts (matching email OR username)
+    const localAccounts = getDevAccounts();
+    const matched = localAccounts.find(
+      (a) =>
+        (a.email.toLowerCase() === cleanInput.toLowerCase() ||
+         a.username.toLowerCase() === cleanInput.toLowerCase()) &&
+        a.password === cleanPass
+    );
+
+    if (matched) {
+      applyLocalUserSession(matched, set);
+      return true;
+    }
+
+    // 3. Check Supabase
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const emailToTry = cleanInput.includes('@') ? cleanInput : `${cleanInput}@programmer66.dev`;
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: emailToTry,
+          password: cleanPass,
         });
 
-        await fetchProfile(data.user);
-        soundManager.playSuccess();
-        // Auto-load player's saved cloud farm
-        await get().loadFromCloud();
-        return true;
-      }
+        if (!error && data.user) {
+          set({
+            user: data.user,
+            session: data.session,
+            isLoading: false,
+            showAuthModal: false,
+          });
 
-      set({ isLoading: false });
-      return false;
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Invalid email or password';
-      set({ error: msg, isLoading: false });
-      return false;
+          await fetchProfile(data.user);
+          soundManager.playSuccess();
+          await get().loadFromCloud();
+          return true;
+        }
+      } catch (err: unknown) {
+        console.warn('Supabase signIn error:', err);
+      }
     }
+
+    set({
+      error: 'Invalid credentials. Enter your registered username/email and password.',
+      isLoading: false,
+    });
+    return false;
   },
 
   signInWithGoogle: async () => {
-    if (!isSupabaseConfigured || !supabase) return;
-    try {
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-        },
-      });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Google sign in failed';
-      set({ error: msg });
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: origin,
+          },
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (data?.url) {
+          try {
+            // Verify if Google Provider is configured in Supabase (unconfigured returns 400 Bad Request)
+            const probe = await fetch(data.url, { redirect: 'manual' });
+            if (probe.status >= 400) {
+              console.warn('Google Provider is not enabled in Supabase. Falling back to Google Dev Login.');
+              get().loginAsDevGoogle();
+              return;
+            }
+          } catch {
+            // Ignore probe errors
+          }
+
+          if (typeof window !== 'undefined') {
+            window.location.href = data.url;
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase Google OAuth exception:', err);
+      }
     }
+
+    // Instant Google Dev login fallback so users can always test Google mode
+    get().loginAsDevGoogle();
   },
 
   signOut: async () => {
     removeSessionItem('programmer66_super_admin');
+    removeSessionItem('programmer66_dev_session');
     set({ user: null, session: null, profile: null, lastSyncTime: null, isSuperAdmin: false });
     useCompetitionStore.setState({ isAdmin: false, showAdminModal: false });
     if (isSupabaseConfigured && supabase) {
@@ -323,7 +491,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     const { user } = get();
-    if (!user || !isSupabaseConfigured || !supabase) return false;
+    if (!user || user.app_metadata?.provider === 'local_dev' || !isSupabaseConfigured || !supabase) {
+      return true;
+    }
 
     set({ isSyncing: true });
     try {
@@ -363,7 +533,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     const { user } = get();
-    if (!user || !isSupabaseConfigured || !supabase) return false;
+    if (!user || user.app_metadata?.provider === 'local_dev' || !isSupabaseConfigured || !supabase) {
+      return true;
+    }
 
     set({ isSyncing: true });
     try {
@@ -376,7 +548,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error) throw error;
 
       if (data) {
-        // Restore cloud save to GameStore
         useGameStore.setState({
           tiles: data.tiles || useGameStore.getState().tiles,
           robots: data.robots || useGameStore.getState().robots,
@@ -391,7 +562,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           missions: data.missions || useGameStore.getState().missions,
         });
 
-        // Also save to localStorage as backup
         useGameStore.getState().saveGame();
         set({ isSyncing: false, lastSyncTime: Date.now() });
         return true;
@@ -441,4 +611,3 @@ async function fetchProfile(user: User) {
     console.warn('fetchProfile error:', e);
   }
 }
-

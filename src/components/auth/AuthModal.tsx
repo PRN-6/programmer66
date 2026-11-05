@@ -12,6 +12,7 @@ import {
   Sparkles,
   Shield,
   KeyRound,
+  Zap,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -57,21 +58,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
       return;
     }
 
-    // 2. Regular Sign In: Check if user entered Super Admin credentials in standard tab
+    // 2. Regular Sign In (Supports Username OR Email)
     if (mode === 'signin') {
-      const isSuper = loginAsSuperAdmin(cleanInput, password);
-      if (isSuper) {
-        onClose();
+      if (!cleanInput) {
+        setFormError('Please enter your username or email.');
         return;
       }
 
-      if (!cleanInput || !cleanInput.includes('@')) {
-        setFormError('Please enter a valid email address.');
-        return;
-      }
-
-      if (password.length < 6) {
-        setFormError('Password must be at least 6 characters.');
+      if (!password) {
+        setFormError('Please enter your password.');
         return;
       }
 
@@ -84,13 +79,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
 
     // 3. Create Account (Sign Up)
     if (mode === 'signup') {
-      if (!cleanInput || !cleanInput.includes('@')) {
-        setFormError('Please enter a valid email address.');
+      if (!cleanInput) {
+        setFormError('Please enter an email address or username.');
         return;
       }
 
-      if (password.length < 6) {
-        setFormError('Password must be at least 6 characters.');
+      if (password.length < 4) {
+        setFormError('Password must be at least 4 characters.');
         return;
       }
 
@@ -135,7 +130,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
               <p className="text-xs text-neutral-400">
                 {mode === 'admin'
                   ? 'Access Room & Competition Control Panel'
-                  : 'Cloud Sync & Cross-Device Progression'}
+                  : 'Development & Cloud Farm Progression'}
               </p>
             </div>
           </div>
@@ -209,12 +204,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
 
           {mode === 'signup' && (
             <div className="space-y-1 text-xs">
-              <label className="text-neutral-300 font-medium">Player / Farmer Name</label>
+              <label className="text-neutral-300 font-medium">Player / Username</label>
               <div className="relative">
                 <User className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="e.g. NeoPilot"
+                  placeholder="e.g. test1"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-3 py-2 text-white placeholder:text-neutral-600 focus:outline-none focus:border-sky-500 transition text-xs font-mono"
@@ -225,7 +220,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
 
           <div className="space-y-1 text-xs">
             <label className="text-neutral-300 font-medium">
-              {mode === 'admin' ? 'Admin Username or Email' : 'Email Address'}
+              {mode === 'admin'
+                ? 'Admin Username or Email'
+                : mode === 'signup'
+                ? 'Email Address or Username'
+                : 'Email or Username'}
             </label>
             <div className="relative">
               {mode === 'admin' ? (
@@ -234,8 +233,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
                 <Mail className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
               )}
               <input
-                type={mode === 'admin' ? 'text' : 'email'}
-                placeholder={mode === 'admin' ? 'admin or admin@programmer66.com' : 'pilot@programmer66.com'}
+                type="text"
+                placeholder={
+                  mode === 'admin'
+                    ? 'admin or admin@programmer66.com'
+                    : mode === 'signup'
+                    ? 'test1@gmail.com or test1'
+                    : 'test1 or test1@gmail.com'
+                }
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -260,7 +265,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
               )}
               <input
                 type="password"
-                placeholder={mode === 'admin' ? 'Enter master password from .env' : 'At least 6 characters'}
+                placeholder={mode === 'admin' ? 'Enter master password from .env' : 'Enter password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -281,18 +286,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
                 <span>Super Admin Privileges</span>
               </div>
               <p className="text-[10px] text-amber-300/80 leading-relaxed">
-                Credentials configured in <code className="bg-amber-950/60 px-1 py-0.5 rounded text-amber-200 font-mono">.env</code> (<code className="font-mono">VITE_SUPER_ADMIN_...</code>). Logging in launches the Organizer Dashboard to create rooms, launch coding competitions, manage custom challenges, and control live scoreboards.
+                Credentials configured in <code className="bg-amber-950/60 px-1 py-0.5 rounded text-amber-200 font-mono">.env</code> (<code className="font-mono">VITE_SUPER_ADMIN_...</code>). Logging in opens the Organizer Dashboard to create rooms, launch coding competitions, and control live scoreboards.
               </p>
             </div>
           ) : (
             <div className="bg-neutral-900/60 p-3 rounded-xl border border-neutral-800/80 space-y-1.5 text-[11px] text-neutral-400">
               <div className="flex items-center gap-1.5 text-neutral-300">
+                <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>Instant Dev & Cloud Registration (No email confirmation wait)</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-neutral-300">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Saves your level, coins, and farm plots in the cloud</span>
+                <span>Saves your level, coins, and farm plots automatically</span>
               </div>
               <div className="flex items-center gap-1.5 text-neutral-300">
                 <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                <span>Seamlessly resume from any computer or browser</span>
+                <span>Works on any laptop or computer</span>
               </div>
             </div>
           )}
@@ -319,7 +328,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
               </>
             ) : (
               <>
-                <span>{mode === 'signin' ? 'Sign In & Load Cloud Save' : 'Create Account & Sync Farm'}</span>
+                <span>{mode === 'signin' ? 'Sign In & Load Farm' : 'Create Account & Start Farming'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </>
             )}
@@ -331,6 +340,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
               type="button"
               onClick={signInWithGoogle}
               className="w-full py-2 px-4 bg-neutral-900 hover:bg-neutral-850 text-neutral-300 hover:text-white font-medium rounded-xl text-xs border border-neutral-800 transition flex items-center justify-center gap-2"
+              title="Instant sign in with Google"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
                 <path
