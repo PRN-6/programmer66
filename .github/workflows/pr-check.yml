@@ -35,3 +35,4 @@ jobs:
 
       - name: 🏗️ Verify Production Build
         run: npm run build
+

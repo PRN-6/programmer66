@@ -58,3 +58,4 @@ npm run build
 - **Super Admin**: Authenticated using master credentials in `.env` (`VITE_SUPER_ADMIN_EMAIL`, `VITE_SUPER_ADMIN_PASSWORD`, `VITE_SUPER_ADMIN_USERNAME`).
 - **Player Progression**: Hybrid model. Allows instant registration and login in development without waiting for email verification, and syncs automatically to Supabase `player_saves` when cloud is active.
 - **Single Claim Enforcement**: Mission rewards must strictly check `mission.rewardClaimed` to prevent duplicate money or XP exploits.
+

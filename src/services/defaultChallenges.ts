@@ -12,12 +12,15 @@ export const DEFAULT_CHALLENGES: Challenge[] = [
     timeLimitSeconds: 120,
     testCriterion: 'planted_count',
     starterCode: `# Level 1: Automated Seed Sower
-# Goal: Plant 12 carrots using a loop
+# Goal: Write a Python loop to plant at least 12 Carrot seeds.
+#
+# Available commands:
+#   fly_to(x, y)          - Moves the drone to coordinates (x, y)
+#   plant(x, y, "carrot") - Plants a carrot seed at (x, y)
+#   get_tile(x, y)        - Returns current tile details
 
-for y in range(0, 3):
-    for x in range(0, 4):
-        fly_to(x, y)
-        plant(x, y, "carrot")
+# TODO: Write your automation loop below to plant 12 carrots
+
 `,
     solutionHint: 'Use nested loops for x in range(0, 4) and y in range(0, 3) with fly_to(x, y) and plant(x, y, "carrot").',
   },
@@ -25,20 +28,21 @@ for y in range(0, 3):
     id: 'chal-2',
     level: 2,
     title: 'Level 2: Smart Irrigation Engineer',
-    description: 'Fly across your soil beds and water 8 plots so their moisture reaches optimal levels.',
+    description: 'Fly across your soil beds and water 8 plots so their moisture reaches optimal levels (>=60%).',
     points: 150,
     targetCount: 8,
     timeLimitSeconds: 150,
     testCriterion: 'water_efficiency',
     starterCode: `# Level 2: Smart Irrigation Engineer
-# Goal: Inspect tiles and water 8 plots
+# Goal: Inspect plots and water at least 8 dry beds to optimal moisture (>=60%).
+#
+# Available commands:
+#   fly_to(x, y)   - Move drone to (x, y)
+#   water(x, y)    - Spray hydration mist on soil
+#   get_tile(x, y) - Check tile info: tile["moisture"]
 
-for x in range(0, 4):
-    for y in range(0, 2):
-        fly_to(x, y)
-        tile = get_tile(x, y)
-        if tile and tile["moisture"] < 80:
-            water(x, y)
+# TODO: Write your code below to inspect and water 8 plots
+
 `,
     solutionHint: 'Use get_tile(x, y) to check moisture and water if it is below 80.',
   },
@@ -46,20 +50,21 @@ for x in range(0, 4):
     id: 'chal-3',
     level: 3,
     title: 'Level 3: Bountiful Autumn Harvest',
-    description: 'Automate the quadcopter drone to locate ripe crops and harvest at least 10 crops into your inventory.',
+    description: 'Automate the quadcopter drone to locate ripe crops (growth >= 100) and harvest at least 10 crops into your inventory.',
     points: 250,
     targetCount: 10,
     timeLimitSeconds: 180,
     testCriterion: 'harvest_count',
-    starterCode: `# Level 3: Autumn Harvest
-# Goal: Harvest 10 mature crops
+    starterCode: `# Level 3: Bountiful Autumn Harvest
+# Goal: Locate mature crops (growth >= 100) and harvest at least 10 crops.
+#
+# Available commands:
+#   fly_to(x, y)   - Move drone to (x, y)
+#   harvest(x, y)  - Harvest fully grown crop
+#   get_tile(x, y) - Returns {"crop": str, "growth": int}
 
-for y in range(0, 6):
-    for x in range(0, 6):
-        fly_to(x, y)
-        tile = get_tile(x, y)
-        if tile and tile["crop"] and tile["growth"] >= 100:
-            harvest(x, y)
+# TODO: Write your code below to scan and harvest 10 ripe crops
+
 `,
     solutionHint: 'Check tile["growth"] >= 100 before calling harvest(x, y).',
   },
@@ -73,12 +78,16 @@ for y in range(0, 6):
     timeLimitSeconds: 150,
     testCriterion: 'water_efficiency',
     starterCode: `# Level 4: Soil Nutrition Master
-# Goal: Clear weeds and fertilize 6 plots
+# Goal: Clear weeds and apply fertilizer on at least 6 farm plots.
+#
+# Available commands:
+#   fly_to(x, y)        - Move drone to (x, y)
+#   clear_weeds(x, y)   - Remove weeds on plot
+#   fertilize(x, y)     - Enrich soil nutrients
+#   get_tile(x, y)      - Check tile info
 
-for x in range(0, 6):
-    fly_to(x, 0)
-    clear_weeds(x, 0)
-    fertilize(x, 0)
+# TODO: Write your code below to fertilize and clear 6 plots
+
 `,
     solutionHint: 'Call clear_weeds(x, y) followed by fertilize(x, y) across 6 plots.',
   },
@@ -92,15 +101,14 @@ for x in range(0, 6):
     timeLimitSeconds: 90,
     testCriterion: 'speed_run',
     starterCode: `# Level 5: Grand Championship Speed Run
-# Maximize points by chaining plant, water, and harvest!
+# Goal: Plant, water, and harvest as many crops as possible in minimum time!
+#
+# Available commands:
+#   fly_to(x, y), plant(x, y, crop), water(x, y), harvest(x, y)
 
-for y in range(0, 4):
-    for x in range(0, 4):
-        fly_to(x, y)
-        plant(x, y, "carrot")
-        water(x, y)
+# TODO: Implement your high-speed automation pipeline
+
 `,
     solutionHint: 'Speed up execution by planting fast-growing crops with immediate watering.',
   },
 ];
-

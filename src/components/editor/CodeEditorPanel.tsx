@@ -20,7 +20,7 @@ import {
   Minimize2,
   ChevronDown,
   ChevronUp,
-  XCircle,
+  Lock,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useEditorStore } from '../../store/useEditorStore';
@@ -62,6 +62,8 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
   const [isSubmittingChallenge, setIsSubmittingChallenge] = useState(false);
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [taskDone, setTaskDone] = useState(false);
+  const [evaluationMessage, setEvaluationMessage] = useState<string | null>(null);
   const [showBeginnerGuide, setShowBeginnerGuide] = useState(false);
 
   // --- Dynamic Panel Resizing & Maximizing ---
@@ -105,6 +107,9 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
   useEffect(() => {
     if (isCompeting && activeChallenge && lastLoadedChallengeIdRef.current !== activeChallenge.id) {
       lastLoadedChallengeIdRef.current = activeChallenge.id;
+      setTaskDone(false);
+      setEvaluationMessage(null);
+      setSubmissionError(null);
       const currentCode = activeTab?.code || '';
       if (
         !currentCode.trim() ||
@@ -219,30 +224,51 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
     activeChallenge && currentTeam?.completedChallenges?.includes(activeChallenge.id)
   );
 
+  const handleRunScript = async () => {
+    setTaskDone(false);
+    setSubmissionError(null);
+    await runCode();
+
+    // After script finishes running, evaluate challenge if in competition mode
+    if (isCompeting && activeChallenge) {
+      const gameState = useGameStore.getState();
+      const evaluation = evaluateChallenge(activeChallenge, gameState, activeTab.code);
+      setEvaluationMessage(evaluation.message);
+
+      if (evaluation.passed) {
+        setTaskDone(true);
+        soundManager.playSuccess();
+        addLog(
+          'success',
+          `🏆 [TASK COMPLETED] All criteria passed! (${evaluation.message}) You can now submit your official answer.`
+        );
+      } else {
+        setTaskDone(false);
+        addLog('info', `📊 [Challenge Criteria Check] ${evaluation.message}`);
+      }
+    }
+  };
+
   const handleSubmitSolution = async () => {
     if (!currentRoom || !currentTeam || !activeChallenge) return;
+
+    // Verify task criteria are met before submission
+    const gameState = useGameStore.getState();
+    const evaluation = evaluateChallenge(activeChallenge, gameState, activeTab.code);
+    if (!evaluation.passed) {
+      soundManager.playError();
+      setSubmissionError(evaluation.message);
+      setTaskDone(false);
+      addLog('stderr', `❌ Verification Failed: ${evaluation.message}`);
+      setTimeout(() => setSubmissionError(null), 7000);
+      return;
+    }
+
     setIsSubmittingChallenge(true);
     setSubmissionError(null);
 
     try {
-      const gameState = useGameStore.getState();
-      const evaluation = evaluateChallenge(activeChallenge, gameState, activeTab.code);
-
-      if (!evaluation.passed) {
-        soundManager.playError();
-        setSubmissionError(evaluation.message);
-        addLog('stderr', `❌ Verification Failed: ${evaluation.message}`);
-
-        await submitChallengeSolution(
-          activeTab.code,
-          false,
-          evaluation.message
-        );
-        setTimeout(() => setSubmissionError(null), 7000);
-        return;
-      }
-
-      // Passed verification!
+      // Passed verification! Submit solution
       await submitChallengeSolution(
         activeTab.code,
         true,
@@ -251,6 +277,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
 
       soundManager.playSuccess();
       setSubmissionSuccess(true);
+      setTaskDone(false);
       addLog(
         'success',
         `🏆 SUCCESS: ${evaluation.message} (+${activeChallenge.points} pts awarded to ${currentTeam.name})`
@@ -469,7 +496,7 @@ robot.move_to(0, 0)
             </button>
           ) : (
             <button
-              onClick={runCode}
+              onClick={handleRunScript}
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 rounded-lg font-bold text-xs shadow-md transition"
             >
               <Play className="w-3.5 h-3.5 fill-current text-neutral-300" />
@@ -550,27 +577,28 @@ robot.move_to(0, 0)
             {currentTeam && (
               <button
                 onClick={handleSubmitSolution}
-                disabled={isSubmittingChallenge}
+                disabled={isSubmittingChallenge || (!taskDone && !isAlreadyCompleted)}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition shadow-sm ${
                   isAlreadyCompleted
-                    ? 'bg-emerald-700/80 text-emerald-100 hover:bg-emerald-600'
+                    ? 'bg-emerald-700/80 text-emerald-100 hover:bg-emerald-600 cursor-default'
                     : submissionSuccess
                     ? 'bg-emerald-600 text-white'
-                    : submissionError
-                    ? 'bg-red-600 hover:bg-red-500 text-white'
-                    : 'bg-amber-500 hover:bg-amber-400 text-neutral-950'
+                    : taskDone
+                    ? 'bg-emerald-500 hover:bg-emerald-400 text-neutral-950 shadow-emerald-950/50 animate-pulse'
+                    : 'bg-neutral-800 text-neutral-500 border border-neutral-700/60 cursor-not-allowed'
                 }`}
                 title={
-                  submissionError ||
-                  (isAlreadyCompleted
+                  isAlreadyCompleted
                     ? 'Challenge already completed! Points earned.'
-                    : 'Verify code against farm criteria and submit')
+                    : taskDone
+                    ? 'All test cases passed! Click to submit your official solution.'
+                    : 'Run your Python script and pass all challenge criteria first to unlock submission!'
                 }
               >
                 {isSubmittingChallenge ? (
                   <>
                     <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    <span>Grading...</span>
+                    <span>Submitting...</span>
                   </>
                 ) : isAlreadyCompleted ? (
                   <>
@@ -580,22 +608,51 @@ robot.move_to(0, 0)
                 ) : submissionSuccess ? (
                   <>
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Passed!</span>
+                    <span>Passed & Submitted!</span>
                   </>
-                ) : submissionError ? (
+                ) : taskDone ? (
                   <>
-                    <XCircle className="w-3.5 h-3.5" />
-                    <span>Criteria Not Met</span>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Submit Answer (+{activeChallenge.points} pts)</span>
                   </>
                 ) : (
                   <>
-                    <Send className="w-3 h-3" />
-                    <span>Submit Solution</span>
+                    <Lock className="w-3.5 h-3.5 text-neutral-500" />
+                    <span>Submit (Pass Tests First)</span>
                   </>
                 )}
               </button>
             )}
           </div>
+
+          {/* Task Done Success Banner (Unlocks Submission) */}
+          {taskDone && !isAlreadyCompleted && (
+            <div className="w-full mt-1.5 bg-emerald-950/70 border border-emerald-500/40 rounded-lg px-2.5 py-1.5 text-[11px] text-emerald-300 flex items-center justify-between gap-2 animate-in fade-in duration-200">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="font-semibold">
+                  Task Done! All criteria passed{evaluationMessage ? ` (${evaluationMessage})` : ''}. Click &quot;Submit Answer&quot; to claim your points!
+                </span>
+              </div>
+              <button
+                onClick={handleSubmitSolution}
+                disabled={isSubmittingChallenge}
+                className="px-2.5 py-0.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-[10px] rounded transition shadow shrink-0"
+              >
+                Submit Now
+              </button>
+            </div>
+          )}
+
+          {/* Challenge Evaluation Progress / Feedback Banner */}
+          {!taskDone && !isAlreadyCompleted && evaluationMessage && (
+            <div className="w-full mt-1.5 bg-amber-950/50 border border-amber-500/40 rounded-lg px-2.5 py-1.5 text-[11px] text-amber-200 flex items-center justify-between gap-2 animate-in fade-in duration-200">
+              <div className="flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>Status: {evaluationMessage} (Run script again after modifying code)</span>
+              </div>
+            </div>
+          )}
 
           {/* Submission Failure Banner */}
           {submissionError && (
@@ -695,7 +752,12 @@ robot.move_to(0, 0)
           language="python"
           theme="vs-dark"
           value={activeTab.code}
-          onChange={(val) => updateCode(val || '')}
+          onChange={(val) => {
+            updateCode(val || '');
+            if (taskDone) {
+              setTaskDone(false);
+            }
+          }}
           onMount={(editor, monaco) => {
             registerProgrammer66Autocomplete(monaco);
           }}

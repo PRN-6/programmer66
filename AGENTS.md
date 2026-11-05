@@ -24,3 +24,4 @@ Before finalizing any task, agents must ensure:
    ```
 4. **Supabase Safety**: Preserve Row Level Security (RLS) policies defined in `supabase_schema.sql`. Do not bypass access controls.
 5. **UI Accessibility & Styling**: Maintain the dark futuristic sci-fi theme (`neutral-900`, `neutral-950`, `amber` for admin, `sky` for player accounts, `emerald` for missions).
+
