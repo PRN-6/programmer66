@@ -791,6 +791,16 @@ export const useGameStore = create<GameState>((set, get) => ({
         graphicsQuality: state.graphicsQuality,
       };
       localStorage.setItem('programmer66_save', JSON.stringify(saveData));
+
+      // Asynchronously sync to Supabase cloud if player is signed in
+      import('./useAuthStore')
+        .then(({ useAuthStore }) => {
+          const auth = useAuthStore.getState();
+          if (auth.user && !auth.isSyncing) {
+            auth.syncToCloud();
+          }
+        })
+        .catch(() => {});
     } catch (e) {
       console.warn('Failed to save to localStorage:', e);
     }

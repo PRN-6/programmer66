@@ -19,10 +19,13 @@ import {
   BookOpen,
   Code2,
   Trophy,
+  UploadCloud,
+  LogOut,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { WEATHER_PROFILES } from '../../game/simulation/weatherConfig';
 import { CompetitionHUDWidget } from '../competition/CompetitionHUDWidget';
 
@@ -106,6 +109,9 @@ export const TopHUD: React.FC<TopHUDProps> = ({
   const currentRoom = useCompetitionStore((state) => state.currentRoom);
   const activeChallenge = useCompetitionStore((state) => state.activeChallenge);
   const isCompeting = Boolean(currentRoom);
+
+  const [showUserMenu, setShowUserMenu] = React.useState(false);
+  const { user, profile: playerProfile, isSyncing, syncToCloud, signOut, setShowAuthModal } = useAuthStore();
 
   const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
 
@@ -300,6 +306,70 @@ export const TopHUD: React.FC<TopHUDProps> = ({
         >
           {soundMuted ? <VolumeX className="w-4 h-4 text-neutral-500" /> : <Volume2 className="w-4 h-4 text-neutral-300" />}
         </button>
+
+        {/* Cloud Sync & Player Account */}
+        {user ? (
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu((prev) => !prev)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-800 text-xs font-semibold transition"
+              title="Cloud Profile & Sync"
+            >
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isSyncing ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'
+                }`}
+              />
+              <span className="font-mono text-xs max-w-[90px] truncate">
+                {playerProfile?.displayName || user.email?.split('@')[0]}
+              </span>
+            </button>
+
+            {showUserMenu && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-neutral-950 border border-neutral-800 rounded-xl shadow-2xl p-3 z-50 text-xs flex flex-col gap-2.5 animate-in fade-in duration-100">
+                <div className="border-b border-neutral-800 pb-2">
+                  <div className="font-bold text-white truncate">{playerProfile?.displayName}</div>
+                  <div className="text-[11px] text-neutral-400 truncate">{user.email}</div>
+                  <div className="text-[10px] text-emerald-400 flex items-center gap-1 mt-1 font-mono">
+                    <Cloud className="w-3 h-3" />
+                    <span>{isSyncing ? 'Syncing...' : 'Cloud Synced'}</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    syncToCloud();
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-200 transition font-medium flex items-center justify-between"
+                >
+                  <span>Sync Farm to Cloud</span>
+                  <UploadCloud className="w-3.5 h-3.5 text-neutral-400" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    signOut();
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/50 text-red-300 transition font-medium flex items-center justify-between"
+                >
+                  <span>Sign Out</span>
+                  <LogOut className="w-3.5 h-3.5 text-red-400" />
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowAuthModal(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-sky-950/60 hover:bg-sky-900/70 text-sky-200 border border-sky-800/80 text-xs font-semibold transition"
+            title="Sign in to save farm progress across computers"
+          >
+            <Cloud className="w-3.5 h-3.5 text-sky-400" />
+            <span className="hidden sm:inline">Sign In</span>
+          </button>
+        )}
 
         {/* Settings */}
         <button

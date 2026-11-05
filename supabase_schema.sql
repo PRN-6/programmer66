@@ -111,3 +111,65 @@ CREATE POLICY "Allow public delete on teams" ON public.teams FOR DELETE USING (t
 CREATE POLICY "Allow public read access on submissions" ON public.submissions FOR SELECT USING (true);
 CREATE POLICY "Allow public insert on submissions" ON public.submissions FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public delete on submissions" ON public.submissions FOR DELETE USING (true);
+
+-- ========================================================
+-- 11. PLAYER AUTHENTICATION & CLOUD SAVE SCHEMA
+-- ========================================================
+
+-- Player Profiles Table (Connected to Supabase auth.users)
+CREATE TABLE IF NOT EXISTS public.player_profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT,
+  display_name TEXT NOT NULL,
+  avatar_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Player Cloud Saves Table (Persistent Single-Player Farm State)
+CREATE TABLE IF NOT EXISTS public.player_saves (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  level INTEGER NOT NULL DEFAULT 1,
+  xp INTEGER NOT NULL DEFAULT 0,
+  money INTEGER NOT NULL DEFAULT 120,
+  day INTEGER NOT NULL DEFAULT 1,
+  time_of_day DOUBLE PRECISION NOT NULL DEFAULT 8.0,
+  weather TEXT NOT NULL DEFAULT 'sunny',
+  inventory JSONB NOT NULL DEFAULT '{}'::jsonb,
+  tiles JSONB NOT NULL DEFAULT '{}'::jsonb,
+  robots JSONB NOT NULL DEFAULT '[]'::jsonb,
+  missions JSONB NOT NULL DEFAULT '[]'::jsonb,
+  stats JSONB NOT NULL DEFAULT '{}'::jsonb,
+  saved_scripts JSONB NOT NULL DEFAULT '[]'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Enable RLS for Player Data
+ALTER TABLE public.player_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.player_saves ENABLE ROW LEVEL SECURITY;
+
+-- Profiles RLS Policies (Users can only access their own profile)
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.player_profiles;
+CREATE POLICY "Users can view their own profile" ON public.player_profiles
+  FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.player_profiles;
+CREATE POLICY "Users can insert their own profile" ON public.player_profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.player_profiles;
+CREATE POLICY "Users can update their own profile" ON public.player_profiles
+  FOR UPDATE USING (auth.uid() = id);
+
+-- Player Saves RLS Policies (Users can only access their own saves)
+DROP POLICY IF EXISTS "Users can view their own save" ON public.player_saves;
+CREATE POLICY "Users can view their own save" ON public.player_saves
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own save" ON public.player_saves;
+CREATE POLICY "Users can insert their own save" ON public.player_saves
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update their own save" ON public.player_saves;
+CREATE POLICY "Users can update their own save" ON public.player_saves
+  FOR UPDATE USING (auth.uid() = user_id);

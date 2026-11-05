@@ -9,6 +9,7 @@ import { CodeEditorPanel } from './components/editor/CodeEditorPanel';
 import { useEditorStore } from './store/useEditorStore';
 import { useGameStore } from './store/useGameStore';
 import { useCompetitionStore } from './store/useCompetitionStore';
+import { useAuthStore } from './store/useAuthStore';
 import { soundManager } from './audio/soundEffects';
 
 // Lazy-loaded modal components to reduce initial page bundle
@@ -39,6 +40,9 @@ const ScoreboardModal = lazy(() =>
 const WaitingLobby = lazy(() =>
   import('./components/competition/WaitingLobby').then((m) => ({ default: m.WaitingLobby }))
 );
+const AuthModal = lazy(() =>
+  import('./components/auth/AuthModal').then((m) => ({ default: m.AuthModal }))
+);
 
 export function App() {
   const [editorOpen, setEditorOpen] = useState(false);
@@ -50,6 +54,10 @@ export function App() {
   const showDocsModal = useEditorStore((state) => state.showDocsModal);
   const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
   const loadGame = useGameStore((state) => state.loadGame);
+
+  const showAuthModal = useAuthStore((state) => state.showAuthModal);
+  const setShowAuthModal = useAuthStore((state) => state.setShowAuthModal);
+  const initAuth = useAuthStore((state) => state.initAuth);
 
   const showAdminModal = useCompetitionStore((state) => state.showAdminModal);
   const setShowAdminModal = useCompetitionStore((state) => state.setShowAdminModal);
@@ -93,10 +101,11 @@ export function App() {
     }
   }, [currentRoom?.status]);
 
-  // Auto-load saved game and competition session on mount
+  // Auto-load saved game, competition session, and auth session on mount
   useEffect(() => {
     loadGame();
     initSession();
+    initAuth();
 
     const handleFirstInteraction = () => {
       soundManager.startAmbience();
@@ -111,7 +120,7 @@ export function App() {
       window.removeEventListener('click', handleFirstInteraction);
       window.removeEventListener('keydown', handleFirstInteraction);
     };
-  }, [loadGame, initSession]);
+  }, [loadGame, initSession, initAuth]);
 
   return (
     <div className="w-screen h-screen relative overflow-hidden bg-neutral-950 font-sans select-none flex flex-col">
@@ -165,6 +174,7 @@ export function App() {
         {showAdminModal && <AdminModal onClose={() => setShowAdminModal(false)} />}
         {showJoinModal && <JoinCompetitionModal onClose={() => setShowJoinModal(false)} />}
         {showScoreboardModal && <ScoreboardModal onClose={() => setShowScoreboardModal(false)} />}
+        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
 
         {/* Fullscreen Waiting Lobby for Participants when Room is in 'waiting' status */}
         {isWaitingForAdmin && (
