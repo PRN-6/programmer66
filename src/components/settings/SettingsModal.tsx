@@ -8,6 +8,7 @@ import {
   RotateCcw,
   BarChart3,
   Check,
+  Zap,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 
@@ -20,8 +21,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     soundMuted,
     sfxVolume,
     ambienceVolume,
+    graphicsQuality,
     toggleMute,
     setVolumes,
+    setGraphicsQuality,
     saveGame,
     loadGame,
     resetGame,
@@ -87,6 +90,57 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         )}
 
         <div className="p-6 space-y-6">
+          {/* Graphics & Performance Optimization */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-400" />
+                <span>Graphics & Hardware Profile</span>
+              </span>
+              <span className="text-[10px] text-neutral-400 font-mono">
+                {graphicsQuality === 'low' ? 'Max FPS / Low Power' : graphicsQuality === 'balanced' ? 'Balanced (Default)' : 'High Detail'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setGraphicsQuality('low')}
+                className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition ${
+                  graphicsQuality === 'low'
+                    ? 'bg-neutral-800 border-amber-400/80 text-white shadow-md'
+                    : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-850'
+                }`}
+              >
+                <span className="text-xs font-bold">Fast / Eco</span>
+                <span className="text-[10px] text-neutral-400 mt-0.5 leading-tight">Old PCs & Laptops</span>
+              </button>
+
+              <button
+                onClick={() => setGraphicsQuality('balanced')}
+                className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition ${
+                  graphicsQuality === 'balanced'
+                    ? 'bg-neutral-800 border-emerald-400/80 text-white shadow-md'
+                    : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-850'
+                }`}
+              >
+                <span className="text-xs font-bold">Balanced</span>
+                <span className="text-[10px] text-neutral-400 mt-0.5 leading-tight">Recommended</span>
+              </button>
+
+              <button
+                onClick={() => setGraphicsQuality('high')}
+                className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition ${
+                  graphicsQuality === 'high'
+                    ? 'bg-neutral-800 border-sky-400/80 text-white shadow-md'
+                    : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-850'
+                }`}
+              >
+                <span className="text-xs font-bold">High</span>
+                <span className="text-[10px] text-neutral-400 mt-0.5 leading-tight">Detailed 3D</span>
+              </button>
+            </div>
+          </div>
+
           {/* Audio Controls */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">

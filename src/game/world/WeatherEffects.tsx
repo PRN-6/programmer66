@@ -20,11 +20,14 @@ const generateRainPositions = () => {
 const INITIAL_RAIN_POSITIONS = generateRainPositions();
 
 export const WeatherEffects: React.FC = () => {
-  const { weather, timeOfDay } = useGameStore();
+  const weather = useGameStore((s) => s.weather);
+  const timeOfDay = useGameStore((s) => s.timeOfDay);
+  const quality = useGameStore((s) => s.graphicsQuality);
   const profile = WEATHER_PROFILES[weather];
 
-  // Rain particles system
-  const rainCount = weather === 'stormy' ? 600 : weather === 'rainy' ? 350 : 0;
+  // Dynamic particle count based on hardware capability
+  const maxRain = quality === 'low' ? 60 : quality === 'balanced' ? 200 : 500;
+  const rainCount = weather === 'stormy' ? maxRain : weather === 'rainy' ? Math.round(maxRain * 0.6) : 0;
   const rainGeoRef = useRef<THREE.BufferGeometry>(null);
   const rainPositions = INITIAL_RAIN_POSITIONS;
 
@@ -41,8 +44,9 @@ export const WeatherEffects: React.FC = () => {
     return profile.sunColor;
   }, [profile.sunColor, weather, timeOfDay]);
 
-  // Lightning state for thunderstorms
-  const [lightningIntensity, setLightningIntensity] = React.useState(0);
+  // Lightning ref to avoid React state re-renders during thunderstorms
+  const lightningLightRef = useRef<THREE.PointLight>(null);
+  const lightningIntensityRef = useRef(0);
 
   useFrame((_, delta) => {
     // Rain falling animation
@@ -58,15 +62,19 @@ export const WeatherEffects: React.FC = () => {
       rainGeoRef.current.attributes.position.needsUpdate = true;
     }
 
-    // Occasional lightning in storm
+    // Occasional lightning in storm via ref (0 React re-renders)
     if (weather === 'stormy') {
       if (Math.random() < 0.008) {
-        setLightningIntensity(2.5);
-      } else if (lightningIntensity > 0) {
-        setLightningIntensity((prev) => Math.max(0, prev - delta * 6));
+        lightningIntensityRef.current = 2.5;
+      } else if (lightningIntensityRef.current > 0) {
+        lightningIntensityRef.current = Math.max(0, lightningIntensityRef.current - delta * 6);
       }
-    } else if (lightningIntensity > 0) {
-      setLightningIntensity(0);
+    } else {
+      lightningIntensityRef.current = 0;
+    }
+
+    if (lightningLightRef.current) {
+      lightningLightRef.current.intensity = lightningIntensityRef.current * 4;
     }
   });
 
@@ -77,25 +85,26 @@ export const WeatherEffects: React.FC = () => {
         args={[
           isDay ? (weather === 'drought' ? '#fdba74' : '#bae6fd') : '#1e1b4b',
           isDay ? '#3f6212' : '#090d16',
-          (profile.ambientIntensity + lightningIntensity) * (isDay ? 1 : 0.35),
+          profile.ambientIntensity * (isDay ? 1 : 0.35),
         ]}
       />
 
-      {/* Main Directional Sunlight (Casts Shadows) */}
+      {/* Main Directional Sunlight (Casts Shadows based on quality setting) */}
       {isDay && (
         <directionalLight
           position={[sunX, Math.max(2, sunY), 10]}
           intensity={profile.sunIntensity * (weather === 'stormy' ? 0.3 : 1.1)}
           color={sunColor}
-          castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
+          castShadow={quality !== 'low'}
+          shadow-mapSize-width={quality === 'high' ? 1024 : 512}
+          shadow-mapSize-height={quality === 'high' ? 1024 : 512}
           shadow-camera-near={0.5}
           shadow-camera-far={45}
           shadow-camera-left={-12}
           shadow-camera-right={12}
           shadow-camera-top={12}
           shadow-camera-bottom={-12}
+          shadow-bias={-0.0005}
         />
       )}
 
@@ -107,7 +116,7 @@ export const WeatherEffects: React.FC = () => {
             intensity={0.5}
             color="#94a3b8"
           />
-          {/* Overhead Field Flood Light (Simulating Stadium Arena Glow Across the Field) */}
+          {/* Overhead Field Flood Light */}
           <pointLight
             position={[0, 9, 0]}
             intensity={2.2}
@@ -118,14 +127,13 @@ export const WeatherEffects: React.FC = () => {
       )}
 
       {/* Lightning Flash Light */}
-      {lightningIntensity > 0 && (
-        <pointLight
-          position={[0, 10, 0]}
-          intensity={lightningIntensity * 4}
-          color="#f4f4f5"
-          distance={40}
-        />
-      )}
+      <pointLight
+        ref={lightningLightRef}
+        position={[0, 10, 0]}
+        intensity={0}
+        color="#f4f4f5"
+        distance={40}
+      />
 
       {/* Visual Sun Sphere - Soft Silvery White */}
       {isDay && (

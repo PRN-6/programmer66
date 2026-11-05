@@ -12,17 +12,12 @@ import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { CROPS } from '../../game/simulation/cropConfig';
 import type { CropId } from '../../types/game';
 
-export const FarmToolbar: React.FC = () => {
-  const currentRoom = useCompetitionStore((state) => state.currentRoom);
-  const {
-    activeTool,
-    setActiveTool,
-    selectedSeed,
-    setSelectedSeed,
-    inventory,
-  } = useGameStore();
-
-  if (currentRoom) return null;
+const FarmToolbarContent: React.FC = () => {
+  const activeTool = useGameStore((s) => s.activeTool);
+  const setActiveTool = useGameStore((s) => s.setActiveTool);
+  const selectedSeed = useGameStore((s) => s.selectedSeed);
+  const setSelectedSeed = useGameStore((s) => s.setSelectedSeed);
+  const inventory = useGameStore((s) => s.inventory);
 
   const tools: { id: typeof activeTool; label: string; icon: React.ReactNode }[] = [
     { id: 'inspect', label: 'Select / Inspect', icon: <MousePointer className="w-4 h-4 text-neutral-300" /> },
@@ -89,4 +84,10 @@ export const FarmToolbar: React.FC = () => {
       </div>
     </div>
   );
+};
+
+export const FarmToolbar: React.FC = () => {
+  const currentRoom = useCompetitionStore((state) => state.currentRoom);
+  if (currentRoom) return null;
+  return <FarmToolbarContent />;
 };

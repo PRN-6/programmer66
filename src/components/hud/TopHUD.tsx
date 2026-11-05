@@ -1,4 +1,5 @@
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   Coins,
   Sun,
@@ -64,20 +65,43 @@ export const TopHUD: React.FC<TopHUDProps> = ({
     level,
     xp,
     day,
-    timeOfDay,
+    timeString,
+    isNight,
     weather,
     nextWeather,
     isPaused,
     gameSpeed,
     soundMuted,
-    setPaused,
-    setGameSpeed,
-    toggleMute,
-    toggleDayNight,
-    missions,
-  } = useGameStore();
+    uncompletedMissions,
+  } = useGameStore(
+    useShallow((s) => {
+      const hours = Math.floor(s.timeOfDay);
+      const minutes = Math.floor((s.timeOfDay - hours) * 60);
+      const formattedMinutes = minutes < 10 ? `0${minutes}` : `${minutes}`;
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 === 0 ? 12 : hours % 12;
 
-  const isNight = timeOfDay < 5.5 || timeOfDay > 18.5;
+      return {
+        money: s.money,
+        level: s.level,
+        xp: s.xp,
+        day: s.day,
+        timeString: `${displayHours}:${formattedMinutes} ${ampm}`,
+        isNight: s.timeOfDay < 5.5 || s.timeOfDay > 18.5,
+        weather: s.weather,
+        nextWeather: s.nextWeather,
+        isPaused: s.isPaused,
+        gameSpeed: s.gameSpeed,
+        soundMuted: s.soundMuted,
+        uncompletedMissions: s.missions.filter((m) => !m.completed).length,
+      };
+    })
+  );
+
+  const setPaused = useGameStore((s) => s.setPaused);
+  const setGameSpeed = useGameStore((s) => s.setGameSpeed);
+  const toggleMute = useGameStore((s) => s.toggleMute);
+  const toggleDayNight = useGameStore((s) => s.toggleDayNight);
 
   const currentRoom = useCompetitionStore((state) => state.currentRoom);
   const activeChallenge = useCompetitionStore((state) => state.activeChallenge);
@@ -88,21 +112,11 @@ export const TopHUD: React.FC<TopHUDProps> = ({
   const profile = WEATHER_PROFILES[weather];
   const nextProfile = WEATHER_PROFILES[nextWeather];
 
-  // Format 24-hr time to HH:MM AM/PM
-  const hours = Math.floor(timeOfDay);
-  const minutes = Math.floor((timeOfDay - hours) * 60);
-  const formattedMinutes = minutes < 10 ? `0${minutes}` : `${minutes}`;
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  const displayHours = hours % 12 === 0 ? 12 : hours % 12;
-  const timeString = `${displayHours}:${formattedMinutes} ${ampm}`;
-
   // Next level threshold
   const levelThresholds = [0, 100, 250, 500, 900, 1500, 3000];
   const currentLevelBase = levelThresholds[level - 1] || 0;
   const nextLevelXp = levelThresholds[level] || 3000;
   const xpProgress = Math.min(100, Math.max(0, ((xp - currentLevelBase) / (nextLevelXp - currentLevelBase)) * 100));
-
-  const uncompletedMissions = missions.filter((m) => !m.completed).length;
 
   return (
     <header className="h-14 shrink-0 w-full z-40 bg-neutral-950/95 backdrop-blur-md border-b border-neutral-800/80 px-4 flex items-center justify-between shadow-md">

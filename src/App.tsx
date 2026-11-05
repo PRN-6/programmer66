@@ -1,23 +1,43 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import confetti from 'canvas-confetti';
 import { FarmCanvas } from './game/world/FarmCanvas';
 import { TopHUD } from './components/hud/TopHUD';
 import { FarmToolbar } from './components/game/FarmToolbar';
 import { TileInspector } from './components/game/TileInspector';
 import { CodeEditorPanel } from './components/editor/CodeEditorPanel';
-import { MarketplaceModal } from './components/marketplace/MarketplaceModal';
-import { MissionsModal } from './components/missions/MissionsModal';
-import { RobotsModal } from './components/game/RobotsModal';
-import { ApiDocsModal } from './components/docs/ApiDocsModal';
-import { SettingsModal } from './components/settings/SettingsModal';
-import { AdminModal } from './components/admin/AdminModal';
-import { JoinCompetitionModal } from './components/competition/JoinCompetitionModal';
-import { ScoreboardModal } from './components/competition/ScoreboardModal';
-import { WaitingLobby } from './components/competition/WaitingLobby';
 import { useEditorStore } from './store/useEditorStore';
 import { useGameStore } from './store/useGameStore';
 import { useCompetitionStore } from './store/useCompetitionStore';
 import { soundManager } from './audio/soundEffects';
+
+// Lazy-loaded modal components to reduce initial page bundle
+const MarketplaceModal = lazy(() =>
+  import('./components/marketplace/MarketplaceModal').then((m) => ({ default: m.MarketplaceModal }))
+);
+const MissionsModal = lazy(() =>
+  import('./components/missions/MissionsModal').then((m) => ({ default: m.MissionsModal }))
+);
+const RobotsModal = lazy(() =>
+  import('./components/game/RobotsModal').then((m) => ({ default: m.RobotsModal }))
+);
+const ApiDocsModal = lazy(() =>
+  import('./components/docs/ApiDocsModal').then((m) => ({ default: m.ApiDocsModal }))
+);
+const SettingsModal = lazy(() =>
+  import('./components/settings/SettingsModal').then((m) => ({ default: m.SettingsModal }))
+);
+const AdminModal = lazy(() =>
+  import('./components/admin/AdminModal').then((m) => ({ default: m.AdminModal }))
+);
+const JoinCompetitionModal = lazy(() =>
+  import('./components/competition/JoinCompetitionModal').then((m) => ({ default: m.JoinCompetitionModal }))
+);
+const ScoreboardModal = lazy(() =>
+  import('./components/competition/ScoreboardModal').then((m) => ({ default: m.ScoreboardModal }))
+);
+const WaitingLobby = lazy(() =>
+  import('./components/competition/WaitingLobby').then((m) => ({ default: m.WaitingLobby }))
+);
 
 export function App() {
   const [editorOpen, setEditorOpen] = useState(true);
@@ -115,28 +135,30 @@ export function App() {
         )}
       </div>
 
-      {/* Modals */}
-      {showMarket && <MarketplaceModal onClose={() => setShowMarket(false)} />}
-      {showMissions && (
-        <MissionsModal
-          onClose={() => setShowMissions(false)}
-          onOpenEditor={() => setEditorOpen(true)}
-        />
-      )}
-      {showRobots && <RobotsModal onClose={() => setShowRobots(false)} />}
-      {showDocsModal && <ApiDocsModal onClose={() => setShowDocsModal(false)} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
-      {showAdminModal && <AdminModal onClose={() => setShowAdminModal(false)} />}
-      {showJoinModal && <JoinCompetitionModal onClose={() => setShowJoinModal(false)} />}
-      {showScoreboardModal && <ScoreboardModal onClose={() => setShowScoreboardModal(false)} />}
+      {/* Lazy Loaded Modals & Overlays */}
+      <Suspense fallback={null}>
+        {showMarket && <MarketplaceModal onClose={() => setShowMarket(false)} />}
+        {showMissions && (
+          <MissionsModal
+            onClose={() => setShowMissions(false)}
+            onOpenEditor={() => setEditorOpen(true)}
+          />
+        )}
+        {showRobots && <RobotsModal onClose={() => setShowRobots(false)} />}
+        {showDocsModal && <ApiDocsModal onClose={() => setShowDocsModal(false)} />}
+        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+        {showAdminModal && <AdminModal onClose={() => setShowAdminModal(false)} />}
+        {showJoinModal && <JoinCompetitionModal onClose={() => setShowJoinModal(false)} />}
+        {showScoreboardModal && <ScoreboardModal onClose={() => setShowScoreboardModal(false)} />}
 
-      {/* Fullscreen Waiting Lobby for Participants when Room is in 'waiting' status */}
-      {isWaitingForAdmin && (
-        <WaitingLobby
-          onOpenScoreboard={() => setShowScoreboardModal(true)}
-          onOpenDocs={() => setShowDocsModal(true)}
-        />
-      )}
+        {/* Fullscreen Waiting Lobby for Participants when Room is in 'waiting' status */}
+        {isWaitingForAdmin && (
+          <WaitingLobby
+            onOpenScoreboard={() => setShowScoreboardModal(true)}
+            onOpenDocs={() => setShowDocsModal(true)}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

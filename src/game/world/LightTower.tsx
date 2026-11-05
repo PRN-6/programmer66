@@ -10,6 +10,7 @@ interface LightTowerProps {
 
 export const LightTower: React.FC<LightTowerProps> = ({ position, target }) => {
   const timeOfDay = useGameStore((state) => state.timeOfDay);
+  const quality = useGameStore((state) => state.graphicsQuality);
   const beaconRef = useRef<THREE.Mesh>(null);
   const spotLightRef = useRef<THREE.SpotLight>(null);
 
@@ -220,38 +221,40 @@ export const LightTower: React.FC<LightTowerProps> = ({ position, target }) => {
           <spotLight
             ref={spotLightRef}
             position={[0, towerHeight, lampZOffset]}
-            intensity={9.5}
+            intensity={quality === 'low' ? 5.5 : 9.5}
             angle={0.65}
             penumbra={0.35}
-            distance={40}
+            distance={35}
             color="#fffef0"
-            castShadow
-            shadow-mapSize-width={1024}
-            shadow-mapSize-height={1024}
+            castShadow={quality === 'high'}
+            shadow-mapSize-width={512}
+            shadow-mapSize-height={512}
             shadow-bias={-0.0001}
           />
 
           {/* Wide-Angle Stadium Field Wash PointLight */}
           <pointLight
             position={[0, towerHeight - 0.2, lampZOffset + 0.8]}
-            intensity={2.8}
-            distance={25}
+            intensity={quality === 'low' ? 1.8 : 2.8}
+            distance={22}
             color="#fffef0"
           />
 
-          {/* Volumetric Stadium Light Shaft: Starts at lamps (narrow) and expands onto farm grid (wide) */}
-          <group position={beamMid.toArray()} rotation={[beamAngleX, 0, 0]}>
-            <mesh position={[0, 0, 0]}>
-              <cylinderGeometry args={[0.4, 4.4, beamLength, 24, 1, true]} />
-              <meshBasicMaterial
-                color="#fffef0"
-                transparent
-                opacity={0.065}
-                side={THREE.DoubleSide}
-                depthWrite={false}
-              />
-            </mesh>
-          </group>
+          {/* Volumetric Stadium Light Shaft: only rendered in balanced/high modes */}
+          {quality !== 'low' && (
+            <group position={beamMid.toArray()} rotation={[beamAngleX, 0, 0]}>
+              <mesh position={[0, 0, 0]}>
+                <cylinderGeometry args={[0.4, 4.4, beamLength, 16, 1, true]} />
+                <meshBasicMaterial
+                  color="#fffef0"
+                  transparent
+                  opacity={0.065}
+                  side={THREE.DoubleSide}
+                  depthWrite={false}
+                />
+              </mesh>
+            </group>
+          )}
         </>
       )}
     </group>

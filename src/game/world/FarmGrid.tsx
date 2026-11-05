@@ -3,20 +3,11 @@ import { useGameStore } from '../../store/useGameStore';
 import { CropRenderer } from './CropRenderer';
 
 export const FarmGrid: React.FC = () => {
-  const {
-    tiles,
-    gridWidth,
-    gridHeight,
-    selectedTileCoord,
-    selectTile,
-    activeTool,
-    selectedSeed,
-    plantCrop,
-    waterTile,
-    harvestTile,
-    fertilizeTile,
-    clearWeeds,
-  } = useGameStore();
+  const tiles = useGameStore((s) => s.tiles);
+  const gridWidth = useGameStore((s) => s.gridWidth);
+  const gridHeight = useGameStore((s) => s.gridHeight);
+  const selectedTileCoord = useGameStore((s) => s.selectedTileCoord);
+  const selectTile = useGameStore((s) => s.selectTile);
 
   const [hoveredCoord, setHoveredCoord] = useState<{ x: number; y: number } | null>(null);
 
@@ -27,16 +18,19 @@ export const FarmGrid: React.FC = () => {
   const handleTileClick = (x: number, y: number) => {
     selectTile(x, y);
 
+    const state = useGameStore.getState();
+    const { activeTool, selectedSeed } = state;
+
     if (activeTool === 'plant') {
-      plantCrop(x, y, selectedSeed);
+      state.plantCrop(x, y, selectedSeed);
     } else if (activeTool === 'water') {
-      waterTile(x, y);
+      state.waterTile(x, y);
     } else if (activeTool === 'harvest') {
-      harvestTile(x, y);
+      state.harvestTile(x, y);
     } else if (activeTool === 'fertilize') {
-      fertilizeTile(x, y);
+      state.fertilizeTile(x, y);
     } else if (activeTool === 'clear') {
-      clearWeeds(x, y);
+      state.clearWeeds(x, y);
     }
   };
 

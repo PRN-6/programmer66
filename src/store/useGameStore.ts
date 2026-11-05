@@ -48,6 +48,7 @@ export interface GameState {
   soundMuted: boolean;
   sfxVolume: number;
   ambienceVolume: number;
+  graphicsQuality: 'high' | 'balanced' | 'low';
   cameraFollowRobot: boolean;
   robotActionCount: number;
 
@@ -61,6 +62,7 @@ export interface GameState {
   setPaused: (paused: boolean) => void;
   setTimeOfDay: (time: number) => void;
   toggleDayNight: () => void;
+  setGraphicsQuality: (quality: 'high' | 'balanced' | 'low') => void;
 
   // Farming actions
   plantCrop: (x: number, y: number, crop: CropId) => boolean;
@@ -196,6 +198,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   soundMuted: false,
   sfxVolume: 0.5,
   ambienceVolume: 0.25,
+  graphicsQuality:
+    typeof window !== 'undefined' && typeof localStorage !== 'undefined'
+      ? ((localStorage.getItem('programmer66_graphics') as 'high' | 'balanced' | 'low') || 'balanced')
+      : 'balanced',
   cameraFollowRobot: false,
   robotActionCount: 0,
 
@@ -323,7 +329,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       tiles: hasChanges ? updatedTiles : state.tiles,
     });
 
-    state.checkMissions();
+    if (hasChanges) {
+      state.checkMissions();
+    }
   },
 
   selectTile: (x: number, y: number) => {
@@ -747,6 +755,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ cameraFollowRobot: follow });
   },
 
+  setGraphicsQuality: (quality: 'high' | 'balanced' | 'low') => {
+    set({ graphicsQuality: quality });
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('programmer66_graphics', quality);
+      } catch (e) {
+        console.warn('Failed to save graphics setting:', e);
+      }
+    }
+  },
+
   saveGame: () => {
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
     const state = get();
@@ -764,6 +783,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         stats: state.stats,
         missions: state.missions,
         robotActionCount: state.robotActionCount,
+        graphicsQuality: state.graphicsQuality,
       };
       localStorage.setItem('programmer66_save', JSON.stringify(saveData));
     } catch (e) {
@@ -797,6 +817,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         stats: data.stats,
         missions: data.missions,
         robotActionCount: data.robotActionCount || 0,
+        graphicsQuality: data.graphicsQuality || get().graphicsQuality,
       });
       return true;
     } catch (e) {

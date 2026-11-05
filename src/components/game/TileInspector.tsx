@@ -11,32 +11,30 @@ import { useGameStore } from '../../store/useGameStore';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { CROPS } from '../../game/simulation/cropConfig';
 
-export const TileInspector: React.FC = () => {
+interface TileInspectorContentProps {
+  coord: { x: number; y: number };
+}
+
+const TileInspectorContent: React.FC<TileInspectorContentProps> = ({ coord }) => {
   const currentRoom = useCompetitionStore((state) => state.currentRoom);
   const isCompeting = Boolean(currentRoom);
-  const {
-    selectedTileCoord,
-    tiles,
-    clearSelection,
-    plantCrop,
-    waterTile,
-    harvestTile,
-    fertilizeTile,
-    clearWeeds,
-    selectedSeed,
-    inventory,
-  } = useGameStore();
 
-  if (!selectedTileCoord) return null;
+  const key = `${coord.x}_${coord.y}`;
+  const tile = useGameStore((state) => state.tiles[key]);
+  const clearSelection = useGameStore((state) => state.clearSelection);
+  const selectedSeed = useGameStore((state) => state.selectedSeed);
+  const seedCount = useGameStore((state) => state.inventory[`${state.selectedSeed}_seed`] || 0);
+  const fertCount = useGameStore((state) => state.inventory['fertilizer'] || 0);
 
-  const key = `${selectedTileCoord.x}_${selectedTileCoord.y}`;
-  const tile = tiles[key];
   if (!tile || !tile.unlocked) return null;
 
   const cropConfig = tile.crop ? CROPS[tile.crop] : null;
-  const seedKey = `${selectedSeed}_seed`;
-  const seedCount = inventory[seedKey] || 0;
-  const fertCount = inventory['fertilizer'] || 0;
+
+  const handlePlant = () => useGameStore.getState().plantCrop(coord.x, coord.y, selectedSeed);
+  const handleWater = () => useGameStore.getState().waterTile(coord.x, coord.y);
+  const handleHarvest = () => useGameStore.getState().harvestTile(coord.x, coord.y);
+  const handleFertilize = () => useGameStore.getState().fertilizeTile(coord.x, coord.y);
+  const handleClearWeeds = () => useGameStore.getState().clearWeeds(coord.x, coord.y);
 
   return (
     <div className="absolute top-4 left-4 z-20 pointer-events-auto w-72 bg-neutral-950/95 backdrop-blur-md rounded-2xl border border-neutral-800 shadow-2xl p-4 text-neutral-100 flex flex-col gap-3">
@@ -133,7 +131,7 @@ export const TileInspector: React.FC = () => {
           <div className="flex items-center justify-between text-xs bg-neutral-900 border border-neutral-800 px-2 py-1.5 rounded-lg text-neutral-300">
             <span>Weeds Present: {tile.weedLevel}%</span>
             <button
-              onClick={() => clearWeeds(tile.x, tile.y)}
+              onClick={handleClearWeeds}
               className="px-2 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded text-[10px] font-bold border border-neutral-700"
             >
               Clear
@@ -147,7 +145,7 @@ export const TileInspector: React.FC = () => {
         <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-800">
           {tile.crop === null ? (
             <button
-              onClick={() => plantCrop(tile.x, tile.y, selectedSeed)}
+              onClick={handlePlant}
               disabled={seedCount <= 0}
               className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs transition border ${
                 seedCount > 0
@@ -160,7 +158,7 @@ export const TileInspector: React.FC = () => {
             </button>
           ) : tile.stage === 'mature' ? (
             <button
-              onClick={() => harvestTile(tile.x, tile.y)}
+              onClick={handleHarvest}
               className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs bg-neutral-200 hover:bg-white text-neutral-950 shadow-md animate-pulse"
             >
               <Scissors className="w-3.5 h-3.5" />
@@ -173,7 +171,7 @@ export const TileInspector: React.FC = () => {
           )}
 
           <button
-            onClick={() => waterTile(tile.x, tile.y)}
+            onClick={handleWater}
             className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 transition shadow-sm"
           >
             <Droplets className="w-3.5 h-3.5" />
@@ -181,7 +179,7 @@ export const TileInspector: React.FC = () => {
           </button>
 
           <button
-            onClick={() => fertilizeTile(tile.x, tile.y)}
+            onClick={handleFertilize}
             disabled={fertCount <= 0}
             className={`col-span-2 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl font-bold text-xs transition border ${
               fertCount > 0
@@ -200,4 +198,10 @@ export const TileInspector: React.FC = () => {
       )}
     </div>
   );
+};
+
+export const TileInspector: React.FC = () => {
+  const selectedTileCoord = useGameStore((state) => state.selectedTileCoord);
+  if (!selectedTileCoord) return null;
+  return <TileInspectorContent coord={selectedTileCoord} />;
 };
