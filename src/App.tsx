@@ -4,6 +4,7 @@ import { FarmCanvas } from './game/world/FarmCanvas';
 import { TopHUD } from './components/hud/TopHUD';
 import { FarmToolbar } from './components/game/FarmToolbar';
 import { TileInspector } from './components/game/TileInspector';
+import { MissionsTrackerWidget } from './components/missions/MissionsTrackerWidget';
 import { CodeEditorPanel } from './components/editor/CodeEditorPanel';
 import { useEditorStore } from './store/useEditorStore';
 import { useGameStore } from './store/useGameStore';
@@ -122,8 +123,14 @@ export function App() {
         <div className="flex-1 min-w-0 h-full relative overflow-hidden">
           <FarmCanvas />
 
-          {/* Floating Tile Inspector */}
-          <TileInspector />
+          {/* Left-docked floating panels: Soil Plot Inspector & Missions Tracker */}
+          <div className="absolute top-4 left-0 z-20 pointer-events-none flex flex-col items-start gap-2.5 max-h-[calc(100vh-90px)] overflow-y-auto no-scrollbar">
+            <TileInspector />
+            <MissionsTrackerWidget
+              onOpenEditor={() => setEditorOpen(true)}
+              onOpenFullModal={() => setShowMissions(true)}
+            />
+          </div>
 
           {/* Bottom Farm Interaction Toolbar */}
           <FarmToolbar />
