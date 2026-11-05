@@ -41,7 +41,7 @@ const WaitingLobby = lazy(() =>
 );
 
 export function App() {
-  const [editorOpen, setEditorOpen] = useState(true);
+  const [editorOpen, setEditorOpen] = useState(false);
   const [showMarket, setShowMarket] = useState(false);
   const [showMissions, setShowMissions] = useState(false);
   const [showRobots, setShowRobots] = useState(false);
@@ -84,6 +84,14 @@ export function App() {
     }
     prevStatusRef.current = currentRoom?.status || null;
   }, [currentRoom?.status, isAdmin]);
+
+  // Automatically open the code editor when active competition starts
+  useEffect(() => {
+    if (currentRoom?.status === 'active') {
+      const timer = setTimeout(() => setEditorOpen(true), 0);
+      return () => clearTimeout(timer);
+    }
+  }, [currentRoom?.status]);
 
   // Auto-load saved game and competition session on mount
   useEffect(() => {

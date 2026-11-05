@@ -93,7 +93,7 @@ export const FarmCanvas: React.FC = () => {
           stencil: false,
           depth: true,
         }}
-        camera={{ position: [10, 11, 11], fov: 42 }}
+        camera={{ position: [2.8, 9.2, 9.2], fov: 42 }}
         className="w-full h-full"
       >
         {/* Dynamic adaptive frame scaling for silky 60 FPS on low-power devices */}

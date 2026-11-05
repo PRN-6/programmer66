@@ -29,7 +29,7 @@ export const MissionsTrackerWidget: React.FC<MissionsTrackerWidgetProps> = ({
   const claimMissionReward = useGameStore((state) => state.claimMissionReward);
   const { addTab, updateCode, tabs } = useEditorStore();
 
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
 
   // Hidden in competition rooms (competition mode has its own dedicated tournament round challenges)
   if (currentRoom) return null;
@@ -245,3 +245,4 @@ export const MissionsTrackerWidget: React.FC<MissionsTrackerWidgetProps> = ({
     </div>
   );
 };
+
