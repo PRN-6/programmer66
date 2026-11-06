@@ -16,14 +16,19 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { useAuthStore, SUPER_ADMIN_DEFAULTS } from '../../store/useAuthStore';
+import { useAuthStore } from '../../store/useAuthStore';
 
 interface AuthModalProps {
   onClose: () => void;
   defaultMode?: 'signin' | 'signup' | 'admin';
+  onOpenMaintenance?: () => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'signin' }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({
+  onClose,
+  defaultMode = 'signin',
+  onOpenMaintenance,
+}) => {
   const [mode, setMode] = useState<'signin' | 'signup' | 'admin'>(defaultMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,13 +36,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
   const [displayName, setDisplayName] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
-  const handleQuickFillAdmin = () => {
-    setEmail(SUPER_ADMIN_DEFAULTS.username || 'admin');
-    setPassword(SUPER_ADMIN_DEFAULTS.password || 'admin123');
-    setFormError(null);
-  };
-
-  const { signIn, signUp, signInWithGoogle, loginAsSuperAdmin, directDevLogin, isLoading, error, setError } =
+  const { signIn, signUp, signInWithGoogle, loginAsSuperAdmin, isLoading, error, setError } =
     useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,8 +60,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
       const success = loginAsSuperAdmin(cleanInput, password);
       if (success) {
         onClose();
+        onOpenMaintenance?.();
       } else {
-        setFormError('Invalid Super Admin credentials. Please check your .env settings.');
+        setFormError('Invalid Super Admin credentials. Access denied.');
       }
       return;
     }
@@ -204,27 +204,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
-          {mode === 'admin' && (
-            <div className="space-y-3 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  directDevLogin();
-                  onClose();
-                }}
-                className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-neutral-950 font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-950/60 transition transform active:scale-95 cursor-pointer"
-              >
-                <Zap className="w-4 h-4 fill-current text-neutral-950" />
-                <span>⚡ Instant 1-Click Developer Access</span>
-              </button>
-              <div className="flex items-center gap-2 text-[10px] text-neutral-500 uppercase tracking-wider font-bold">
-                <div className="flex-1 h-px bg-neutral-800" />
-                <span>or authorize with master credentials</span>
-                <div className="flex-1 h-px bg-neutral-800" />
-              </div>
-            </div>
-          )}
-
           {displayError && (
             <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-xl text-red-200 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
@@ -266,10 +245,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
                 type="text"
                 placeholder={
                   mode === 'admin'
-                    ? 'admin or admin@programmer66.com'
+                    ? 'Enter admin username or email'
                     : mode === 'signup'
-                    ? 'test1@gmail.com or test1'
-                    : 'test1 or test1@gmail.com'
+                    ? 'e.g. player1@gmail.com or player1'
+                    : 'Username or email'
                 }
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -295,7 +274,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
               )}
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder={mode === 'admin' ? 'Default: admin123' : 'Enter password'}
+                placeholder={mode === 'admin' ? '••••••••' : 'Enter password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -318,51 +297,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
 
           {/* Perks or Admin info banner */}
           {mode === 'admin' ? (
-            <div className="bg-amber-500/10 p-3 rounded-xl border border-amber-500/30 space-y-2 text-[11px] text-amber-200/90">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 font-semibold text-amber-300">
-                  <Shield className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>Super Admin Credentials</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleQuickFillAdmin}
-                  className="px-2 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded text-[10px] font-bold flex items-center gap-1 transition"
-                  title="Auto-fill master credentials"
-                >
-                  <Zap className="w-3 h-3 text-amber-400" />
-                  <span>Auto-Fill</span>
-                </button>
+            <div className="bg-neutral-900/60 p-3 rounded-xl border border-neutral-800 space-y-1.5 text-[11px] text-neutral-400">
+              <div className="flex items-center gap-1.5 text-amber-300 font-semibold">
+                <Shield className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>Super Admin & Maintenance Portal</span>
               </div>
-
-              <div className="bg-neutral-950/80 p-2 rounded-lg border border-amber-500/20 font-mono text-[11px] space-y-1 text-neutral-300">
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-400">Username:</span>
-                  <span className="font-bold text-amber-300">admin</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-400">Password:</span>
-                  <span className="font-bold text-amber-300">admin123</span>
-                </div>
-              </div>
-
               <p className="text-[10px] text-neutral-400 leading-relaxed">
-                Credentials from <code className="text-amber-300">.env</code>. Click <b className="text-amber-200">Auto-Fill</b> or enter <code className="text-white">admin</code> / <code className="text-white">admin123</code>.
+                Authorized developer access only. Unlocks live website maintenance mode, system diagnostics, and operational controls.
               </p>
             </div>
           ) : (
             <div className="bg-neutral-900/60 p-3 rounded-xl border border-neutral-800/80 space-y-1.5 text-[11px] text-neutral-400">
               <div className="flex items-center gap-1.5 text-neutral-300">
                 <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span>Instant Dev & Cloud Registration (No email confirmation wait)</span>
+                <span>Instant Registration (Saves your level, coins, and farm plots)</span>
               </div>
               <div className="flex items-center gap-1.5 text-neutral-300">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Saves your level, coins, and farm plots automatically</span>
+                <span>Competes on the live World Leaderboard</span>
               </div>
               <div className="flex items-center gap-1.5 text-neutral-300">
                 <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                <span>Works on any laptop or computer</span>
+                <span>Works on any laptop or device</span>
               </div>
             </div>
           )}
@@ -384,7 +340,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
               </>
             ) : mode === 'admin' ? (
               <>
-                <span>Authorize & Open Admin Dashboard</span>
+                <span>Authorize & Open Maintenance Console</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </>
             ) : (

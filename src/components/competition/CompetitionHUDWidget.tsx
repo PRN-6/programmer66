@@ -21,7 +21,7 @@ export const CompetitionHUDWidget: React.FC = () => {
         <button
           onClick={() => setShowAdminModal(true)}
           className="p-1.5 bg-neutral-950/40 hover:bg-neutral-900/60 border border-white/10 hover:border-amber-500/40 rounded-xl text-neutral-400 hover:text-amber-300 text-xs transition shadow-lg backdrop-blur-md"
-          title="Open Admin Competition Console"
+          title="Open Organizer Console (Create / Host Hackathon)"
         >
           <Shield className="w-3.5 h-3.5" />
         </button>
@@ -48,9 +48,10 @@ export const CompetitionHUDWidget: React.FC = () => {
         <button
           onClick={() => setShowAdminModal(true)}
           className="flex items-center gap-1.5 px-3 py-1 bg-amber-600 hover:bg-amber-500 text-neutral-950 font-bold rounded-xl text-xs transition shadow-lg"
+          title="Open Event Organizer Console"
         >
           <Shield className="w-3.5 h-3.5" />
-          <span>Admin</span>
+          <span>Organizer</span>
         </button>
       ) : (
         <button

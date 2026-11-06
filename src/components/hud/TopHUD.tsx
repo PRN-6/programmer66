@@ -21,6 +21,7 @@ import {
   ChevronDown,
   CheckCircle2,
   Globe,
+  Wrench,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
@@ -31,6 +32,7 @@ import { CompetitionHUDWidget } from '../competition/CompetitionHUDWidget';
 interface TopHUDProps {
   onOpenWorldLeaderboard?: () => void;
   onOpenSettings: () => void;
+  onOpenMaintenance?: () => void;
   onToggleEditor: () => void;
   editorOpen: boolean;
 }
@@ -55,6 +57,7 @@ const WeatherIcon: React.FC<{ weather: string }> = ({ weather }) => {
 export const TopHUD: React.FC<TopHUDProps> = ({
   onOpenWorldLeaderboard,
   onOpenSettings,
+  onOpenMaintenance,
   onToggleEditor,
   editorOpen,
 }) => {
@@ -394,18 +397,41 @@ export const TopHUD: React.FC<TopHUDProps> = ({
                   )}
                 </div>
 
-                {/* Organizer Dashboard Quick Action */}
+                {/* Super Admin Quick Actions: System Maintenance & Organizer Console */}
                 {isSuperAdmin && (
-                  <button
-                    onClick={() => {
-                      setShowAdminModal(true);
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full text-left px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition font-bold flex items-center justify-between"
-                  >
-                    <span>Admin Dashboard</span>
-                    <Shield className="w-3.5 h-3.5 text-amber-400" />
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        onOpenMaintenance?.();
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 transition font-bold flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Wrench className="w-3.5 h-3.5 text-amber-400" />
+                        <span>System Maintenance</span>
+                      </div>
+                      <span className="text-[10px] bg-neutral-950/80 px-1 py-0.5 rounded text-amber-400 font-mono">
+                        DEV
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowAdminModal(true);
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-700/80 transition font-semibold flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Organizer Console</span>
+                      </div>
+                      <span className="text-[10px] text-neutral-400 font-mono">
+                        ROOMS
+                      </span>
+                    </button>
+                  </>
                 )}
 
                 {!isSuperAdmin && (

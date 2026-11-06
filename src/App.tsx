@@ -13,6 +13,10 @@ import { useAuthStore } from './store/useAuthStore';
 import { CompetitionService } from './services/competitionService';
 import { soundManager } from './audio/soundEffects';
 
+import { MaintenanceScreen } from './components/maintenance/MaintenanceScreen';
+import { useMaintenanceStore } from './store/useMaintenanceStore';
+import { X, Wrench } from 'lucide-react';
+
 // Lazy-loaded modal components to reduce initial page bundle
 const MarketplaceModal = lazy(() =>
   import('./components/marketplace/MarketplaceModal').then((m) => ({ default: m.MarketplaceModal }))
@@ -31,6 +35,11 @@ const SettingsModal = lazy(() =>
 );
 const AdminModal = lazy(() =>
   import('./components/admin/AdminModal').then((m) => ({ default: m.AdminModal }))
+);
+const SystemMaintenanceModal = lazy(() =>
+  import('./components/admin/SystemMaintenanceModal').then((m) => ({
+    default: m.SystemMaintenanceModal,
+  }))
 );
 const JoinCompetitionModal = lazy(() =>
   import('./components/competition/JoinCompetitionModal').then((m) => ({ default: m.JoinCompetitionModal }))
@@ -58,6 +67,12 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showWorldLeaderboard, setShowWorldLeaderboard] = useState(false);
   const [showMissionsTracker, setShowMissionsTracker] = useState(false);
+  const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+
+  const isMaintenanceActive = useMaintenanceStore((state) => state.isMaintenanceActive);
+  const maintenanceType = useMaintenanceStore((state) => state.maintenanceType);
+  const broadcastMessage = useMaintenanceStore((state) => state.broadcastMessage);
+  const clearBroadcast = useMaintenanceStore((state) => state.clearBroadcast);
 
   const showDocsModal = useEditorStore((state) => state.showDocsModal);
   const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
@@ -66,6 +81,7 @@ export function App() {
   const showAuthModal = useAuthStore((state) => state.showAuthModal);
   const setShowAuthModal = useAuthStore((state) => state.setShowAuthModal);
   const initAuth = useAuthStore((state) => state.initAuth);
+  const isSuperAdmin = useAuthStore((state) => state.isSuperAdmin);
 
   const showAdminModal = useCompetitionStore((state) => state.showAdminModal);
   const setShowAdminModal = useCompetitionStore((state) => state.setShowAdminModal);
@@ -194,9 +210,47 @@ export function App() {
       <TopHUD
         onOpenWorldLeaderboard={() => setShowWorldLeaderboard(true)}
         onOpenSettings={() => setShowSettings(true)}
+        onOpenMaintenance={() => setShowMaintenanceModal(true)}
         onToggleEditor={() => setEditorOpen((prev) => !prev)}
         editorOpen={editorOpen}
       />
+
+      {/* Floating System Broadcast Alert Banner */}
+      {broadcastMessage && (
+        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2 rounded-2xl bg-amber-500/95 text-neutral-950 font-bold text-xs shadow-2xl backdrop-blur-md animate-in slide-in-from-top-4">
+          <span className="font-mono uppercase text-[10px] bg-neutral-950 text-amber-300 px-1.5 py-0.5 rounded font-black">
+            System Notice
+          </span>
+          <span>{broadcastMessage}</span>
+          <button
+            onClick={clearBroadcast}
+            className="p-1 hover:bg-black/20 rounded-lg transition"
+            title="Dismiss notice"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Super Admin Bypass Floating Indicator when Maintenance is active */}
+      {isMaintenanceActive && isSuperAdmin && (
+        <div className="fixed top-16 right-4 z-40 animate-in fade-in flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/95 text-neutral-950 font-bold text-xs shadow-xl shadow-amber-950/40 border border-amber-400">
+          <span className="w-2 h-2 rounded-full bg-neutral-950 animate-ping" />
+          <span>Live Maintenance Active (Admin Bypass)</span>
+          <button
+            onClick={() => setShowMaintenanceModal(true)}
+            className="px-2 py-0.5 rounded-lg bg-neutral-950/20 hover:bg-neutral-950/40 text-neutral-950 text-[10px] uppercase font-mono ml-1 flex items-center gap-1"
+          >
+            <Wrench className="w-3 h-3" />
+            <span>Console</span>
+          </button>
+        </div>
+      )}
+
+      {/* Full Lockdown Screen for Public Visitors during Maintenance */}
+      {isMaintenanceActive && maintenanceType === 'lockdown' && !isSuperAdmin && (
+        <MaintenanceScreen onOpenAdminAuth={() => setShowAuthModal(true)} />
+      )}
 
       {/* Lazy Loaded Modals & Overlays */}
       <Suspense fallback={null}>
@@ -215,9 +269,23 @@ export function App() {
         {showDocsModal && <ApiDocsModal onClose={() => setShowDocsModal(false)} />}
         {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
         {showAdminModal && <AdminModal onClose={() => setShowAdminModal(false)} />}
+        {showMaintenanceModal && (
+          <SystemMaintenanceModal
+            onClose={() => setShowMaintenanceModal(false)}
+            onOpenOrganizer={() => {
+              setShowMaintenanceModal(false);
+              setShowAdminModal(true);
+            }}
+          />
+        )}
         {showJoinModal && <JoinCompetitionModal onClose={() => setShowJoinModal(false)} />}
         {showScoreboardModal && <ScoreboardModal onClose={() => setShowScoreboardModal(false)} />}
-        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+        {showAuthModal && (
+          <AuthModal
+            onClose={() => setShowAuthModal(false)}
+            onOpenMaintenance={() => setShowMaintenanceModal(true)}
+          />
+        )}
         {showWorldLeaderboard && (
           <WorldLeaderboardModal
             onClose={() => setShowWorldLeaderboard(false)}

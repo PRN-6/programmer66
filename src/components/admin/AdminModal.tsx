@@ -228,9 +228,9 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-neutral-100">Event Admin & Competition Manager</h2>
+                <h2 className="text-lg font-bold text-neutral-100">Competition Organizer Console</h2>
                 <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  Organizer Console
+                  Hackathon Host
                 </span>
                 {isFullScreen && (
                   <span className="hidden sm:inline px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-neutral-800 text-neutral-400 border border-neutral-700">
