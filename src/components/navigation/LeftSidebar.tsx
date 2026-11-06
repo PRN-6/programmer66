@@ -22,8 +22,6 @@ export interface LeftSidebarProps {
   onOpenMissionsModal: () => void;
   onToggleMissionsTracker: () => void;
   isMissionsTrackerOpen: boolean;
-  onTogglePlotInspector: () => void;
-  isPlotInspectorOpen: boolean;
   onOpenRobots: () => void;
   onOpenWorldLeaderboard: () => void;
   onOpenDocs: () => void;
@@ -34,8 +32,6 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   onOpenMissionsModal,
   onToggleMissionsTracker,
   isMissionsTrackerOpen,
-  onTogglePlotInspector,
-  isPlotInspectorOpen,
   onOpenRobots,
   onOpenWorldLeaderboard,
   onOpenDocs,
@@ -267,30 +263,22 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
         {/* Selected Soil Plot Item (Shown seamlessly inside the dock whenever a plot is selected!) */}
         {selectedTile && (
           <div className="pt-1 mt-0.5 border-t border-white/10">
-            <button
-              onClick={() => {
-                soundManager.playPlant();
-                onTogglePlotInspector();
-              }}
+            <div
               className={`group relative flex items-center rounded-xl transition-all duration-150 text-left ${
                 isCollapsed
                   ? 'p-2 justify-center w-full'
                   : 'px-2.5 py-2 w-full gap-2.5'
-              } ${
-                isPlotInspectorOpen
-                  ? 'bg-sky-500/20 border border-sky-500/40 text-sky-200'
-                  : 'hover:bg-neutral-900/80 border border-transparent hover:border-white/10'
-              }`}
+              } bg-sky-500/15 border border-sky-500/30 text-sky-200`}
               title={
                 isCollapsed
                   ? `Plot (${selectedTile.x}, ${selectedTile.y}) • ${
                       selectedCropConfig?.name || 'Empty'
-                    } • 💧${Math.round(selectedTile.moisture)}%`
+                    } • 💧${Math.round(selectedTile.moisture)}% • ✦${Math.round(selectedTile.nutrients)}%`
                   : undefined
               }
             >
               {/* Plot Coordinates Icon Badge */}
-              <div className="relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border bg-sky-500/15 border-sky-500/30 text-sky-300 font-mono text-[10px] font-bold shadow-sm group-hover:scale-105 transition">
+              <div className="relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border bg-sky-500/20 border-sky-500/40 text-sky-300 font-mono text-[10px] font-bold shadow-sm group-hover:scale-105 transition">
                 <span>
                   {selectedTile.x},{selectedTile.y}
                 </span>
@@ -301,15 +289,19 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
               {!isCollapsed && (
                 <div className="flex items-center justify-between min-w-0 flex-1">
                   <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-bold text-neutral-100 group-hover:text-white leading-tight truncate">
+                    <span className="text-xs font-bold text-neutral-100 leading-tight truncate">
                       Plot ({selectedTile.x}, {selectedTile.y})
                     </span>
-                    <span className="text-[10px] text-neutral-400 group-hover:text-neutral-300 truncate font-sans flex items-center gap-1">
-                      <span>{selectedCropConfig?.name || 'Empty Bed'}</span>
+                    <span className="text-[10px] text-neutral-400 truncate font-sans flex items-center gap-1 mt-0.5">
+                      <span className="text-neutral-300 font-medium">{selectedCropConfig?.name || 'Empty Bed'}</span>
                       <span>•</span>
                       <span className="flex items-center gap-0.5 text-sky-400 font-mono">
                         <Droplets className="w-2.5 h-2.5" />
                         {Math.round(selectedTile.moisture)}%
+                      </span>
+                      <span>•</span>
+                      <span className="text-amber-400 font-mono">
+                        ✦{Math.round(selectedTile.nutrients)}%
                       </span>
                     </span>
                   </div>
@@ -334,11 +326,12 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                   </span>
                   <span className="text-[10px] text-neutral-400">
                     {selectedCropConfig?.name || 'Empty'} • 💧
-                    {Math.round(selectedTile.moisture)}%
+                    {Math.round(selectedTile.moisture)}% • ✦
+                    {Math.round(selectedTile.nutrients)}%
                   </span>
                 </div>
               )}
-            </button>
+            </div>
           </div>
         )}
       </div>

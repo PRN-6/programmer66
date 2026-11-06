@@ -4,7 +4,6 @@ import { FarmCanvas } from './game/world/FarmCanvas';
 import { TopHUD } from './components/hud/TopHUD';
 import { LeftSidebar } from './components/navigation/LeftSidebar';
 import { FarmToolbar } from './components/game/FarmToolbar';
-import { TileInspectorCard } from './components/game/TileInspector';
 import { MissionsTrackerCard } from './components/missions/MissionsTrackerWidget';
 import { CodeEditorPanel } from './components/editor/CodeEditorPanel';
 import { useEditorStore } from './store/useEditorStore';
@@ -59,25 +58,6 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showWorldLeaderboard, setShowWorldLeaderboard] = useState(false);
   const [showMissionsTracker, setShowMissionsTracker] = useState(false);
-  const [closedTileCoordKey, setClosedTileCoordKey] = useState<string | null>(null);
-
-  const selectedTileCoord = useGameStore((state) => state.selectedTileCoord);
-  const selectedTileKey = selectedTileCoord
-    ? `${selectedTileCoord.x}_${selectedTileCoord.y}`
-    : null;
-
-  // Derives whether plot inspector is open; automatically opens whenever a new plot is selected
-  const isPlotInspectorOpen = Boolean(
-    selectedTileCoord && closedTileCoordKey !== selectedTileKey
-  );
-
-  const handleTogglePlotInspector = () => {
-    if (isPlotInspectorOpen) {
-      setClosedTileCoordKey(selectedTileKey);
-    } else {
-      setClosedTileCoordKey(null);
-    }
-  };
 
   const showDocsModal = useEditorStore((state) => state.showDocsModal);
   const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
@@ -184,30 +164,21 @@ export function App() {
             onOpenMissionsModal={() => setShowMissions(true)}
             onToggleMissionsTracker={() => setShowMissionsTracker((prev) => !prev)}
             isMissionsTrackerOpen={showMissionsTracker}
-            onTogglePlotInspector={handleTogglePlotInspector}
-            isPlotInspectorOpen={isPlotInspectorOpen}
             onOpenRobots={() => setShowRobots(true)}
             onOpenWorldLeaderboard={() => setShowWorldLeaderboard(true)}
             onOpenDocs={() => setShowDocsModal(true)}
           />
 
           {/* Adjacent Flyout Panels */}
-          <div className="flex flex-col gap-2.5 overflow-y-auto no-scrollbar max-h-[calc(100vh-90px)]">
-            {isPlotInspectorOpen && selectedTileCoord && (
-              <TileInspectorCard
-                coord={selectedTileCoord}
-                onClose={() => setClosedTileCoordKey(selectedTileKey)}
-              />
-            )}
-
-            {showMissionsTracker && !currentRoom && (
+          {showMissionsTracker && !currentRoom && (
+            <div className="flex flex-col gap-2.5 overflow-y-auto no-scrollbar max-h-[calc(100vh-90px)]">
               <MissionsTrackerCard
                 onOpenEditor={() => setEditorOpen(true)}
                 onOpenFullModal={() => setShowMissions(true)}
                 onClose={() => setShowMissionsTracker(false)}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Bottom Farm Interaction Toolbar */}
