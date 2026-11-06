@@ -13,6 +13,8 @@ export type TokenType =
   | 'RPAREN'
   | 'LBRACKET'
   | 'RBRACKET'
+  | 'LBRACE'
+  | 'RBRACE'
   | 'ASSIGN'
   | 'NEWLINE'
   | 'INDENT'
@@ -178,6 +180,14 @@ export class Lexer {
         case ']':
           this.parenDepth = Math.max(0, this.parenDepth - 1);
           tokens.push({ type: 'RBRACKET', value: ']', line: startLine, column: startCol });
+          break;
+        case '{':
+          this.parenDepth++;
+          tokens.push({ type: 'LBRACE', value: '{', line: startLine, column: startCol });
+          break;
+        case '}':
+          this.parenDepth = Math.max(0, this.parenDepth - 1);
+          tokens.push({ type: 'RBRACE', value: '}', line: startLine, column: startCol });
           break;
         default:
           throw new Error(`Unexpected character '${singleChar}' at line ${startLine}, col ${startCol}`);

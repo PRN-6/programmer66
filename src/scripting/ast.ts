@@ -17,12 +17,14 @@ export type ASTNode =
   | CallExpr
   | MemberExpr
   | IndexExpr
+  | SliceExpr
   | Identifier
   | NumberLiteral
   | StringLiteral
   | BooleanLiteral
   | NoneLiteral
-  | ListLiteral;
+  | ListLiteral
+  | DictLiteral;
 
 export interface SourceLocation {
   line: number;
@@ -109,6 +111,7 @@ export interface BinaryExpr extends BaseNode {
     | '<='
     | '>'
     | '>='
+    | 'in'
     | 'and'
     | 'or';
   left: ASTNode;
@@ -166,5 +169,23 @@ export interface NoneLiteral extends BaseNode {
 export interface ListLiteral extends BaseNode {
   type: 'ListLiteral';
   elements: ASTNode[];
+}
+
+export interface SliceExpr extends BaseNode {
+  type: 'SliceExpr';
+  object: ASTNode;
+  start?: ASTNode | null;
+  stop?: ASTNode | null;
+  step?: ASTNode | null;
+}
+
+export interface DictEntry {
+  key: ASTNode;
+  value: ASTNode;
+}
+
+export interface DictLiteral extends BaseNode {
+  type: 'DictLiteral';
+  entries: DictEntry[];
 }
 

@@ -24,7 +24,7 @@ import {
   LayoutGrid,
 } from 'lucide-react';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
-import { Challenge, ChallengeCriterion, ChallengeDifficulty } from '../../types/competition';
+import { Challenge, ChallengeCriterion, ChallengeDifficulty, ChallengeTopic } from '../../types/competition';
 import { FieldConfig } from '../../types/field';
 import { isSupabaseConfigured } from '../../services/supabase';
 import { DEFAULT_CHALLENGES } from '../../services/defaultChallenges';
@@ -64,6 +64,7 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     DEFAULT_CHALLENGES.map((c) => c.id)
   );
   const [levelCategoryFilter, setLevelCategoryFilter] = useState<'all' | ChallengeDifficulty>('all');
+  const [topicFilter, setTopicFilter] = useState<'all' | ChallengeTopic>('all');
   const [resumeCode, setResumeCode] = useState('');
   const [resumeError, setResumeError] = useState<string | null>(null);
 
@@ -73,9 +74,17 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     );
   };
 
-  const selectPresetChallenges = (preset: 'all' | 'easy' | 'medium' | 'hard' | 'balanced') => {
+  const selectPresetChallenges = (preset: 'all' | 'leetcode' | 'farming' | 'easy' | 'medium' | 'hard' | 'balanced') => {
     if (preset === 'all') {
       setSelectedChallengeIds(DEFAULT_CHALLENGES.map((c) => c.id));
+    } else if (preset === 'leetcode') {
+      setSelectedChallengeIds(
+        DEFAULT_CHALLENGES.filter((c) => c.topic === 'leetcode').map((c) => c.id)
+      );
+    } else if (preset === 'farming') {
+      setSelectedChallengeIds(
+        DEFAULT_CHALLENGES.filter((c) => c.topic !== 'leetcode').map((c) => c.id)
+      );
     } else if (preset === 'easy') {
       setSelectedChallengeIds(
         DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'easy').map((c) => c.id)
@@ -89,7 +98,7 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'hard').map((c) => c.id)
       );
     } else if (preset === 'balanced') {
-      setSelectedChallengeIds(['chal-1', 'chal-2', 'chal-5', 'chal-6', 'chal-9', 'chal-11']);
+      setSelectedChallengeIds(['chal-1', 'chal-5', 'chal-8', 'chal-12', 'chal-16', 'chal-20']);
     }
   };
 
@@ -548,50 +557,74 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                 : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
                             }`}
                           >
-                            All 12 Levels
+                            All ({DEFAULT_CHALLENGES.length})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => selectPresetChallenges('leetcode')}
+                            className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
+                              selectedChallengeIds.length === DEFAULT_CHALLENGES.filter((c) => c.topic === 'leetcode').length &&
+                              DEFAULT_CHALLENGES.filter((c) => c.topic === 'leetcode').every((c) => selectedChallengeIds.includes(c.id))
+                                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 font-bold'
+                                : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
+                            }`}
+                          >
+                            LeetCode ({DEFAULT_CHALLENGES.filter((c) => c.topic === 'leetcode').length})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => selectPresetChallenges('farming')}
+                            className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
+                              selectedChallengeIds.length === DEFAULT_CHALLENGES.filter((c) => c.topic !== 'leetcode').length &&
+                              DEFAULT_CHALLENGES.filter((c) => c.topic !== 'leetcode').every((c) => selectedChallengeIds.includes(c.id))
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold'
+                                : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
+                            }`}
+                          >
+                            Farming ({DEFAULT_CHALLENGES.filter((c) => c.topic !== 'leetcode').length})
                           </button>
                           <button
                             type="button"
                             onClick={() => selectPresetChallenges('easy')}
                             className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
-                              selectedChallengeIds.length === 4 &&
+                              selectedChallengeIds.length === DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'easy').length &&
                               DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'easy').every((c) => selectedChallengeIds.includes(c.id))
                                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold'
                                 : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
                             }`}
                           >
-                            Easy (4)
+                            Easy ({DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'easy').length})
                           </button>
                           <button
                             type="button"
                             onClick={() => selectPresetChallenges('medium')}
                             className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
-                              selectedChallengeIds.length === 4 &&
+                              selectedChallengeIds.length === DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'medium').length &&
                               DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'medium').every((c) => selectedChallengeIds.includes(c.id))
                                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
                                 : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
                             }`}
                           >
-                            Medium (4)
+                            Medium ({DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'medium').length})
                           </button>
                           <button
                             type="button"
                             onClick={() => selectPresetChallenges('hard')}
                             className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
-                              selectedChallengeIds.length === 4 &&
+                              selectedChallengeIds.length === DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'hard').length &&
                               DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'hard').every((c) => selectedChallengeIds.includes(c.id))
                                 ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 font-bold'
                                 : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
                             }`}
                           >
-                            Hard (4)
+                            Hard ({DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'hard').length})
                           </button>
                           <button
                             type="button"
                             onClick={() => selectPresetChallenges('balanced')}
                             className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
                               selectedChallengeIds.length === 6 &&
-                              ['chal-1', 'chal-2', 'chal-5', 'chal-6', 'chal-9', 'chal-11'].every((id) => selectedChallengeIds.includes(id))
+                              ['chal-1', 'chal-5', 'chal-8', 'chal-12', 'chal-16', 'chal-20'].every((id) => selectedChallengeIds.includes(id))
                                 ? 'bg-sky-500/20 text-sky-300 border-sky-500/40 font-bold'
                                 : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
                             }`}
@@ -601,46 +634,91 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         </div>
                       </div>
 
-                      {/* Difficulty Tabs */}
-                      <div className="flex items-center gap-1.5 p-1 bg-neutral-900/80 rounded-xl border border-neutral-800">
-                        {(['all', 'easy', 'medium', 'hard'] as const).map((cat) => {
-                          const count = cat === 'all'
-                            ? DEFAULT_CHALLENGES.length
-                            : DEFAULT_CHALLENGES.filter((c) => c.difficulty === cat).length;
-                          const selectedInCat = cat === 'all'
-                            ? selectedChallengeIds.length
-                            : DEFAULT_CHALLENGES.filter((c) => c.difficulty === cat && selectedChallengeIds.includes(c.id)).length;
-                          const isActive = levelCategoryFilter === cat;
+                      {/* Topic & Difficulty Filters */}
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        {/* Topic Tabs */}
+                        <div className="flex items-center gap-1 p-1 bg-neutral-900/80 rounded-xl border border-neutral-800 flex-1">
+                          {(['all', 'leetcode', 'farming'] as const).map((t) => {
+                            const count =
+                              t === 'all'
+                                ? DEFAULT_CHALLENGES.length
+                                : t === 'leetcode'
+                                ? DEFAULT_CHALLENGES.filter((c) => c.topic === 'leetcode').length
+                                : DEFAULT_CHALLENGES.filter((c) => c.topic !== 'leetcode').length;
+                            const isActive = topicFilter === t;
 
-                          return (
-                            <button
-                              key={cat}
-                              type="button"
-                              onClick={() => setLevelCategoryFilter(cat)}
-                              className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-xs font-semibold transition ${
-                                isActive
-                                  ? cat === 'easy'
-                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                                    : cat === 'medium'
-                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                                    : cat === 'hard'
-                                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm'
-                                    : 'bg-neutral-800 text-white border border-neutral-700 shadow-sm'
-                                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
-                              }`}
-                            >
-                              <span className="capitalize">{cat}</span>
-                              <span className="text-[10px] font-mono opacity-80">
-                                ({selectedInCat}/{count})
-                              </span>
-                            </button>
-                          );
-                        })}
+                            return (
+                              <button
+                                key={t}
+                                type="button"
+                                onClick={() => setTopicFilter(t)}
+                                className={`flex-1 py-1 px-2 rounded-lg text-xs font-semibold transition capitalize flex items-center justify-center gap-1 ${
+                                  isActive
+                                    ? t === 'leetcode'
+                                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                                      : t === 'farming'
+                                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                                      : 'bg-neutral-800 text-white border border-neutral-700 shadow-sm'
+                                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                                }`}
+                              >
+                                <span>{t === 'all' ? 'All Tracks' : t === 'leetcode' ? 'LeetCode' : 'Farming'}</span>
+                                <span className="text-[10px] font-mono opacity-80">({count})</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Difficulty Tabs */}
+                        <div className="flex items-center gap-1 p-1 bg-neutral-900/80 rounded-xl border border-neutral-800 flex-1">
+                          {(['all', 'easy', 'medium', 'hard'] as const).map((cat) => {
+                            const pool = DEFAULT_CHALLENGES.filter((c) => {
+                              if (topicFilter === 'leetcode') return c.topic === 'leetcode';
+                              if (topicFilter === 'farming') return c.topic !== 'leetcode';
+                              return true;
+                            });
+                            const count = cat === 'all' ? pool.length : pool.filter((c) => c.difficulty === cat).length;
+                            const selectedInCat =
+                              cat === 'all'
+                                ? pool.filter((c) => selectedChallengeIds.includes(c.id)).length
+                                : pool.filter((c) => c.difficulty === cat && selectedChallengeIds.includes(c.id)).length;
+                            const isActive = levelCategoryFilter === cat;
+
+                            return (
+                              <button
+                                key={cat}
+                                type="button"
+                                onClick={() => setLevelCategoryFilter(cat)}
+                                className={`flex-1 flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg text-xs font-semibold transition ${
+                                  isActive
+                                    ? cat === 'easy'
+                                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                                      : cat === 'medium'
+                                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                                      : cat === 'hard'
+                                      ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm'
+                                      : 'bg-neutral-800 text-white border border-neutral-700 shadow-sm'
+                                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                                }`}
+                              >
+                                <span className="capitalize">{cat}</span>
+                                <span className="text-[10px] font-mono opacity-80">
+                                  ({selectedInCat}/{count})
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       {/* Level Cards */}
                       <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1">
                         {DEFAULT_CHALLENGES
+                          .filter((c) => {
+                            if (topicFilter === 'leetcode') return c.topic === 'leetcode';
+                            if (topicFilter === 'farming') return c.topic !== 'leetcode';
+                            return true;
+                          })
                           .filter((c) => levelCategoryFilter === 'all' || c.difficulty === levelCategoryFilter)
                           .map((chal) => {
                             const isSelected = selectedChallengeIds.includes(chal.id);
@@ -672,12 +750,22 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                       <span className="font-semibold text-neutral-100 truncate">
                                         {chal.title.replace(/^Level\s*\d+:\s*/i, '')}
                                       </span>
+                                      {chal.topic === 'leetcode' && (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                          LeetCode
+                                        </span>
+                                      )}
                                       <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${badge.cls}`}>
                                         {badge.label}
                                       </span>
                                       <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-neutral-800 text-amber-400 font-bold">
                                         +{chal.points} pts
                                       </span>
+                                      {chal.functionName && (
+                                        <span className="text-[10px] font-mono text-cyan-400/90 hidden sm:inline">
+                                          fn: {chal.functionName}()
+                                        </span>
+                                      )}
                                     </div>
                                     <p className="text-[11px] text-neutral-400 line-clamp-1 mt-0.5">
                                       {chal.description}
@@ -1032,6 +1120,8 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         <option value="harvest_count">Harvest Target Count</option>
                         <option value="water_efficiency">Moisture / Water Optimal</option>
                         <option value="speed_run">Speed Run</option>
+                        <option value="leetcode_test">LeetCode Unit Tests</option>
+                        <option value="pattern_match">Grid Spatial Pattern</option>
                       </select>
                     </div>
                     <div>
@@ -1089,10 +1179,15 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     className="p-4 bg-neutral-950 border border-neutral-800 rounded-xl flex items-start justify-between gap-4"
                   >
                     <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="px-2 py-0.5 bg-neutral-800 text-neutral-300 text-xs font-mono font-bold rounded">
                           Level {chal.level}
                         </span>
+                        {chal.topic === 'leetcode' && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-cyan-500/20 text-cyan-300 border-cyan-500/40">
+                            LeetCode
+                          </span>
+                        )}
                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getDiffBadge(chal.difficulty).cls}`}>
                           {getDiffBadge(chal.difficulty).label}
                         </span>

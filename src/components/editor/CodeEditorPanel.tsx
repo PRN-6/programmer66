@@ -272,7 +272,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
     // After script finishes running, evaluate challenge if in competition mode
     if (isCompeting && activeChallenge) {
       const gameState = useGameStore.getState();
-      const evaluation = evaluateChallenge(activeChallenge, gameState, activeTab.code);
+      const evaluation = await evaluateChallenge(activeChallenge, gameState, activeTab.code);
       setEvaluationMessage(evaluation.message);
 
       if (evaluation.passed) {
@@ -294,7 +294,7 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
 
     // Verify task criteria are met before submission
     const gameState = useGameStore.getState();
-    const evaluation = evaluateChallenge(activeChallenge, gameState, activeTab.code);
+    const evaluation = await evaluateChallenge(activeChallenge, gameState, activeTab.code);
     if (!evaluation.passed) {
       soundManager.playError();
       setSubmissionError(evaluation.message);
@@ -629,10 +629,15 @@ robot.move_to(0, 0)
                         ? 'bg-emerald-950/40 text-emerald-300 border-emerald-700/60 hover:bg-emerald-900/40'
                         : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-neutral-200 hover:bg-neutral-800'
                     }`}
-                    title={`Question ${idx + 1} (${chal.difficulty || 'normal'}): ${chal.title} (+${chal.points} pts)`}
+                    title={`Question ${idx + 1} (${chal.topic === 'leetcode' ? 'LeetCode ' : ''}${chal.difficulty || 'normal'}): ${chal.title} (+${chal.points} pts)`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${diffDot}`} />
                     <span>Q{chal.level}</span>
+                    {chal.topic === 'leetcode' && (
+                      <span className="text-[9px] font-mono font-bold text-cyan-400 bg-cyan-950/60 px-1 rounded border border-cyan-800/60">
+                        LC
+                      </span>
+                    )}
                     {isSolved ? (
                       <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
                     ) : (
@@ -670,6 +675,11 @@ robot.move_to(0, 0)
                     <span className="text-xs font-bold text-amber-300">
                       Q{activeChallenge.level}: {activeChallenge.title.replace(/^Level\s*\d+:\s*/i, '')}
                     </span>
+                    {activeChallenge.topic === 'leetcode' && (
+                      <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded border bg-cyan-500/15 text-cyan-300 border-cyan-500/40">
+                        LeetCode
+                      </span>
+                    )}
                     {activeChallenge.difficulty && (
                       <span
                         className={`text-[9px] font-bold uppercase px-1.5 py-0.2 rounded border ${
@@ -686,6 +696,11 @@ robot.move_to(0, 0)
                     <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded">
                       +{activeChallenge.points} pts
                     </span>
+                    {activeChallenge.functionName && (
+                      <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/50 px-1.5 py-0.2 rounded border border-cyan-800/60 hidden sm:inline">
+                        def {activeChallenge.functionName}(...)
+                      </span>
+                    )}
                     {isAlreadyCompleted && (
                       <span className="text-[10px] font-bold px-1.5 py-0.2 bg-emerald-950 text-emerald-300 border border-emerald-700/80 rounded flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Solved

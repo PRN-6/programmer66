@@ -22,6 +22,9 @@ import {
   BooleanLiteral,
   NoneLiteral,
   ListLiteral,
+  SliceExpr,
+  DictLiteral,
+  DictEntry,
 } from './ast';
 import { Token, TokenType } from './lexer';
 
@@ -290,8 +293,14 @@ export class Parser {
   private parseComparison(): ASTNode {
     let expr = this.parseAdditive();
 
-    while (this.checkOperator('==', '!=', '<', '<=', '>', '>=')) {
-      const op = this.advance().value as '==' | '!=' | '<' | '<=' | '>' | '>=';
+    while (this.checkOperator('==', '!=', '<', '<=', '>', '>=') || this.checkKeyword('in')) {
+      let op: string;
+      if (this.checkKeyword('in')) {
+        this.advance();
+        op = 'in';
+      } else {
+        op = this.advance().value;
+      }
       const right = this.parseAdditive();
       expr = {
         type: 'BinaryExpr',
@@ -384,15 +393,53 @@ export class Parser {
           loc: expr.loc,
         } as MemberExpr;
       } else if (this.match('LBRACKET')) {
-        // Index access: expr[idx]
-        const indexExpr = this.parseExpression();
-        this.consume('RBRACKET', 'Expected "]" after index expression');
+        // Index access or slice access: expr[idx] or expr[start:stop:step]
+        let startNode: ASTNode | null = null;
+        let stopNode: ASTNode | null = null;
+        let stepNode: ASTNode | null = null;
+
+        if (this.match('COLON')) {
+          if (!this.check('COLON') && !this.check('RBRACKET')) {
+            stopNode = this.parseExpression();
+          }
+          if (this.match('COLON')) {
+            if (!this.check('RBRACKET')) {
+              stepNode = this.parseExpression();
+            }
+          }
+        } else {
+          const firstExpr = this.parseExpression();
+          if (this.match('COLON')) {
+            startNode = firstExpr;
+            if (!this.check('COLON') && !this.check('RBRACKET')) {
+              stopNode = this.parseExpression();
+            }
+            if (this.match('COLON')) {
+              if (!this.check('RBRACKET')) {
+                stepNode = this.parseExpression();
+              }
+            }
+          } else {
+            this.consume('RBRACKET', 'Expected "]" after index expression');
+            expr = {
+              type: 'IndexExpr',
+              object: expr,
+              index: firstExpr,
+              loc: expr.loc,
+            } as IndexExpr;
+            continue;
+          }
+        }
+
+        this.consume('RBRACKET', 'Expected "]" after slice expression');
         expr = {
-          type: 'IndexExpr',
+          type: 'SliceExpr',
           object: expr,
-          index: indexExpr,
+          start: startNode,
+          stop: stopNode,
+          step: stepNode,
           loc: expr.loc,
-        } as IndexExpr;
+        } as SliceExpr;
       } else {
         break;
       }
@@ -459,6 +506,25 @@ export class Parser {
         elements,
         loc: { line: token.line, column: token.column },
       } as ListLiteral;
+    }
+
+    if (this.match('LBRACE')) {
+      const entries: DictEntry[] = [];
+      if (!this.check('RBRACE')) {
+        do {
+          if (this.check('RBRACE')) break;
+          const key = this.parseExpression();
+          this.consume('COLON', 'Expected ":" after dictionary key');
+          const value = this.parseExpression();
+          entries.push({ key, value });
+        } while (this.match('COMMA'));
+      }
+      this.consume('RBRACE', 'Expected "}" after dictionary entries');
+      return {
+        type: 'DictLiteral',
+        entries,
+        loc: { line: token.line, column: token.column },
+      } as DictLiteral;
     }
 
     if (this.match('LPAREN')) {

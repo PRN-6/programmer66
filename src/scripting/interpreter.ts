@@ -18,6 +18,8 @@ import {
   StringLiteral,
   BooleanLiteral,
   ListLiteral,
+  DictLiteral,
+  SliceExpr,
 } from './ast';
 import { Environment } from './environment';
 
@@ -124,6 +126,25 @@ export class Interpreter {
     });
     this.globalEnv.define('int', (val: unknown) => parseInt(String(val), 10));
     this.globalEnv.define('str', (val: unknown) => String(val));
+    this.globalEnv.define('dict', () => ({}));
+    this.globalEnv.define('list', (arg?: unknown) => {
+      if (arg === undefined) return [];
+      if (Array.isArray(arg)) return [...arg];
+      if (typeof arg === 'string') return arg.split('');
+      return [arg];
+    });
+    this.globalEnv.define('sum', (arr: unknown[]) => {
+      if (!Array.isArray(arr)) return 0;
+      return arr.reduce((acc: number, v: unknown) => acc + (typeof v === 'number' ? v : 0), 0);
+    });
+    this.globalEnv.define('sorted', (arr: unknown[]) => {
+      if (!Array.isArray(arr)) return [];
+      return [...arr].sort((a: any, b: any) => (a > b ? 1 : a < b ? -1 : 0));
+    });
+    this.globalEnv.define('reversed', (arr: unknown[]) => {
+      if (!Array.isArray(arr)) return [];
+      return [...arr].reverse();
+    });
     this.globalEnv.define('sleep', async (seconds: number) => {
       await this.sleep(seconds * 1000);
       return null;
@@ -408,6 +429,14 @@ export class Interpreter {
             return (left as number) > (right as number);
           case '>=':
             return (left as number) >= (right as number);
+          case 'in':
+            if (Array.isArray(right) || typeof right === 'string') {
+              return (right as unknown[]).includes(left);
+            }
+            if (typeof right === 'object' && right !== null) {
+              return String(left) in (right as object);
+            }
+            return false;
           default:
             throw new Error(`Unsupported binary operator '${bin.operator}'`);
         }
@@ -418,6 +447,31 @@ export class Interpreter {
         const obj = (await this.evaluate(mem.object, env)) as Record<string, unknown>;
         if (obj === null || obj === undefined) {
           throw new Error(`AttributeError: 'NoneType' object has no attribute '${mem.property}' at line ${mem.loc?.line}`);
+        }
+        if (Array.isArray(obj)) {
+          if (mem.property === 'append') {
+            return (item: unknown) => {
+              (obj as unknown[]).push(item);
+              return null;
+            };
+          }
+          if (mem.property === 'pop') {
+            return () => (obj as unknown[]).pop();
+          }
+        }
+        if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+          if (mem.property === 'keys') {
+            return () => Object.keys(obj);
+          }
+          if (mem.property === 'values') {
+            return () => Object.values(obj);
+          }
+          if (mem.property === 'get') {
+            return (k: string | number, defaultVal: unknown = null) => {
+              const strKey = String(k);
+              return strKey in obj ? obj[strKey] : defaultVal;
+            };
+          }
         }
         const val = obj[mem.property];
         if (typeof val === 'function') {
@@ -455,6 +509,57 @@ export class Interpreter {
 
         const res = await callee(...evaluatedArgs);
         return res;
+      }
+
+      case 'SliceExpr': {
+        const slice = node as SliceExpr;
+        const target = (await this.evaluate(slice.object, env)) as unknown[] | string;
+        if (!Array.isArray(target) && typeof target !== 'string') {
+          throw new Error(`TypeError: '${typeof target}' is not subscriptable/sliceable at line ${slice.loc?.line}`);
+        }
+        const isStr = typeof target === 'string';
+        const len = target.length;
+        let step = slice.step ? Number(await this.evaluate(slice.step, env)) : 1;
+        if (isNaN(step) || step === 0) step = 1;
+
+        let start: number;
+        if (slice.start !== null && slice.start !== undefined) {
+          start = Number(await this.evaluate(slice.start, env));
+          if (start < 0) start = Math.max(0, len + start);
+        } else {
+          start = step < 0 ? len - 1 : 0;
+        }
+
+        let stop: number;
+        if (slice.stop !== null && slice.stop !== undefined) {
+          stop = Number(await this.evaluate(slice.stop, env));
+          if (stop < 0) stop = Math.max(-1, len + stop);
+        } else {
+          stop = step < 0 ? -1 : len;
+        }
+
+        const res: unknown[] = [];
+        if (step > 0) {
+          for (let i = start; i < stop && i < len; i += step) {
+            res.push(target[i]);
+          }
+        } else {
+          for (let i = start; i > stop && i >= 0; i += step) {
+            res.push(target[i]);
+          }
+        }
+        return isStr ? res.join('') : res;
+      }
+
+      case 'DictLiteral': {
+        const dictNode = node as DictLiteral;
+        const dictObj: Record<string, unknown> = {};
+        for (const entry of dictNode.entries) {
+          const k = await this.evaluate(entry.key, env);
+          const v = await this.evaluate(entry.value, env);
+          dictObj[String(k)] = v;
+        }
+        return dictObj;
       }
 
       default:

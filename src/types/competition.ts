@@ -14,9 +14,18 @@ export type ChallengeCriterion =
   | 'harvest_count'
   | 'planted_count'
   | 'water_efficiency'
-  | 'speed_run';
+  | 'speed_run'
+  | 'leetcode_test'
+  | 'pattern_match';
 
 export type ChallengeDifficulty = 'easy' | 'medium' | 'hard';
+export type ChallengeTopic = 'farming' | 'leetcode' | 'optimization';
+
+export interface LeetCodeTestCase {
+  input: unknown[];
+  expected: unknown;
+  description?: string;
+}
 
 export interface Challenge {
   id: string;
@@ -24,11 +33,14 @@ export interface Challenge {
   description: string;
   level: number;
   difficulty?: ChallengeDifficulty;
+  topic?: ChallengeTopic;
   points: number;
   targetCrop?: string;
   targetCount: number;
   timeLimitSeconds: number;
   testCriterion: ChallengeCriterion;
+  functionName?: string;
+  testCases?: LeetCodeTestCase[];
   starterCode: string;
   solutionHint?: string;
 }

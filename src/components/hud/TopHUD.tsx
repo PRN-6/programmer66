@@ -241,6 +241,11 @@ export const TopHUD: React.FC<TopHUDProps> = ({
                           <span className="w-5 h-5 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 text-[10px] font-mono flex items-center justify-center shrink-0">
                             Q{chal.level}
                           </span>
+                          {chal.topic === 'leetcode' && (
+                            <span className="text-[9px] font-mono font-bold text-cyan-400 bg-cyan-950/60 px-1 py-0.2 rounded border border-cyan-800/60 shrink-0">
+                              LC
+                            </span>
+                          )}
                           <span className="truncate">{chal.title.replace(/^Level\s*\d+:\s*/i, '')}</span>
                           {chal.difficulty && (
                             <span
