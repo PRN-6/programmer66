@@ -11,16 +11,16 @@ export const CompetitionHUDWidget: React.FC = () => {
       <div className="flex items-center gap-1.5">
         <button
           onClick={() => setShowJoinModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-500/50 rounded-lg text-amber-300 text-xs font-semibold transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 hover:border-amber-500/60 rounded-xl text-amber-300 text-xs font-semibold transition shadow-lg backdrop-blur-md"
           title="Join a live competition event with a room code"
         >
-          <Trophy className="w-3.5 h-3.5" />
+          <Trophy className="w-3.5 h-3.5 text-amber-400" />
           <span>Join Event</span>
         </button>
 
         <button
           onClick={() => setShowAdminModal(true)}
-          className="p-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 rounded-lg text-neutral-400 hover:text-neutral-200 text-xs transition"
+          className="p-1.5 bg-neutral-950/40 hover:bg-neutral-900/60 border border-white/10 hover:border-amber-500/40 rounded-xl text-neutral-400 hover:text-amber-300 text-xs transition shadow-lg backdrop-blur-md"
           title="Open Admin Competition Console"
         >
           <Shield className="w-3.5 h-3.5" />
@@ -31,7 +31,7 @@ export const CompetitionHUDWidget: React.FC = () => {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs font-mono">
+      <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/15 border border-amber-500/30 rounded-xl text-xs font-mono backdrop-blur-md shadow-lg">
         <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
         <span className="font-bold text-amber-300">{currentRoom.code}</span>
         <span className="text-neutral-600">|</span>
@@ -47,7 +47,7 @@ export const CompetitionHUDWidget: React.FC = () => {
       {isAdmin ? (
         <button
           onClick={() => setShowAdminModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1 bg-amber-600 hover:bg-amber-500 text-neutral-950 font-bold rounded-lg text-xs transition shadow-sm"
+          className="flex items-center gap-1.5 px-3 py-1 bg-amber-600 hover:bg-amber-500 text-neutral-950 font-bold rounded-xl text-xs transition shadow-lg"
         >
           <Shield className="w-3.5 h-3.5" />
           <span>Admin</span>
@@ -55,7 +55,7 @@ export const CompetitionHUDWidget: React.FC = () => {
       ) : (
         <button
           onClick={() => setShowScoreboardModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 font-medium rounded-lg text-xs transition"
+          className="flex items-center gap-1.5 px-3 py-1 bg-neutral-950/40 hover:bg-neutral-900/60 border border-white/10 hover:border-white/20 text-neutral-200 font-medium rounded-xl text-xs transition shadow-lg backdrop-blur-md"
         >
           <Award className="w-3.5 h-3.5 text-amber-400" />
           <span>Leaderboard</span>

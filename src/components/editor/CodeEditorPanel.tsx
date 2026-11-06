@@ -429,7 +429,7 @@ robot.move_to(0, 0)
       style={{
         width: isMaximized ? 'min(calc(100vw - 40px), 1200px)' : `${panelWidth}px`,
       }}
-      className={`relative shrink-0 h-full bg-neutral-950 border-l border-neutral-800 flex flex-col z-20 shadow-2xl transition-[width] ${
+      className={`relative shrink-0 h-full pt-14 bg-neutral-950 border-l border-neutral-800 flex flex-col z-30 shadow-2xl transition-[width] ${
         isDraggingWidth ? 'select-none transition-none' : 'duration-150'
       }`}
     >

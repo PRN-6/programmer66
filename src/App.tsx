@@ -123,8 +123,30 @@ export function App() {
   }, [loadGame, initSession, initAuth]);
 
   return (
-    <div className="w-screen h-screen relative overflow-hidden bg-neutral-950 font-sans select-none flex flex-col">
-      {/* Top HUD (Fixed at top across entire screen) */}
+    <div className="w-screen h-screen relative overflow-hidden bg-neutral-950 font-sans select-none flex">
+      {/* 3D Farm Canvas Area - with min-w-0 to guarantee clean responsive resizing without overflow */}
+      <div className="flex-1 min-w-0 h-full relative overflow-hidden">
+        <FarmCanvas />
+
+        {/* Left-docked floating panels: Soil Plot Inspector & Missions Tracker */}
+        <div className="absolute top-16 left-0 z-20 pointer-events-none flex flex-col items-start gap-2.5 max-h-[calc(100vh-90px)] overflow-y-auto no-scrollbar">
+          <TileInspector />
+          <MissionsTrackerWidget
+            onOpenEditor={() => setEditorOpen(true)}
+            onOpenFullModal={() => setShowMissions(true)}
+          />
+        </div>
+
+        {/* Bottom Farm Interaction Toolbar */}
+        <FarmToolbar />
+      </div>
+
+      {/* Collapsible Programming Editor Panel */}
+      {editorOpen && (
+        <CodeEditorPanel onClose={() => setEditorOpen(false)} />
+      )}
+
+      {/* Top HUD (Floating overlay across the top with transparent background) */}
       <TopHUD
         onOpenMarket={() => setShowMarket(true)}
         onOpenMissions={() => setShowMissions(true)}
@@ -133,31 +155,6 @@ export function App() {
         onToggleEditor={() => setEditorOpen((prev) => !prev)}
         editorOpen={editorOpen}
       />
-
-      {/* Main Workspace below Top HUD */}
-      <div className="flex-1 w-full flex overflow-hidden relative">
-        {/* 3D Farm Canvas Area - with min-w-0 to guarantee clean responsive resizing without overflow */}
-        <div className="flex-1 min-w-0 h-full relative overflow-hidden">
-          <FarmCanvas />
-
-          {/* Left-docked floating panels: Soil Plot Inspector & Missions Tracker */}
-          <div className="absolute top-4 left-0 z-20 pointer-events-none flex flex-col items-start gap-2.5 max-h-[calc(100vh-90px)] overflow-y-auto no-scrollbar">
-            <TileInspector />
-            <MissionsTrackerWidget
-              onOpenEditor={() => setEditorOpen(true)}
-              onOpenFullModal={() => setShowMissions(true)}
-            />
-          </div>
-
-          {/* Bottom Farm Interaction Toolbar */}
-          <FarmToolbar />
-        </div>
-
-        {/* Collapsible Programming Editor Panel */}
-        {editorOpen && (
-          <CodeEditorPanel onClose={() => setEditorOpen(false)} />
-        )}
-      </div>
 
       {/* Lazy Loaded Modals & Overlays */}
       <Suspense fallback={null}>
