@@ -24,6 +24,9 @@ import {
   ChevronRight,
   RotateCcw,
   Lock,
+  GripHorizontal,
+  Columns2,
+  AppWindow,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useEditorStore } from '../../store/useEditorStore';
@@ -106,29 +109,210 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
     }
   };
 
-  // --- Dynamic Panel Resizing & Maximizing ---
-  const [panelWidth, setPanelWidth] = useState<number>(() => {
+  // --- Window Mode & Floating Position/Size State ---
+  const [windowMode, setWindowMode] = useState<'floating' | 'docked'>(() => {
     try {
-      const saved = localStorage.getItem('prog66_editor_width');
-      if (saved) {
-        const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed) && parsed >= 340) return parsed;
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const saved = localStorage.getItem('prog66_editor_window_mode');
+        if (saved === 'docked' || saved === 'floating') return saved;
       }
     } catch {
       // ignore
     }
-    return 540;
+    return 'floating';
   });
+
+  const [panelWidth, setPanelWidth] = useState<number>(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const saved = localStorage.getItem('prog66_editor_width');
+        if (saved) {
+          const parsed = parseInt(saved, 10);
+          if (!isNaN(parsed) && parsed >= 380) return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return typeof window !== 'undefined' ? Math.min(620, Math.max(480, window.innerWidth - 60)) : 580;
+  });
+
+  const [panelHeight, setPanelHeight] = useState<number>(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const saved = localStorage.getItem('prog66_editor_height');
+        if (saved) {
+          const parsed = parseInt(saved, 10);
+          if (!isNaN(parsed) && parsed >= 320) return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return typeof window !== 'undefined' ? Math.min(680, window.innerHeight - 90) : 600;
+  });
+
+  const [position, setPosition] = useState<{ x: number; y: number }>(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const savedX = localStorage.getItem('prog66_editor_x');
+        const savedY = localStorage.getItem('prog66_editor_y');
+        if (savedX && savedY) {
+          const px = parseInt(savedX, 10);
+          const py = parseInt(savedY, 10);
+          if (!isNaN(px) && !isNaN(py)) {
+            return {
+              x: Math.max(10, Math.min(window.innerWidth - 200, px)),
+              y: Math.max(56, Math.min(window.innerHeight - 80, py)),
+            };
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    const defaultW = 620;
+    const defaultX = typeof window !== 'undefined' ? Math.max(20, window.innerWidth - defaultW - 24) : 400;
+    return { x: defaultX, y: 64 };
+  });
+
   const [isMaximized, setIsMaximized] = useState(false);
-  const [isDraggingWidth, setIsDraggingWidth] = useState(false);
+  const [isDraggingWindow, setIsDraggingWindow] = useState(false);
+  const [resizingDirection, setResizingDirection] = useState<string | null>(null);
+
+  const handleStartDragWindow = (e: React.MouseEvent) => {
+    if (isMaximized || windowMode === 'docked') return;
+
+    // Do not initiate drag if user clicked a button, input, tab, etc.
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('.tab-item') ||
+      target.closest('.no-drag')
+    ) {
+      return;
+    }
+
+    e.preventDefault();
+    setIsDraggingWindow(true);
+
+    const startMouseX = e.clientX;
+    const startMouseY = e.clientY;
+    const startPosX = position.x;
+    const startPosY = position.y;
+    let currentX = startPosX;
+    let currentY = startPosY;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startMouseX;
+      const deltaY = moveEvent.clientY - startMouseY;
+
+      const maxX = window.innerWidth - 160;
+      const maxY = window.innerHeight - 80;
+
+      currentX = Math.max(10, Math.min(maxX, startPosX + deltaX));
+      currentY = Math.max(56, Math.min(maxY, startPosY + deltaY));
+
+      setPosition({ x: currentX, y: currentY });
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingWindow(false);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          localStorage.setItem('prog66_editor_x', String(currentX));
+          localStorage.setItem('prog66_editor_y', String(currentY));
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleStartResize =
+    (direction: 'left' | 'right' | 'bottom' | 'bottom-left' | 'bottom-right') =>
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isMaximized) return;
+
+      setResizingDirection(direction);
+
+      const startMouseX = e.clientX;
+      const startMouseY = e.clientY;
+      const startW = panelWidth;
+      const startH = panelHeight;
+      const startPosX = position.x;
+      let currentW = startW;
+      let currentH = startH;
+      let currentX = startPosX;
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const deltaX = moveEvent.clientX - startMouseX;
+        const deltaY = moveEvent.clientY - startMouseY;
+
+        const minW = 380;
+        const maxW = Math.min(window.innerWidth - 30, 1200);
+        const minH = 300;
+        const maxH = Math.min(window.innerHeight - 70, 1000);
+
+        if (direction === 'left' || direction === 'bottom-left') {
+          currentW = Math.max(minW, Math.min(maxW, startW - deltaX));
+          currentX = Math.max(10, startPosX - (currentW - startW));
+          setPanelWidth(currentW);
+          if (windowMode === 'floating') {
+            setPosition((pos) => ({ ...pos, x: currentX }));
+          }
+        } else if (direction === 'right' || direction === 'bottom-right') {
+          currentW = Math.max(minW, Math.min(maxW, startW + deltaX));
+          setPanelWidth(currentW);
+        }
+
+        if (
+          direction === 'bottom' ||
+          direction === 'bottom-left' ||
+          direction === 'bottom-right'
+        ) {
+          currentH = Math.max(minH, Math.min(maxH, startH + deltaY));
+          setPanelHeight(currentH);
+        }
+      };
+
+      const handleMouseUp = () => {
+        setResizingDirection(null);
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.setItem('prog66_editor_width', String(currentW));
+            localStorage.setItem('prog66_editor_height', String(currentH));
+            localStorage.setItem('prog66_editor_x', String(currentX));
+          }
+        } catch {
+          // ignore
+        }
+      };
+
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    };
 
   // --- Dynamic Console Resizing & Minimizing ---
   const [consoleHeight, setConsoleHeight] = useState<number>(() => {
     try {
-      const saved = localStorage.getItem('prog66_console_height');
-      if (saved) {
-        const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed) && parsed >= 60) return parsed;
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const saved = localStorage.getItem('prog66_console_height');
+        if (saved) {
+          const parsed = parseInt(saved, 10);
+          if (!isNaN(parsed) && parsed >= 60) return parsed;
+        }
       }
     } catch {
       // ignore
@@ -174,40 +358,6 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
       return () => clearTimeout(timer);
     }
   }, [executionState]);
-
-  // Width drag handler
-  const handleStartResizeWidth = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDraggingWidth(true);
-    const startX = e.clientX;
-    const startW = isMaximized ? Math.min(window.innerWidth - 60, 1100) : panelWidth;
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const delta = startX - moveEvent.clientX;
-      const minW = Math.min(340, window.innerWidth - 80);
-      const maxW = Math.max(minW, window.innerWidth - 60);
-      const nextW = Math.max(minW, Math.min(maxW, startW + delta));
-      setPanelWidth(nextW);
-      if (isMaximized) setIsMaximized(false);
-    };
-
-    const handleMouseUp = () => {
-      setIsDraggingWidth(false);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      setPanelWidth((curr) => {
-        try {
-          localStorage.setItem('prog66_editor_width', String(curr));
-        } catch {
-          // ignore
-        }
-        return curr;
-      });
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-  };
 
   // Console height drag handler
   const handleStartResizeConsole = (e: React.MouseEvent) => {
@@ -424,36 +574,128 @@ print("Routine complete! Returning to base.")
 robot.move_to(0, 0)
 `;
 
+  // Mode-based layout styles
+  const windowStyles: React.CSSProperties = isMaximized
+    ? {
+        position: 'fixed',
+        left: '12px',
+        top: '60px',
+        width: 'calc(100vw - 24px)',
+        height: 'calc(100vh - 72px)',
+        zIndex: 40,
+      }
+    : windowMode === 'docked'
+    ? {
+        position: 'fixed',
+        right: 0,
+        top: '56px',
+        bottom: 0,
+        width: `${panelWidth}px`,
+        height: 'calc(100vh - 56px)',
+        zIndex: 40,
+      }
+    : {
+        position: 'fixed',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        width: `${panelWidth}px`,
+        height: `${panelHeight}px`,
+        zIndex: 40,
+      };
+
   return (
     <div
-      style={{
-        width: isMaximized ? 'min(calc(100vw - 40px), 1200px)' : `${panelWidth}px`,
-      }}
-      className={`relative shrink-0 h-full pt-14 bg-neutral-950 border-l border-neutral-800 flex flex-col z-30 shadow-2xl transition-[width] ${
-        isDraggingWidth ? 'select-none transition-none' : 'duration-150'
+      style={windowStyles}
+      className={`flex flex-col bg-neutral-950/92 backdrop-blur-2xl shadow-2xl overflow-hidden transition-[box-shadow] ${
+        windowMode === 'docked'
+          ? 'border-l border-white/10'
+          : 'border border-white/15 rounded-2xl ring-1 ring-black/60 shadow-[0_20px_60px_rgba(0,0,0,0.85)]'
+      } ${
+        isDraggingWindow || resizingDirection
+          ? 'select-none transition-none'
+          : 'duration-150'
       }`}
     >
-      {/* Horizontal Resize Drag Handle on Left Border */}
-      <div
-        onMouseDown={handleStartResizeWidth}
-        className={`absolute -left-1.5 top-0 bottom-0 w-3 cursor-col-resize z-40 group flex items-center justify-center hover:bg-neutral-500/20 transition ${
-          isDraggingWidth ? 'bg-neutral-500/40' : ''
-        }`}
-        title="Drag left/right to resize Code Editor width"
-      >
-        <div className="w-1 h-10 rounded-full bg-neutral-600 group-hover:bg-neutral-300 group-hover:h-16 transition-all" />
-      </div>
+      {/* Resizing Edge Handles (Only in floating window mode and when not maximized) */}
+      {windowMode === 'floating' && !isMaximized && (
+        <>
+          {/* Left Edge Handle */}
+          <div
+            onMouseDown={handleStartResize('left')}
+            className="absolute -left-1 top-3 bottom-3 w-2.5 cursor-ew-resize z-40 hover:bg-sky-400/30 transition rounded-l"
+            title="Resize width"
+          />
 
-      {/* Tab Bar */}
-      <div className="flex items-center justify-between bg-neutral-900 border-b border-neutral-800 px-2 pt-1.5 overflow-x-auto shrink-0 select-none">
-        <div className="flex items-center gap-1">
+          {/* Right Edge Handle */}
+          <div
+            onMouseDown={handleStartResize('right')}
+            className="absolute -right-1 top-3 bottom-3 w-2.5 cursor-ew-resize z-40 hover:bg-sky-400/30 transition rounded-r"
+            title="Resize width"
+          />
+
+          {/* Bottom Edge Handle */}
+          <div
+            onMouseDown={handleStartResize('bottom')}
+            className="absolute -bottom-1 left-3 right-3 h-2.5 cursor-ns-resize z-40 hover:bg-sky-400/30 transition rounded-b"
+            title="Resize height"
+          />
+
+          {/* Bottom-Left Corner Handle */}
+          <div
+            onMouseDown={handleStartResize('bottom-left')}
+            className="absolute -bottom-1.5 -left-1.5 w-4 h-4 cursor-nesw-resize z-50 hover:bg-sky-400/50 rounded-bl transition"
+            title="Resize diagonally"
+          />
+
+          {/* Bottom-Right Corner Handle */}
+          <div
+            onMouseDown={handleStartResize('bottom-right')}
+            className="absolute -bottom-1.5 -right-1.5 w-4 h-4 cursor-nwse-resize z-50 hover:bg-sky-400/50 rounded-br transition"
+            title="Resize diagonally"
+          />
+        </>
+      )}
+
+      {/* When docked, provide Left Border resize handle */}
+      {windowMode === 'docked' && !isMaximized && (
+        <div
+          onMouseDown={handleStartResize('left')}
+          className="absolute -left-1.5 top-0 bottom-0 w-3 cursor-col-resize z-40 group flex items-center justify-center hover:bg-neutral-500/20 transition"
+          title="Drag left/right to resize Code Editor width"
+        >
+          <div className="w-1 h-10 rounded-full bg-neutral-600 group-hover:bg-neutral-300 group-hover:h-16 transition-all" />
+        </div>
+      )}
+
+      {/* Tab Bar / Title Bar (Draggable in floating mode) */}
+      <div
+        onMouseDown={handleStartDragWindow}
+        className={`flex items-center justify-between bg-neutral-900/90 border-b border-neutral-800 px-3 py-1.5 shrink-0 select-none ${
+          windowMode === 'floating' && !isMaximized ? 'cursor-move group' : ''
+        }`}
+        title={
+          windowMode === 'floating' && !isMaximized
+            ? 'Click and drag to move code editor window'
+            : undefined
+        }
+      >
+        <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar">
+          {windowMode === 'floating' && !isMaximized && (
+            <div
+              className="p-1 text-neutral-500 group-hover:text-neutral-300 transition shrink-0"
+              title="Drag window"
+            >
+              <GripHorizontal className="w-4 h-4" />
+            </div>
+          )}
+
           {visibleTabs.map((tab) => (
             <div
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-t-lg text-xs font-mono cursor-pointer transition ${
+              className={`tab-item flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono cursor-pointer transition shrink-0 ${
                 activeTabId === tab.id
-                  ? 'bg-neutral-950 text-neutral-100 font-bold border-t-2 border-neutral-400'
+                  ? 'bg-neutral-950 text-neutral-100 font-bold border border-white/10 shadow-sm'
                   : 'bg-neutral-900/60 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/60'
               }`}
             >
@@ -474,17 +716,17 @@ robot.move_to(0, 0)
 
           <button
             onClick={handleCreateTab}
-            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 text-xs flex items-center gap-1"
+            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 text-xs flex items-center gap-1 shrink-0"
             title="Create new script file"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <div className="flex items-center gap-1 mb-1">
+        <div className="flex items-center gap-1 shrink-0 ml-2">
           <button
             onClick={() => setShowBeginnerGuide((prev) => !prev)}
-            className={`p-1.5 rounded text-xs flex items-center gap-1 border transition ${
+            className={`p-1.5 rounded-lg text-xs flex items-center gap-1 border transition ${
               showBeginnerGuide
                 ? 'bg-neutral-800 text-emerald-400 border-emerald-500/50'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800 border-neutral-700'
@@ -494,18 +736,49 @@ robot.move_to(0, 0)
             <Lightbulb className="w-3.5 h-3.5" />
             <span className="hidden sm:inline font-semibold">Guide</span>
           </button>
+
           <button
             onClick={() => setShowDocsModal(true)}
-            className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
             title="API Documentation"
           >
             <BookOpen className="w-4 h-4" />
           </button>
 
+          {/* Dock / Float Toggle */}
+          <button
+            onClick={() => {
+              setWindowMode((prev) => {
+                const next = prev === 'floating' ? 'docked' : 'floating';
+                try {
+                  if (typeof window !== 'undefined' && window.localStorage) {
+                    localStorage.setItem('prog66_editor_window_mode', next);
+                  }
+                } catch {
+                  // ignore
+                }
+                return next;
+              });
+              if (isMaximized) setIsMaximized(false);
+            }}
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+            title={
+              windowMode === 'floating'
+                ? 'Dock editor to right side'
+                : 'Float editor as movable window'
+            }
+          >
+            {windowMode === 'floating' ? (
+              <Columns2 className="w-4 h-4" />
+            ) : (
+              <AppWindow className="w-4 h-4" />
+            )}
+          </button>
+
           {/* Maximize / Restore Toggle */}
           <button
             onClick={() => setIsMaximized((prev) => !prev)}
-            className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
             title={isMaximized ? 'Restore editor size' : 'Maximize editor width'}
           >
             {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -513,8 +786,8 @@ robot.move_to(0, 0)
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
-            title="Close editor panel"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-rose-500/20 hover:text-rose-300 transition"
+            title="Close editor panel (Esc / Hide Code)"
           >
             <X className="w-4 h-4" />
           </button>
