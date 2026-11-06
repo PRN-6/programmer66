@@ -22,6 +22,8 @@ import {
   UploadCloud,
   LogOut,
   Shield,
+  ChevronDown,
+  CheckCircle2,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useEditorStore } from '../../store/useEditorStore';
@@ -108,11 +110,14 @@ export const TopHUD: React.FC<TopHUDProps> = ({
   const toggleDayNight = useGameStore((s) => s.toggleDayNight);
 
   const currentRoom = useCompetitionStore((state) => state.currentRoom);
+  const currentTeam = useCompetitionStore((state) => state.currentTeam);
   const activeChallenge = useCompetitionStore((state) => state.activeChallenge);
+  const selectChallenge = useCompetitionStore((state) => state.selectChallenge);
   const setShowAdminModal = useCompetitionStore((state) => state.setShowAdminModal);
   const isCompeting = Boolean(currentRoom);
 
   const [showUserMenu, setShowUserMenu] = React.useState(false);
+  const [showQuestionsDropdown, setShowQuestionsDropdown] = React.useState(false);
   const { user, profile: playerProfile, isSyncing, isSuperAdmin, syncToCloud, signOut, setShowAuthModal } = useAuthStore();
 
   const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
@@ -169,20 +174,79 @@ export const TopHUD: React.FC<TopHUDProps> = ({
         )}
       </div>
 
-      {/* Center Display: Competition Round vs Sandbox Day/Time/Weather */}
+      {/* Center Display: Interactive Competition Questions Dropdown vs Sandbox Day/Time/Weather */}
       <div className="flex items-center gap-3">
-        {isCompeting ? (
-          activeChallenge && (
-            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-3.5 py-1.5 rounded-xl shadow-sm">
+        {isCompeting && currentRoom ? (
+          <div className="relative">
+            <button
+              onClick={() => setShowQuestionsDropdown((prev) => !prev)}
+              className="flex items-center gap-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-500/50 px-3 py-1.5 rounded-xl shadow-sm transition group"
+              title="Click to view all competition questions and switch problems"
+            >
               <Trophy className="w-4 h-4 text-amber-400" />
-              <span className="text-xs font-bold text-amber-300">
-                Round {activeChallenge.level}: {activeChallenge.title.replace(/^Level\s*\d+:\s*/i, '')}
-              </span>
-              <span className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">
-                +{activeChallenge.points} pts
-              </span>
-            </div>
-          )
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-amber-300">
+                  {activeChallenge ? `Q${activeChallenge.level}: ${activeChallenge.title.replace(/^Level\s*\d+:\s*/i, '')}` : 'Questions'}
+                </span>
+                {activeChallenge && currentTeam?.completedChallenges.includes(activeChallenge.id) && (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                )}
+                {activeChallenge && (
+                  <span className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded">
+                    +{activeChallenge.points}p
+                  </span>
+                )}
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-amber-400/80 group-hover:translate-y-0.5 transition" />
+            </button>
+
+            {/* Questions Dropdown Menu */}
+            {showQuestionsDropdown && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-neutral-950 border border-neutral-800 rounded-xl shadow-2xl p-2 z-50 animate-in fade-in duration-100 flex flex-col gap-1">
+                <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-800 flex items-center justify-between">
+                  <span>Contest Questions</span>
+                  <span>{currentTeam?.completedChallenges.length || 0}/{currentRoom.challenges.length} Solved</span>
+                </div>
+                <div className="max-h-60 overflow-y-auto space-y-1 pt-1">
+                  {currentRoom.challenges.map((chal) => {
+                    const isSelected = activeChallenge?.id === chal.id;
+                    const isSolved = currentTeam?.completedChallenges.includes(chal.id);
+
+                    return (
+                      <button
+                        key={chal.id}
+                        onClick={() => {
+                          selectChallenge(chal.id);
+                          setShowQuestionsDropdown(false);
+                          if (!editorOpen) onToggleEditor();
+                        }}
+                        className={`w-full text-left p-2 rounded-lg text-xs transition flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40'
+                            : 'hover:bg-neutral-900 text-neutral-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-5 h-5 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 text-[10px] font-mono flex items-center justify-center shrink-0">
+                            Q{chal.level}
+                          </span>
+                          <span className="truncate">{chal.title.replace(/^Level\s*\d+:\s*/i, '')}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                          <span className="text-[10px] font-mono text-amber-400">+{chal.points}p</span>
+                          {isSolved ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <span className="w-2 h-2 rounded-full bg-neutral-700" />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <>
             {/* Day & Time (Click to toggle Day / Night Stadium Lights) */}

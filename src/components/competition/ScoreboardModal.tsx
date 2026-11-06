@@ -92,8 +92,26 @@ export const ScoreboardModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
                           )}
                         </div>
                         <p className="text-[11px] text-neutral-500">
-                          {team.members.join(', ')} • {team.completedChallenges.length} challenges solved
+                          {team.members.join(', ')} • {team.completedChallenges.length}/{currentRoom?.challenges.length || 0} solved
                         </p>
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                          {currentRoom?.challenges.map((c) => {
+                            const isDone = team.completedChallenges.includes(c.id);
+                            return (
+                              <span
+                                key={c.id}
+                                className={`text-[9px] font-mono px-1.5 py-0.2 rounded ${
+                                  isDone
+                                    ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 font-bold'
+                                    : 'bg-neutral-900 text-neutral-600 border border-neutral-800'
+                                }`}
+                                title={`Q${c.level}: ${c.title} (${isDone ? 'Solved' : 'Unsolved'})`}
+                              >
+                                Q{c.level} {isDone ? '✓' : '—'}
+                              </span>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
 

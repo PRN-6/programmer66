@@ -42,6 +42,7 @@ interface CompetitionState {
   teams: Team[];
   submissions: Submission[];
   activeChallenge: Challenge | null;
+  selectedChallengeId: string | null;
   recentRooms: Room[];
   isAdmin: boolean;
   showAdminModal: boolean;
@@ -56,6 +57,7 @@ interface CompetitionState {
   setShowScoreboardModal: (show: boolean) => void;
   setError: (err: string | null) => void;
 
+  selectChallenge: (challengeId: string) => void;
   initSession: () => Promise<void>;
   createRoom: (
     title: string,
@@ -90,6 +92,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
   teams: [],
   submissions: [],
   activeChallenge: null,
+  selectedChallengeId: null,
   recentRooms: [],
   isAdmin: false,
   showAdminModal: false,
@@ -102,6 +105,18 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
   setShowJoinModal: (show) => set({ showJoinModal: show }),
   setShowScoreboardModal: (show) => set({ showScoreboardModal: show }),
   setError: (err) => set({ error: err }),
+
+  selectChallenge: (challengeId: string) => {
+    const { currentRoom } = get();
+    if (!currentRoom) return;
+    const challenge = currentRoom.challenges.find((c) => c.id === challengeId);
+    if (challenge) {
+      set({
+        selectedChallengeId: challengeId,
+        activeChallenge: challenge,
+      });
+    }
+  },
 
   initSession: async () => {
     // 1. Check URL query param ?room=CODE
@@ -134,7 +149,9 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
       if (room) {
         const teams = await CompetitionService.getTeams(room.id);
         const submissions = await CompetitionService.getSubmissions(room.id);
+        const currentSelectedId = get().selectedChallengeId;
         const activeChallenge =
+          (currentSelectedId && room.challenges.find((c) => c.id === currentSelectedId)) ||
           room.challenges.find((c) => c.id === room.activeChallengeId) ||
           room.challenges[0] ||
           null;
@@ -148,6 +165,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
           teams,
           submissions,
           activeChallenge,
+          selectedChallengeId: activeChallenge?.id || null,
         });
 
         saveSession({
@@ -184,6 +202,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
         teams,
         submissions,
         activeChallenge,
+        selectedChallengeId: activeChallenge?.id || null,
         isLoading: false,
       });
 
@@ -222,6 +241,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
         teams,
         submissions,
         activeChallenge,
+        selectedChallengeId: activeChallenge?.id || null,
         isLoading: false,
       });
 
@@ -252,6 +272,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
         teams,
         submissions,
         activeChallenge,
+        selectedChallengeId: activeChallenge?.id || null,
         isAdmin: false,
         isLoading: false,
         showJoinModal: false,
@@ -277,6 +298,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
       teams: [],
       submissions: [],
       activeChallenge: null,
+      selectedChallengeId: null,
       isAdmin: false,
     });
   },
@@ -290,7 +312,9 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
       if (updatedRoom) {
         const teams = await CompetitionService.getTeams(updatedRoom.id);
         const submissions = await CompetitionService.getSubmissions(updatedRoom.id);
+        const currentSelectedId = get().selectedChallengeId;
         const activeChallenge =
+          (currentSelectedId && updatedRoom.challenges.find((c) => c.id === currentSelectedId)) ||
           updatedRoom.challenges.find((c) => c.id === updatedRoom.activeChallengeId) ||
           updatedRoom.challenges[0] ||
           null;
@@ -306,6 +330,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
             teams: [],
             submissions: [],
             activeChallenge: null,
+            selectedChallengeId: null,
             isAdmin: false,
           });
           alert('Notice: The competition event was closed by the host.');
@@ -321,6 +346,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
             teams: [],
             submissions: [],
             activeChallenge: null,
+            selectedChallengeId: null,
             isAdmin: false,
           });
           alert('Notice: Your team was removed from the event by the host.');
@@ -333,6 +359,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
           teams,
           submissions,
           activeChallenge,
+          selectedChallengeId: activeChallenge?.id || null,
         });
       }
     } catch (err) {
@@ -385,6 +412,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
       teams: [],
       submissions: [],
       activeChallenge: null,
+      selectedChallengeId: null,
       isAdmin: false,
     });
     await get().fetchRecentRooms();

@@ -23,6 +23,7 @@ import {
 import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { Challenge, ChallengeCriterion } from '../../types/competition';
 import { isSupabaseConfigured } from '../../services/supabase';
+import { DEFAULT_CHALLENGES } from '../../services/defaultChallenges';
 
 export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const {
@@ -50,8 +51,29 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [newRoomTitle, setNewRoomTitle] = useState('');
   const [newRoomDuration, setNewRoomDuration] = useState(30);
+  const [selectedChallengeIds, setSelectedChallengeIds] = useState<string[]>(() =>
+    DEFAULT_CHALLENGES.map((c) => c.id)
+  );
   const [resumeCode, setResumeCode] = useState('');
   const [resumeError, setResumeError] = useState<string | null>(null);
+
+  const toggleChallengeSelection = (id: string) => {
+    setSelectedChallengeIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const selectPresetChallenges = (preset: 'all' | '1-3' | '1-2' | 'speed') => {
+    if (preset === 'all') {
+      setSelectedChallengeIds(DEFAULT_CHALLENGES.map((c) => c.id));
+    } else if (preset === '1-3') {
+      setSelectedChallengeIds(['chal-1', 'chal-2', 'chal-3']);
+    } else if (preset === '1-2') {
+      setSelectedChallengeIds(['chal-1', 'chal-2']);
+    } else if (preset === 'speed') {
+      setSelectedChallengeIds(['chal-5']);
+    }
+  };
 
   // New challenge form state
   const [showAddChallenge, setShowAddChallenge] = useState(false);
@@ -119,8 +141,12 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   const handleCreateNewRoom = async () => {
-    if (!newRoomTitle.trim()) return;
-    await createRoom(newRoomTitle, newRoomDuration);
+    if (!newRoomTitle.trim() || selectedChallengeIds.length === 0) return;
+    const chosenChallenges = DEFAULT_CHALLENGES.filter((c) =>
+      selectedChallengeIds.includes(c.id)
+    );
+    const challengesToUse = chosenChallenges.length > 0 ? chosenChallenges : DEFAULT_CHALLENGES;
+    await createRoom(newRoomTitle, newRoomDuration, undefined, challengesToUse);
     setNewRoomTitle('');
   };
 
@@ -399,12 +425,137 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       />
                     </div>
 
+                    {/* Level / Challenge Selection */}
+                    <div className="space-y-2 pt-2 border-t border-neutral-800">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <label className="block text-xs font-bold text-neutral-200">
+                            Select Included Levels / Questions
+                          </label>
+                          <p className="text-[11px] text-neutral-400">
+                            Participants can browse, select, and solve any of these questions during the contest.
+                          </p>
+                        </div>
+                        {/* Quick Presets */}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => selectPresetChallenges('all')}
+                            className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
+                              selectedChallengeIds.length === DEFAULT_CHALLENGES.length
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
+                                : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
+                            }`}
+                          >
+                            All 5 Levels
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => selectPresetChallenges('1-3')}
+                            className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
+                              selectedChallengeIds.length === 3 &&
+                              selectedChallengeIds.includes('chal-1') &&
+                              selectedChallengeIds.includes('chal-2') &&
+                              selectedChallengeIds.includes('chal-3')
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
+                                : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
+                            }`}
+                          >
+                            Levels 1–3
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => selectPresetChallenges('1-2')}
+                            className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
+                              selectedChallengeIds.length === 2 &&
+                              selectedChallengeIds.includes('chal-1') &&
+                              selectedChallengeIds.includes('chal-2')
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
+                                : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
+                            }`}
+                          >
+                            Beginner (1–2)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => selectPresetChallenges('speed')}
+                            className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
+                              selectedChallengeIds.length === 1 && selectedChallengeIds.includes('chal-5')
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
+                                : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
+                            }`}
+                          >
+                            Speed Run (L5)
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Level Cards */}
+                      <div className="grid grid-cols-1 gap-2 max-h-56 overflow-y-auto pr-1">
+                        {DEFAULT_CHALLENGES.map((chal) => {
+                          const isSelected = selectedChallengeIds.includes(chal.id);
+                          return (
+                            <div
+                              key={chal.id}
+                              onClick={() => toggleChallengeSelection(chal.id)}
+                              className={`p-2.5 rounded-xl border text-xs cursor-pointer transition flex items-center justify-between ${
+                                isSelected
+                                  ? 'bg-amber-500/10 border-amber-500/40 text-neutral-100 shadow-sm'
+                                  : 'bg-neutral-900/60 border-neutral-800 text-neutral-500 hover:border-neutral-700'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={`w-5 h-5 rounded-md flex items-center justify-center border text-xs font-bold transition ${
+                                    isSelected
+                                      ? 'bg-amber-500 text-neutral-950 border-amber-400'
+                                      : 'bg-neutral-800 border-neutral-700 text-transparent'
+                                  }`}
+                                >
+                                  ✓
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-amber-300">Level {chal.level}:</span>
+                                    <span className="font-semibold text-neutral-100">{chal.title.replace(/^Level\s*\d+:\s*/i, '')}</span>
+                                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-neutral-800 text-amber-400 font-bold">
+                                      +{chal.points} pts
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-neutral-400 line-clamp-1 mt-0.5">
+                                    {chal.description}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-mono uppercase text-neutral-400 shrink-0">
+                                {chal.testCriterion}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Selected Summary */}
+                      <div className="flex items-center justify-between text-xs text-neutral-400 pt-1">
+                        <span>
+                          Selected: <b className="text-amber-300">{selectedChallengeIds.length} Levels</b>
+                        </span>
+                        <span>
+                          Total Available: <b className="text-amber-300">
+                            {DEFAULT_CHALLENGES
+                              .filter((c) => selectedChallengeIds.includes(c.id))
+                              .reduce((acc, c) => acc + c.points, 0)} pts
+                          </b>
+                        </span>
+                      </div>
+                    </div>
+
                     <button
                       onClick={handleCreateNewRoom}
-                      disabled={!newRoomTitle.trim()}
+                      disabled={!newRoomTitle.trim() || selectedChallengeIds.length === 0}
                       className="w-full py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:opacity-50 text-neutral-950 font-bold text-sm rounded-xl transition shadow-lg shadow-amber-950/40"
                     >
-                      🚀 Generate Room & Launch Event
+                      🚀 Generate Room & Launch Event ({selectedChallengeIds.length} Levels)
                     </button>
                   </div>
                 </div>

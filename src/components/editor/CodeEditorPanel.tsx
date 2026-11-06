@@ -20,6 +20,9 @@ import {
   Minimize2,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
   Lock,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -57,7 +60,9 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
   const currentRoom = useCompetitionStore((state) => state.currentRoom);
   const currentTeam = useCompetitionStore((state) => state.currentTeam);
   const activeChallenge = useCompetitionStore((state) => state.activeChallenge);
+  const selectChallenge = useCompetitionStore((state) => state.selectChallenge);
   const submitChallengeSolution = useCompetitionStore((state) => state.submitChallengeSolution);
+  const resetFarmPlots = useGameStore((state) => state.resetFarmPlots);
 
   const [isSubmittingChallenge, setIsSubmittingChallenge] = useState(false);
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
@@ -65,6 +70,41 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ onClose }) => 
   const [taskDone, setTaskDone] = useState(false);
   const [evaluationMessage, setEvaluationMessage] = useState<string | null>(null);
   const [showBeginnerGuide, setShowBeginnerGuide] = useState(false);
+
+  const challenges = currentRoom?.challenges || [];
+  const activeChalIndex = challenges.findIndex((c) => c.id === activeChallenge?.id);
+  const solvedChallengeIds = currentTeam?.completedChallenges || [];
+  const solvedCount = challenges.filter((c) => solvedChallengeIds.includes(c.id)).length;
+
+  const handleSelectQuestion = (chalId: string) => {
+    selectChallenge(chalId);
+    setTaskDone(false);
+    setEvaluationMessage(null);
+    setSubmissionError(null);
+
+    const targetChal = challenges.find((c) => c.id === chalId);
+    if (!targetChal) return;
+
+    const tabName = `level_${targetChal.level}.py`;
+    const existingTab = tabs.find((t) => t.name === tabName);
+    if (existingTab) {
+      setActiveTab(existingTab.id);
+    } else {
+      addTab(tabName, targetChal.starterCode);
+    }
+  };
+
+  const handlePrevQuestion = () => {
+    if (activeChalIndex > 0) {
+      handleSelectQuestion(challenges[activeChalIndex - 1].id);
+    }
+  };
+
+  const handleNextQuestion = () => {
+    if (activeChalIndex >= 0 && activeChalIndex < challenges.length - 1) {
+      handleSelectQuestion(challenges[activeChalIndex + 1].id);
+    }
+  };
 
   // --- Dynamic Panel Resizing & Maximizing ---
   const [panelWidth, setPanelWidth] = useState<number>(() => {
@@ -418,7 +458,7 @@ robot.move_to(0, 0)
               }`}
             >
               <span>{tab.name}</span>
-              {!isCompeting && tabs.length > 1 && (
+              {tabs.length > 1 && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -432,15 +472,13 @@ robot.move_to(0, 0)
             </div>
           ))}
 
-          {!isCompeting && (
-            <button
-              onClick={handleCreateTab}
-              className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 text-xs flex items-center gap-1"
-              title="Create new script file"
-            >
-              <Plus className="w-3.5 h-3.5" />
-            </button>
-          )}
+          <button
+            onClick={handleCreateTab}
+            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 text-xs flex items-center gap-1"
+            title="Create new script file"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         <div className="flex items-center gap-1 mb-1">
@@ -546,84 +584,167 @@ robot.move_to(0, 0)
         </div>
       </div>
 
-      {/* Active Competition Challenge Banner - Fixed single Level format */}
-      {currentRoom && activeChallenge && (
-        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-amber-300">
-                  Level {activeChallenge.level}: {activeChallenge.title.replace(/^Level\s*\d+:\s*/i, '')}
-                </span>
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded">
-                  +{activeChallenge.points} pts
-                </span>
-              </div>
-              <p className="text-[11px] text-neutral-400 line-clamp-1">{activeChallenge.description}</p>
+      {/* Multi-Problem Switcher & Contest Question Navigator */}
+      {currentRoom && challenges.length > 0 && (
+        <div className="bg-neutral-950 border-b border-amber-500/30 flex flex-col shrink-0">
+          {/* Top Multi-Question Pills Row */}
+          <div className="px-3 py-1.5 bg-neutral-900/90 border-b border-neutral-800 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 mr-1 flex items-center gap-1">
+                <Trophy className="w-3 h-3 text-amber-400" />
+                <span>Questions:</span>
+              </span>
+
+              {/* Prev Button */}
+              <button
+                onClick={handlePrevQuestion}
+                disabled={activeChalIndex <= 0}
+                className="p-1 rounded text-neutral-400 hover:text-white disabled:opacity-30 disabled:hover:text-neutral-400 hover:bg-neutral-800 transition"
+                title="Previous Question"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Problem Pills */}
+              {challenges.map((chal, idx) => {
+                const isSelected = activeChallenge?.id === chal.id;
+                const isSolved = solvedChallengeIds.includes(chal.id);
+
+                return (
+                  <button
+                    key={chal.id}
+                    onClick={() => handleSelectQuestion(chal.id)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition shrink-0 border ${
+                      isSelected
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm font-bold ring-1 ring-amber-400/30'
+                        : isSolved
+                        ? 'bg-emerald-950/40 text-emerald-300 border-emerald-700/60 hover:bg-emerald-900/40'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-neutral-200 hover:bg-neutral-800'
+                    }`}
+                    title={`Question ${idx + 1}: ${chal.title} (+${chal.points} pts)`}
+                  >
+                    <span>Q{chal.level}</span>
+                    {isSolved ? (
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                    ) : (
+                      <span className="text-[10px] opacity-75 font-mono">+{chal.points}p</span>
+                    )}
+                  </button>
+                );
+              })}
+
+              {/* Next Button */}
+              <button
+                onClick={handleNextQuestion}
+                disabled={activeChalIndex >= challenges.length - 1}
+                className="p-1 rounded text-neutral-400 hover:text-white disabled:opacity-30 disabled:hover:text-neutral-400 hover:bg-neutral-800 transition"
+                title="Next Question"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Solved Summary Badge */}
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 border border-neutral-700 text-neutral-300">
+                Solved: <b className="text-emerald-400">{solvedCount}</b>/{challenges.length}
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleLoadStarterCode}
-              className="flex items-center gap-1 px-2 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 text-xs font-medium transition"
-              title="Replace current editor text with the starter code for this challenge"
-            >
-              <Download className="w-3 h-3 text-neutral-400" />
-              <span>Load Starter</span>
-            </button>
+          {/* Active Question Details & Actions */}
+          {activeChallenge && (
+            <div className="bg-amber-500/10 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-amber-300">
+                      Q{activeChallenge.level}: {activeChallenge.title.replace(/^Level\s*\d+:\s*/i, '')}
+                    </span>
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded">
+                      +{activeChallenge.points} pts
+                    </span>
+                    {isAlreadyCompleted && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.2 bg-emerald-950 text-emerald-300 border border-emerald-700/80 rounded flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Solved
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-neutral-400 line-clamp-1">{activeChallenge.description}</p>
+                </div>
+              </div>
 
-            {currentTeam && (
-              <button
-                onClick={handleSubmitSolution}
-                disabled={isSubmittingChallenge || (!taskDone && !isAlreadyCompleted)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition shadow-sm ${
-                  isAlreadyCompleted
-                    ? 'bg-emerald-700/80 text-emerald-100 hover:bg-emerald-600 cursor-default'
-                    : submissionSuccess
-                    ? 'bg-emerald-600 text-white'
-                    : taskDone
-                    ? 'bg-emerald-500 hover:bg-emerald-400 text-neutral-950 shadow-emerald-950/50 animate-pulse'
-                    : 'bg-neutral-800 text-neutral-500 border border-neutral-700/60 cursor-not-allowed'
-                }`}
-                title={
-                  isAlreadyCompleted
-                    ? 'Challenge already completed! Points earned.'
-                    : taskDone
-                    ? 'All test cases passed! Click to submit your official solution.'
-                    : 'Run your Python script and pass all challenge criteria first to unlock submission!'
-                }
-              >
-                {isSubmittingChallenge ? (
-                  <>
-                    <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    <span>Submitting...</span>
-                  </>
-                ) : isAlreadyCompleted ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Solved (+{activeChallenge.points} pts)</span>
-                  </>
-                ) : submissionSuccess ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Passed & Submitted!</span>
-                  </>
-                ) : taskDone ? (
-                  <>
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Submit Answer (+{activeChallenge.points} pts)</span>
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-3.5 h-3.5 text-neutral-500" />
-                    <span>Submit (Pass Tests First)</span>
-                  </>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={resetFarmPlots}
+                  className="flex items-center gap-1 px-2 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 text-xs font-medium transition"
+                  title="Clear farm plots to test fresh execution"
+                >
+                  <RotateCcw className="w-3 h-3 text-neutral-400" />
+                  <span className="hidden sm:inline">Reset Soil</span>
+                </button>
+
+                <button
+                  onClick={handleLoadStarterCode}
+                  className="flex items-center gap-1 px-2 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 text-xs font-medium transition"
+                  title="Replace current editor text with the starter code for this challenge"
+                >
+                  <Download className="w-3 h-3 text-neutral-400" />
+                  <span>Load Starter</span>
+                </button>
+
+                {currentTeam && (
+                  <button
+                    onClick={handleSubmitSolution}
+                    disabled={isSubmittingChallenge || (!taskDone && !isAlreadyCompleted)}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition shadow-sm ${
+                      isAlreadyCompleted
+                        ? 'bg-emerald-700/80 text-emerald-100 hover:bg-emerald-600 cursor-default'
+                        : submissionSuccess
+                        ? 'bg-emerald-600 text-white'
+                        : taskDone
+                        ? 'bg-emerald-500 hover:bg-emerald-400 text-neutral-950 shadow-emerald-950/50 animate-pulse'
+                        : 'bg-neutral-800 text-neutral-500 border border-neutral-700/60 cursor-not-allowed'
+                    }`}
+                    title={
+                      isAlreadyCompleted
+                        ? 'Challenge already completed! Points earned.'
+                        : taskDone
+                        ? 'All test cases passed! Click to submit your official solution.'
+                        : 'Run your Python script and pass all challenge criteria first to unlock submission!'
+                    }
+                  >
+                    {isSubmittingChallenge ? (
+                      <>
+                        <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : isAlreadyCompleted ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Solved (+{activeChallenge.points} pts)</span>
+                      </>
+                    ) : submissionSuccess ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Passed & Submitted!</span>
+                      </>
+                    ) : taskDone ? (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Submit Answer (+{activeChallenge.points} pts)</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3.5 h-3.5 text-neutral-500" />
+                        <span>Submit (Pass Tests First)</span>
+                      </>
+                    )}
+                  </button>
                 )}
-              </button>
-            )}
-          </div>
+              </div>
+            </div>
+          )}
 
           {/* Task Done Success Banner (Unlocks Submission) */}
           {taskDone && !isAlreadyCompleted && (

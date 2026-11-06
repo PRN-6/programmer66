@@ -87,4 +87,41 @@ describe('CompetitionService', () => {
     const retrieved = await CompetitionService.getRoomByCode(room.code);
     expect(retrieved?.status).toBe('completed');
   });
+
+  it('creates a room with custom selected levels', async () => {
+    const selectedLevels = [
+      {
+        id: 'chal-1',
+        level: 1,
+        title: 'Level 1: Automated Seed Sower',
+        description: 'Plant carrots',
+        points: 100,
+        targetCount: 12,
+        timeLimitSeconds: 120,
+        testCriterion: 'planted_count' as const,
+        starterCode: '# Level 1',
+      },
+      {
+        id: 'chal-2',
+        level: 2,
+        title: 'Level 2: Smart Irrigation Engineer',
+        description: 'Water plots',
+        points: 150,
+        targetCount: 8,
+        timeLimitSeconds: 150,
+        testCriterion: 'water_efficiency' as const,
+        starterCode: '# Level 2',
+      },
+    ];
+
+    const room = await CompetitionService.createRoom(
+      'Custom 2-Level Contest',
+      30,
+      undefined,
+      selectedLevels
+    );
+
+    expect(room.challenges.length).toBe(2);
+    expect(room.challenges.map((c) => c.id)).toEqual(['chal-1', 'chal-2']);
+  });
 });

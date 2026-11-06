@@ -256,22 +256,41 @@ export const WaitingLobby: React.FC<WaitingLobbyProps> = ({
               </div>
             </div>
 
-            {/* Event Format Details */}
-            <div className="bg-neutral-900/40 border border-neutral-800/70 rounded-xl p-3 text-xs space-y-2">
-              <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-                Event Format
+            {/* Event Format & Included Challenges */}
+            <div className="bg-neutral-900/40 border border-neutral-800/70 rounded-xl p-3 text-xs space-y-2.5">
+              <div className="flex items-center justify-between text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                <span>Event Problem Set</span>
+                <span className="text-amber-400 font-mono">
+                  {currentRoom.challenges?.reduce((acc, c) => acc + c.points, 0) || 0} Total Pts
+                </span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-[11px]">
                 <div className="bg-neutral-950 p-2 rounded border border-neutral-800/60">
-                  <span className="text-neutral-500 block text-[10px]">Rounds</span>
+                  <span className="text-neutral-500 block text-[10px]">Problems</span>
                   <span className="font-bold text-white">
-                    {currentRoom.challenges?.length || 5} Challenges
+                    {currentRoom.challenges?.length || 0} Questions
                   </span>
                 </div>
                 <div className="bg-neutral-950 p-2 rounded border border-neutral-800/60">
-                  <span className="text-neutral-500 block text-[10px]">Scoring</span>
-                  <span className="font-bold text-amber-400">Accuracy + Speed</span>
+                  <span className="text-neutral-500 block text-[10px]">Format</span>
+                  <span className="font-bold text-amber-400">Free Choice Order</span>
                 </div>
+              </div>
+              {/* Question list pills */}
+              <div className="space-y-1.5 pt-1 max-h-36 overflow-y-auto pr-1">
+                {currentRoom.challenges?.map((chal) => (
+                  <div
+                    key={chal.id}
+                    className="p-1.5 rounded bg-neutral-950/80 border border-neutral-800/70 flex items-center justify-between text-[11px]"
+                  >
+                    <span className="text-neutral-300 font-medium truncate">
+                      Q{chal.level}: {chal.title.replace(/^Level\s*\d+:\s*/i, '')}
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-amber-400 shrink-0 ml-1">
+                      +{chal.points} pts
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
