@@ -13,6 +13,16 @@ export const Environment: React.FC = () => {
     return obj;
   }, []);
 
+  // Triangular gable wall shape to close attic on farmhouse sides
+  const farmhouseGableShape = useMemo(() => {
+    const shape = new THREE.Shape();
+    shape.moveTo(-1.4, 0);
+    shape.lineTo(1.4, 0);
+    shape.lineTo(0, 1.05);
+    shape.closePath();
+    return shape;
+  }, []);
+
   useFrame((_, delta) => {
     if (windmillBladesRef.current) {
       windmillBladesRef.current.rotation.z += delta * 1.0;
@@ -46,15 +56,44 @@ export const Environment: React.FC = () => {
           <boxGeometry args={[3.2, 2.4, 2.8]} />
           <meshStandardMaterial color="#fef3c7" roughness={0.7} />
         </mesh>
-        {/* Pitched Terracotta Red Roof */}
-        <mesh position={[0, 2.9, 0]} rotation={[0, 0, 0]} castShadow>
-          <coneGeometry args={[2.5, 1.4, 4]} />
-          <meshStandardMaterial color="#b91c1c" roughness={0.6} />
+
+        {/* Triangular Attic Gable Walls (Left & Right sides) */}
+        <mesh position={[1.595, 2.4, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+          <shapeGeometry args={[farmhouseGableShape]} />
+          <meshStandardMaterial color="#fef3c7" roughness={0.7} side={THREE.DoubleSide} />
         </mesh>
+        <mesh position={[-1.595, 2.4, 0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
+          <shapeGeometry args={[farmhouseGableShape]} />
+          <meshStandardMaterial color="#fef3c7" roughness={0.7} side={THREE.DoubleSide} />
+        </mesh>
+
+        {/* Front Pitch Roof Slope (overhanging front wall and porch) */}
+        <mesh position={[0, 2.885, 0.81]} rotation={[0.609, 0, 0]} castShadow>
+          <boxGeometry args={[3.65, 0.08, 2.05]} />
+          <meshStandardMaterial color="#b91c1c" roughness={0.55} />
+        </mesh>
+
+        {/* Back Pitch Roof Slope (overhanging back wall) */}
+        <mesh position={[0, 2.885, -0.81]} rotation={[-0.609, 0, 0]} castShadow>
+          <boxGeometry args={[3.65, 0.08, 2.05]} />
+          <meshStandardMaterial color="#b91c1c" roughness={0.55} />
+        </mesh>
+
+        {/* Roof Ridge Cap */}
+        <mesh position={[0, 3.46, 0]} castShadow>
+          <boxGeometry args={[3.68, 0.08, 0.16]} />
+          <meshStandardMaterial color="#991b1b" roughness={0.5} />
+        </mesh>
+
         {/* Brick Chimney */}
-        <mesh position={[0.9, 3.1, 0.5]} castShadow>
-          <boxGeometry args={[0.4, 1.0, 0.4]} />
-          <meshStandardMaterial color="#7f1d1d" roughness={0.9} />
+        <mesh position={[0.85, 3.35, -0.45]} castShadow>
+          <boxGeometry args={[0.38, 0.9, 0.38]} />
+          <meshStandardMaterial color="#7f1d1d" roughness={0.85} />
+        </mesh>
+        {/* Chimney Cap */}
+        <mesh position={[0.85, 3.82, -0.45]} castShadow>
+          <boxGeometry args={[0.44, 0.06, 0.44]} />
+          <meshStandardMaterial color="#450a0a" roughness={0.9} />
         </mesh>
         {/* Natural Wooden Porch */}
         <mesh position={[0, 0.2, 1.6]} castShadow receiveShadow>
