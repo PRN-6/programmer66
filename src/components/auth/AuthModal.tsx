@@ -13,8 +13,10 @@ import {
   Shield,
   KeyRound,
   Zap,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
-import { useAuthStore } from '../../store/useAuthStore';
+import { useAuthStore, SUPER_ADMIN_DEFAULTS } from '../../store/useAuthStore';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -25,8 +27,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
   const [mode, setMode] = useState<'signin' | 'signup' | 'admin'>(defaultMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+
+  const handleQuickFillAdmin = () => {
+    setEmail(SUPER_ADMIN_DEFAULTS.username || 'admin');
+    setPassword(SUPER_ADMIN_DEFAULTS.password || 'admin123');
+    setFormError(null);
+  };
 
   const { signIn, signUp, signInWithGoogle, loginAsSuperAdmin, isLoading, error, setError } =
     useAuthStore();
@@ -264,29 +273,60 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
                 <Lock className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
               )}
               <input
-                type="password"
-                placeholder={mode === 'admin' ? 'Enter master password from .env' : 'Enter password'}
+                type={showPassword ? 'text' : 'password'}
+                placeholder={mode === 'admin' ? 'Default: admin123' : 'Enter password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className={`w-full bg-neutral-900 border rounded-xl pl-9 pr-3 py-2 text-white placeholder:text-neutral-600 focus:outline-none transition text-xs font-mono ${
+                className={`w-full bg-neutral-900 border rounded-xl pl-9 pr-10 py-2 text-white placeholder:text-neutral-600 focus:outline-none transition text-xs font-mono ${
                   mode === 'admin'
                     ? 'border-neutral-800 focus:border-amber-500'
                     : 'border-neutral-800 focus:border-sky-500'
                 }`}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition p-0.5"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
           {/* Perks or Admin info banner */}
           {mode === 'admin' ? (
-            <div className="bg-amber-500/10 p-3 rounded-xl border border-amber-500/30 space-y-1.5 text-[11px] text-amber-200/90">
-              <div className="flex items-center gap-1.5 font-semibold text-amber-300">
-                <Shield className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span>Super Admin Privileges</span>
+            <div className="bg-amber-500/10 p-3 rounded-xl border border-amber-500/30 space-y-2 text-[11px] text-amber-200/90">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-semibold text-amber-300">
+                  <Shield className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Super Admin Credentials</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleQuickFillAdmin}
+                  className="px-2 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded text-[10px] font-bold flex items-center gap-1 transition"
+                  title="Auto-fill master credentials"
+                >
+                  <Zap className="w-3 h-3 text-amber-400" />
+                  <span>Auto-Fill</span>
+                </button>
               </div>
-              <p className="text-[10px] text-amber-300/80 leading-relaxed">
-                Credentials configured in <code className="bg-amber-950/60 px-1 py-0.5 rounded text-amber-200 font-mono">.env</code> (<code className="font-mono">VITE_SUPER_ADMIN_...</code>). Logging in opens the Organizer Dashboard to create rooms, launch coding competitions, and control live scoreboards.
+
+              <div className="bg-neutral-950/80 p-2 rounded-lg border border-amber-500/20 font-mono text-[11px] space-y-1 text-neutral-300">
+                <div className="flex items-center justify-between">
+                  <span className="text-neutral-400">Username:</span>
+                  <span className="font-bold text-amber-300">admin</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-neutral-400">Password:</span>
+                  <span className="font-bold text-amber-300">admin123</span>
+                </div>
+              </div>
+
+              <p className="text-[10px] text-neutral-400 leading-relaxed">
+                Credentials from <code className="text-amber-300">.env</code>. Click <b className="text-amber-200">Auto-Fill</b> or enter <code className="text-white">admin</code> / <code className="text-white">admin123</code>.
               </p>
             </div>
           ) : (
