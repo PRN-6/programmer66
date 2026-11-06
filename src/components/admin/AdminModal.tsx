@@ -21,7 +21,7 @@ import {
   Power,
 } from 'lucide-react';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
-import { Challenge, ChallengeCriterion } from '../../types/competition';
+import { Challenge, ChallengeCriterion, ChallengeDifficulty } from '../../types/competition';
 import { isSupabaseConfigured } from '../../services/supabase';
 import { DEFAULT_CHALLENGES } from '../../services/defaultChallenges';
 
@@ -54,6 +54,7 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [selectedChallengeIds, setSelectedChallengeIds] = useState<string[]>(() =>
     DEFAULT_CHALLENGES.map((c) => c.id)
   );
+  const [levelCategoryFilter, setLevelCategoryFilter] = useState<'all' | ChallengeDifficulty>('all');
   const [resumeCode, setResumeCode] = useState('');
   const [resumeError, setResumeError] = useState<string | null>(null);
 
@@ -63,15 +64,36 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     );
   };
 
-  const selectPresetChallenges = (preset: 'all' | '1-3' | '1-2' | 'speed') => {
+  const selectPresetChallenges = (preset: 'all' | 'easy' | 'medium' | 'hard' | 'balanced') => {
     if (preset === 'all') {
       setSelectedChallengeIds(DEFAULT_CHALLENGES.map((c) => c.id));
-    } else if (preset === '1-3') {
-      setSelectedChallengeIds(['chal-1', 'chal-2', 'chal-3']);
-    } else if (preset === '1-2') {
-      setSelectedChallengeIds(['chal-1', 'chal-2']);
-    } else if (preset === 'speed') {
-      setSelectedChallengeIds(['chal-5']);
+    } else if (preset === 'easy') {
+      setSelectedChallengeIds(
+        DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'easy').map((c) => c.id)
+      );
+    } else if (preset === 'medium') {
+      setSelectedChallengeIds(
+        DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'medium').map((c) => c.id)
+      );
+    } else if (preset === 'hard') {
+      setSelectedChallengeIds(
+        DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'hard').map((c) => c.id)
+      );
+    } else if (preset === 'balanced') {
+      setSelectedChallengeIds(['chal-1', 'chal-2', 'chal-5', 'chal-6', 'chal-9', 'chal-11']);
+    }
+  };
+
+  const getDiffBadge = (diff?: ChallengeDifficulty) => {
+    switch (diff) {
+      case 'easy':
+        return { label: 'Easy', cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' };
+      case 'medium':
+        return { label: 'Medium', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30' };
+      case 'hard':
+        return { label: 'Hard', cls: 'bg-rose-500/15 text-rose-400 border-rose-500/30' };
+      default:
+        return { label: 'Normal', cls: 'bg-neutral-800 text-neutral-300 border-neutral-700' };
     }
   };
 
@@ -80,6 +102,7 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [newChalTitle, setNewChalTitle] = useState('');
   const [newChalDesc, setNewChalDesc] = useState('');
   const [newChalLevel, setNewChalLevel] = useState(1);
+  const [newChalDifficulty, setNewChalDifficulty] = useState<ChallengeDifficulty>('easy');
   const [newChalPoints, setNewChalPoints] = useState(100);
   const [newChalCriterion, setNewChalCriterion] = useState<ChallengeCriterion>('planted_count');
   const [newChalTargetCount, setNewChalTargetCount] = useState(10);
@@ -157,6 +180,7 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       title: newChalTitle,
       description: newChalDesc,
       level: newChalLevel,
+      difficulty: newChalDifficulty,
       points: newChalPoints,
       targetCount: newChalTargetCount,
       timeLimitSeconds: newChalTimeLimit,
@@ -426,18 +450,18 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     </div>
 
                     {/* Level / Challenge Selection */}
-                    <div className="space-y-2 pt-2 border-t border-neutral-800">
+                    <div className="space-y-3 pt-2 border-t border-neutral-800">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
                           <label className="block text-xs font-bold text-neutral-200">
                             Select Included Levels / Questions
                           </label>
                           <p className="text-[11px] text-neutral-400">
-                            Participants can browse, select, and solve any of these questions during the contest.
+                            Categorized into Easy, Medium, and Hard. Participants can browse and solve questions in any order.
                           </p>
                         </div>
                         {/* Quick Presets */}
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center flex-wrap gap-1.5">
                           <button
                             type="button"
                             onClick={() => selectPresetChallenges('all')}
@@ -447,92 +471,153 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                 : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
                             }`}
                           >
-                            All 5 Levels
+                            All 12 Levels
                           </button>
                           <button
                             type="button"
-                            onClick={() => selectPresetChallenges('1-3')}
+                            onClick={() => selectPresetChallenges('easy')}
                             className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
-                              selectedChallengeIds.length === 3 &&
-                              selectedChallengeIds.includes('chal-1') &&
-                              selectedChallengeIds.includes('chal-2') &&
-                              selectedChallengeIds.includes('chal-3')
+                              selectedChallengeIds.length === 4 &&
+                              DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'easy').every((c) => selectedChallengeIds.includes(c.id))
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold'
+                                : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
+                            }`}
+                          >
+                            Easy (4)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => selectPresetChallenges('medium')}
+                            className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
+                              selectedChallengeIds.length === 4 &&
+                              DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'medium').every((c) => selectedChallengeIds.includes(c.id))
                                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
                                 : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
                             }`}
                           >
-                            Levels 1–3
+                            Medium (4)
                           </button>
                           <button
                             type="button"
-                            onClick={() => selectPresetChallenges('1-2')}
+                            onClick={() => selectPresetChallenges('hard')}
                             className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
-                              selectedChallengeIds.length === 2 &&
-                              selectedChallengeIds.includes('chal-1') &&
-                              selectedChallengeIds.includes('chal-2')
-                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
+                              selectedChallengeIds.length === 4 &&
+                              DEFAULT_CHALLENGES.filter((c) => c.difficulty === 'hard').every((c) => selectedChallengeIds.includes(c.id))
+                                ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 font-bold'
                                 : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
                             }`}
                           >
-                            Beginner (1–2)
+                            Hard (4)
                           </button>
                           <button
                             type="button"
-                            onClick={() => selectPresetChallenges('speed')}
+                            onClick={() => selectPresetChallenges('balanced')}
                             className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition ${
-                              selectedChallengeIds.length === 1 && selectedChallengeIds.includes('chal-5')
-                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
+                              selectedChallengeIds.length === 6 &&
+                              ['chal-1', 'chal-2', 'chal-5', 'chal-6', 'chal-9', 'chal-11'].every((id) => selectedChallengeIds.includes(id))
+                                ? 'bg-sky-500/20 text-sky-300 border-sky-500/40 font-bold'
                                 : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-700'
                             }`}
                           >
-                            Speed Run (L5)
+                            Balanced (6)
                           </button>
                         </div>
                       </div>
 
-                      {/* Level Cards */}
-                      <div className="grid grid-cols-1 gap-2 max-h-56 overflow-y-auto pr-1">
-                        {DEFAULT_CHALLENGES.map((chal) => {
-                          const isSelected = selectedChallengeIds.includes(chal.id);
+                      {/* Difficulty Tabs */}
+                      <div className="flex items-center gap-1.5 p-1 bg-neutral-900/80 rounded-xl border border-neutral-800">
+                        {(['all', 'easy', 'medium', 'hard'] as const).map((cat) => {
+                          const count = cat === 'all'
+                            ? DEFAULT_CHALLENGES.length
+                            : DEFAULT_CHALLENGES.filter((c) => c.difficulty === cat).length;
+                          const selectedInCat = cat === 'all'
+                            ? selectedChallengeIds.length
+                            : DEFAULT_CHALLENGES.filter((c) => c.difficulty === cat && selectedChallengeIds.includes(c.id)).length;
+                          const isActive = levelCategoryFilter === cat;
+
                           return (
-                            <div
-                              key={chal.id}
-                              onClick={() => toggleChallengeSelection(chal.id)}
-                              className={`p-2.5 rounded-xl border text-xs cursor-pointer transition flex items-center justify-between ${
-                                isSelected
-                                  ? 'bg-amber-500/10 border-amber-500/40 text-neutral-100 shadow-sm'
-                                  : 'bg-neutral-900/60 border-neutral-800 text-neutral-500 hover:border-neutral-700'
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => setLevelCategoryFilter(cat)}
+                              className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-xs font-semibold transition ${
+                                isActive
+                                  ? cat === 'easy'
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                                    : cat === 'medium'
+                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                                    : cat === 'hard'
+                                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm'
+                                    : 'bg-neutral-800 text-white border border-neutral-700 shadow-sm'
+                                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
                               }`}
                             >
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className={`w-5 h-5 rounded-md flex items-center justify-center border text-xs font-bold transition ${
-                                    isSelected
-                                      ? 'bg-amber-500 text-neutral-950 border-amber-400'
-                                      : 'bg-neutral-800 border-neutral-700 text-transparent'
-                                  }`}
-                                >
-                                  ✓
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-bold text-amber-300">Level {chal.level}:</span>
-                                    <span className="font-semibold text-neutral-100">{chal.title.replace(/^Level\s*\d+:\s*/i, '')}</span>
-                                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-neutral-800 text-amber-400 font-bold">
-                                      +{chal.points} pts
-                                    </span>
-                                  </div>
-                                  <p className="text-[11px] text-neutral-400 line-clamp-1 mt-0.5">
-                                    {chal.description}
-                                  </p>
-                                </div>
-                              </div>
-                              <span className="text-[10px] font-mono uppercase text-neutral-400 shrink-0">
-                                {chal.testCriterion}
+                              <span className="capitalize">{cat}</span>
+                              <span className="text-[10px] font-mono opacity-80">
+                                ({selectedInCat}/{count})
                               </span>
-                            </div>
+                            </button>
                           );
                         })}
+                      </div>
+
+                      {/* Level Cards */}
+                      <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1">
+                        {DEFAULT_CHALLENGES
+                          .filter((c) => levelCategoryFilter === 'all' || c.difficulty === levelCategoryFilter)
+                          .map((chal) => {
+                            const isSelected = selectedChallengeIds.includes(chal.id);
+                            const badge = getDiffBadge(chal.difficulty);
+
+                            return (
+                              <div
+                                key={chal.id}
+                                onClick={() => toggleChallengeSelection(chal.id)}
+                                className={`p-2.5 rounded-xl border text-xs cursor-pointer transition flex items-center justify-between ${
+                                  isSelected
+                                    ? 'bg-amber-500/10 border-amber-500/40 text-neutral-100 shadow-sm'
+                                    : 'bg-neutral-900/60 border-neutral-800 text-neutral-500 hover:border-neutral-700'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div
+                                    className={`w-5 h-5 rounded-md flex items-center justify-center border text-xs font-bold shrink-0 transition ${
+                                      isSelected
+                                        ? 'bg-amber-500 text-neutral-950 border-amber-400'
+                                        : 'bg-neutral-800 border-neutral-700 text-transparent'
+                                    }`}
+                                  >
+                                    ✓
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center flex-wrap gap-1.5">
+                                      <span className="font-bold text-amber-300">Level {chal.level}:</span>
+                                      <span className="font-semibold text-neutral-100 truncate">
+                                        {chal.title.replace(/^Level\s*\d+:\s*/i, '')}
+                                      </span>
+                                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${badge.cls}`}>
+                                        {badge.label}
+                                      </span>
+                                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-neutral-800 text-amber-400 font-bold">
+                                        +{chal.points} pts
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] text-neutral-400 line-clamp-1 mt-0.5">
+                                      {chal.description}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0 ml-2">
+                                  <span className="text-[10px] font-mono text-neutral-400">
+                                    {chal.timeLimitSeconds}s
+                                  </span>
+                                  <span className="text-[10px] font-mono uppercase text-neutral-400 hidden sm:inline">
+                                    {chal.testCriterion}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
                       </div>
 
                       {/* Selected Summary */}
@@ -803,7 +888,7 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                     <div>
                       <label className="block text-xs text-neutral-400 mb-1">Level Number</label>
                       <input
@@ -812,6 +897,18 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         onChange={(e) => setNewChalLevel(Number(e.target.value))}
                         className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-1.5 text-xs text-neutral-200"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-neutral-400 mb-1">Difficulty</label>
+                      <select
+                        value={newChalDifficulty}
+                        onChange={(e) => setNewChalDifficulty(e.target.value as ChallengeDifficulty)}
+                        className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-1.5 text-xs text-neutral-200"
+                      >
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-xs text-neutral-400 mb-1">Success Criteria</label>
@@ -884,6 +981,9 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 bg-neutral-800 text-neutral-300 text-xs font-mono font-bold rounded">
                           Level {chal.level}
+                        </span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getDiffBadge(chal.difficulty).cls}`}>
+                          {getDiffBadge(chal.difficulty).label}
                         </span>
                         <h4 className="text-sm font-semibold text-neutral-200">{chal.title}</h4>
                         <span className="px-2 py-0.5 bg-amber-500/10 text-amber-300 text-xs font-mono font-bold rounded">

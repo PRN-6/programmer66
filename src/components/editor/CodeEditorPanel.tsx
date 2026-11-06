@@ -609,6 +609,14 @@ robot.move_to(0, 0)
               {challenges.map((chal, idx) => {
                 const isSelected = activeChallenge?.id === chal.id;
                 const isSolved = solvedChallengeIds.includes(chal.id);
+                const diffDot =
+                  chal.difficulty === 'easy'
+                    ? 'bg-emerald-400'
+                    : chal.difficulty === 'medium'
+                    ? 'bg-amber-400'
+                    : chal.difficulty === 'hard'
+                    ? 'bg-rose-400'
+                    : 'bg-neutral-500';
 
                 return (
                   <button
@@ -621,8 +629,9 @@ robot.move_to(0, 0)
                         ? 'bg-emerald-950/40 text-emerald-300 border-emerald-700/60 hover:bg-emerald-900/40'
                         : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-neutral-200 hover:bg-neutral-800'
                     }`}
-                    title={`Question ${idx + 1}: ${chal.title} (+${chal.points} pts)`}
+                    title={`Question ${idx + 1} (${chal.difficulty || 'normal'}): ${chal.title} (+${chal.points} pts)`}
                   >
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${diffDot}`} />
                     <span>Q{chal.level}</span>
                     {isSolved ? (
                       <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
@@ -661,6 +670,19 @@ robot.move_to(0, 0)
                     <span className="text-xs font-bold text-amber-300">
                       Q{activeChallenge.level}: {activeChallenge.title.replace(/^Level\s*\d+:\s*/i, '')}
                     </span>
+                    {activeChallenge.difficulty && (
+                      <span
+                        className={`text-[9px] font-bold uppercase px-1.5 py-0.2 rounded border ${
+                          activeChallenge.difficulty === 'easy'
+                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40'
+                            : activeChallenge.difficulty === 'medium'
+                            ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+                            : 'bg-rose-500/15 text-rose-300 border-rose-500/40'
+                        }`}
+                      >
+                        {activeChallenge.difficulty}
+                      </span>
+                    )}
                     <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded">
                       +{activeChallenge.points} pts
                     </span>

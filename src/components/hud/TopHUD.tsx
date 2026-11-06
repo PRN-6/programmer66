@@ -188,6 +188,17 @@ export const TopHUD: React.FC<TopHUDProps> = ({
                 <span className="text-xs font-bold text-amber-300">
                   {activeChallenge ? `Q${activeChallenge.level}: ${activeChallenge.title.replace(/^Level\s*\d+:\s*/i, '')}` : 'Questions'}
                 </span>
+                {activeChallenge?.difficulty && (
+                  <span className={`text-[9px] font-semibold uppercase px-1 py-0.2 rounded bg-neutral-900 border border-neutral-800 ${
+                    activeChallenge.difficulty === 'easy'
+                      ? 'text-emerald-400'
+                      : activeChallenge.difficulty === 'medium'
+                      ? 'text-amber-400'
+                      : 'text-rose-400'
+                  }`}>
+                    {activeChallenge.difficulty}
+                  </span>
+                )}
                 {activeChallenge && currentTeam?.completedChallenges.includes(activeChallenge.id) && (
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 )}
@@ -231,6 +242,19 @@ export const TopHUD: React.FC<TopHUDProps> = ({
                             Q{chal.level}
                           </span>
                           <span className="truncate">{chal.title.replace(/^Level\s*\d+:\s*/i, '')}</span>
+                          {chal.difficulty && (
+                            <span
+                              className={`text-[9px] font-semibold uppercase px-1 py-0.2 rounded shrink-0 bg-neutral-900 border border-neutral-800 ${
+                                chal.difficulty === 'easy'
+                                  ? 'text-emerald-400'
+                                  : chal.difficulty === 'medium'
+                                  ? 'text-amber-400'
+                                  : 'text-rose-400'
+                              }`}
+                            >
+                              {chal.difficulty}
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0 ml-2">
                           <span className="text-[10px] font-mono text-amber-400">+{chal.points}p</span>

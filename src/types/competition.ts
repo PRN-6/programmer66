@@ -13,11 +13,14 @@ export type ChallengeCriterion =
   | 'water_efficiency'
   | 'speed_run';
 
+export type ChallengeDifficulty = 'easy' | 'medium' | 'hard';
+
 export interface Challenge {
   id: string;
   title: string;
   description: string;
   level: number;
+  difficulty?: ChallengeDifficulty;
   points: number;
   targetCrop?: string;
   targetCount: number;

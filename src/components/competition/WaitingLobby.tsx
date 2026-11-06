@@ -283,9 +283,24 @@ export const WaitingLobby: React.FC<WaitingLobbyProps> = ({
                     key={chal.id}
                     className="p-1.5 rounded bg-neutral-950/80 border border-neutral-800/70 flex items-center justify-between text-[11px]"
                   >
-                    <span className="text-neutral-300 font-medium truncate">
-                      Q{chal.level}: {chal.title.replace(/^Level\s*\d+:\s*/i, '')}
-                    </span>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="text-neutral-300 font-medium truncate">
+                        Q{chal.level}: {chal.title.replace(/^Level\s*\d+:\s*/i, '')}
+                      </span>
+                      {chal.difficulty && (
+                        <span
+                          className={`text-[9px] font-semibold uppercase px-1 py-0.2 rounded shrink-0 bg-neutral-900 border border-neutral-800 ${
+                            chal.difficulty === 'easy'
+                              ? 'text-emerald-400'
+                              : chal.difficulty === 'medium'
+                              ? 'text-amber-400'
+                              : 'text-rose-400'
+                          }`}
+                        >
+                          {chal.difficulty}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[10px] font-mono font-bold text-amber-400 shrink-0 ml-1">
                       +{chal.points} pts
                     </span>
