@@ -74,7 +74,7 @@ export const MissionsTrackerWidget: React.FC<MissionsTrackerWidgetProps> = ({
       <div className="pointer-events-auto animate-in slide-in-from-left duration-200">
         <button
           onClick={() => setIsMinimized(false)}
-          className="flex items-center gap-2 bg-neutral-950/95 hover:bg-neutral-900 border-y border-r border-neutral-800 text-neutral-200 pl-3 pr-2.5 py-2 rounded-r-xl shadow-2xl backdrop-blur-md group transition"
+          className="flex items-center gap-2 bg-neutral-950/80 hover:bg-neutral-900/90 border border-white/10 text-neutral-200 px-3 py-2 rounded-2xl shadow-2xl backdrop-blur-md group transition"
           title="Click to expand Active Missions tracker"
         >
           <div className="w-5 h-5 rounded-md bg-neutral-800 border border-neutral-700 text-emerald-400 flex items-center justify-center">
@@ -106,7 +106,7 @@ export const MissionsTrackerWidget: React.FC<MissionsTrackerWidgetProps> = ({
 
   // Expanded state
   return (
-    <div className="pointer-events-auto w-72 bg-neutral-950/95 backdrop-blur-md rounded-2xl border border-neutral-800 shadow-2xl p-3.5 text-neutral-100 flex flex-col gap-2.5 animate-in fade-in duration-150 ml-4 max-h-[380px]">
+    <div className="pointer-events-auto w-72 bg-neutral-950/80 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-3.5 text-neutral-100 flex flex-col gap-2.5 animate-in fade-in duration-150 max-h-[380px]">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
         <div className="flex items-center gap-2">

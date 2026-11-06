@@ -12,11 +12,7 @@ import {
   VolumeX,
   Play,
   Pause,
-  ShoppingBag,
-  Target,
-  Bot,
   Settings,
-  BookOpen,
   Code2,
   Trophy,
   UploadCloud,
@@ -27,17 +23,13 @@ import {
   Globe,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
-import { useEditorStore } from '../../store/useEditorStore';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { WEATHER_PROFILES } from '../../game/simulation/weatherConfig';
 import { CompetitionHUDWidget } from '../competition/CompetitionHUDWidget';
 
 interface TopHUDProps {
-  onOpenMarket: () => void;
-  onOpenMissions: () => void;
-  onOpenRobots: () => void;
-  onOpenWorldLeaderboard: () => void;
+  onOpenWorldLeaderboard?: () => void;
   onOpenSettings: () => void;
   onToggleEditor: () => void;
   editorOpen: boolean;
@@ -61,9 +53,6 @@ const WeatherIcon: React.FC<{ weather: string }> = ({ weather }) => {
 };
 
 export const TopHUD: React.FC<TopHUDProps> = ({
-  onOpenMarket,
-  onOpenMissions,
-  onOpenRobots,
   onOpenWorldLeaderboard,
   onOpenSettings,
   onToggleEditor,
@@ -81,7 +70,6 @@ export const TopHUD: React.FC<TopHUDProps> = ({
     isPaused,
     gameSpeed,
     soundMuted,
-    uncompletedMissions,
   } = useGameStore(
     useShallow((s) => {
       const hours = Math.floor(s.timeOfDay);
@@ -102,7 +90,6 @@ export const TopHUD: React.FC<TopHUDProps> = ({
         isPaused: s.isPaused,
         gameSpeed: s.gameSpeed,
         soundMuted: s.soundMuted,
-        uncompletedMissions: s.missions.filter((m) => !m.rewardClaimed).length,
       };
     })
   );
@@ -122,8 +109,6 @@ export const TopHUD: React.FC<TopHUDProps> = ({
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   const [showQuestionsDropdown, setShowQuestionsDropdown] = React.useState(false);
   const { user, profile: playerProfile, isSyncing, isSuperAdmin, syncToCloud, signOut, setShowAuthModal } = useAuthStore();
-
-  const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
 
   const profile = WEATHER_PROFILES[weather];
   const nextProfile = WEATHER_PROFILES[nextWeather];
@@ -349,63 +334,6 @@ export const TopHUD: React.FC<TopHUDProps> = ({
         {/* Live Competition / Admin Widget */}
         <CompetitionHUDWidget />
 
-        {/* Casual Sandbox Buttons (Only shown when not competing to keep competition UI ultra-clean) */}
-        {!isCompeting && (
-          <>
-            {/* Marketplace */}
-            <button
-              onClick={onOpenMarket}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-950/40 hover:bg-neutral-900/60 backdrop-blur-md text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 text-xs font-semibold transition shadow-lg"
-              title="Marketplace & Supplies"
-            >
-              <ShoppingBag className="w-3.5 h-3.5 text-neutral-400" />
-              <span className="hidden sm:inline">Market</span>
-            </button>
-
-            {/* Missions / Objectives */}
-            <button
-              onClick={onOpenMissions}
-              className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-950/40 hover:bg-neutral-900/60 backdrop-blur-md text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 text-xs font-semibold transition shadow-lg"
-              title="Missions & Objectives"
-            >
-              <Target className="w-3.5 h-3.5 text-neutral-400" />
-              <span className="hidden sm:inline">Missions</span>
-              {uncompletedMissions > 0 && (
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping absolute -top-0.5 -right-0.5" />
-              )}
-            </button>
-
-            {/* Robots */}
-            <button
-              onClick={onOpenRobots}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-950/40 hover:bg-neutral-900/60 backdrop-blur-md text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 text-xs font-semibold transition shadow-lg"
-              title="Robots & Drones"
-            >
-              <Bot className="w-3.5 h-3.5 text-neutral-400" />
-              <span className="hidden sm:inline">Robots</span>
-            </button>
-
-            {/* World Leaderboard */}
-            <button
-              onClick={onOpenWorldLeaderboard}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-950/40 hover:bg-neutral-900/60 backdrop-blur-md text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 text-xs font-semibold transition shadow-lg"
-              title="World Leaderboard (Global Mission Rankings)"
-            >
-              <Globe className="w-3.5 h-3.5 text-sky-400" />
-              <span className="hidden sm:inline">World Rank</span>
-            </button>
-          </>
-        )}
-
-        {/* API Docs */}
-        <button
-          onClick={() => setShowDocsModal(true)}
-          className="p-1.5 rounded-xl bg-neutral-950/40 hover:bg-neutral-900/60 backdrop-blur-md text-neutral-400 hover:text-white border border-white/10 hover:border-white/20 transition shadow-lg"
-          title="API Reference Manual"
-        >
-          <BookOpen className="w-4 h-4" />
-        </button>
-
         {/* Audio Mute Toggle */}
         <button
           onClick={toggleMute}
@@ -495,7 +423,7 @@ export const TopHUD: React.FC<TopHUDProps> = ({
 
                 <button
                   onClick={() => {
-                    onOpenWorldLeaderboard();
+                    onOpenWorldLeaderboard?.();
                     setShowUserMenu(false);
                   }}
                   className="w-full text-left px-2.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-200 transition font-medium flex items-center justify-between"

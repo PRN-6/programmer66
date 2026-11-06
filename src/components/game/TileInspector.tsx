@@ -50,7 +50,7 @@ const TileInspectorContent: React.FC<TileInspectorContentProps> = ({
       <div className="pointer-events-auto animate-in slide-in-from-left duration-200">
         <button
           onClick={onToggleMinimize}
-          className="flex items-center gap-2 bg-neutral-950/95 hover:bg-neutral-900 border-y border-r border-neutral-800 text-neutral-200 pl-3 pr-2.5 py-2 rounded-r-xl shadow-2xl backdrop-blur-md group transition"
+          className="flex items-center gap-2 bg-neutral-950/80 hover:bg-neutral-900/90 border border-white/10 text-neutral-200 px-3 py-2 rounded-2xl shadow-2xl backdrop-blur-md group transition"
           title="Click to expand Soil Plot Inspector"
         >
           <div className="w-5 h-5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-200 font-mono text-[10px] flex items-center justify-center font-bold">
@@ -71,7 +71,7 @@ const TileInspectorContent: React.FC<TileInspectorContentProps> = ({
   }
 
   return (
-    <div className="pointer-events-auto w-72 bg-neutral-950/95 backdrop-blur-md rounded-2xl border border-neutral-800 shadow-2xl p-4 text-neutral-100 flex flex-col gap-3 animate-in fade-in duration-150 ml-4">
+    <div className="pointer-events-auto w-72 bg-neutral-950/80 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-4 text-neutral-100 flex flex-col gap-3 animate-in fade-in duration-150">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
         <div className="flex items-center gap-2">

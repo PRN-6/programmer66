@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import confetti from 'canvas-confetti';
 import { FarmCanvas } from './game/world/FarmCanvas';
 import { TopHUD } from './components/hud/TopHUD';
+import { LeftSidebar } from './components/navigation/LeftSidebar';
 import { FarmToolbar } from './components/game/FarmToolbar';
 import { TileInspector } from './components/game/TileInspector';
 import { MissionsTrackerWidget } from './components/missions/MissionsTrackerWidget';
@@ -134,8 +135,15 @@ export function App() {
       <div className="flex-1 min-w-0 h-full relative overflow-hidden">
         <FarmCanvas />
 
-        {/* Left-docked floating panels: Soil Plot Inspector & Missions Tracker */}
-        <div className="absolute top-16 left-0 z-20 pointer-events-none flex flex-col items-start gap-2.5 max-h-[calc(100vh-90px)] overflow-y-auto no-scrollbar">
+        {/* Left-docked floating panels: Navigation Sidebar, Soil Plot Inspector & Missions Tracker */}
+        <div className="absolute top-16 left-3.5 z-20 pointer-events-none flex flex-col items-start gap-2.5 max-h-[calc(100vh-80px)] overflow-y-auto no-scrollbar">
+          <LeftSidebar
+            onOpenMarket={() => setShowMarket(true)}
+            onOpenMissions={() => setShowMissions(true)}
+            onOpenRobots={() => setShowRobots(true)}
+            onOpenWorldLeaderboard={() => setShowWorldLeaderboard(true)}
+            onOpenDocs={() => setShowDocsModal(true)}
+          />
           <TileInspector />
           <MissionsTrackerWidget
             onOpenEditor={() => setEditorOpen(true)}
@@ -154,9 +162,6 @@ export function App() {
 
       {/* Top HUD (Floating overlay across the top with transparent background) */}
       <TopHUD
-        onOpenMarket={() => setShowMarket(true)}
-        onOpenMissions={() => setShowMissions(true)}
-        onOpenRobots={() => setShowRobots(true)}
         onOpenWorldLeaderboard={() => setShowWorldLeaderboard(true)}
         onOpenSettings={() => setShowSettings(true)}
         onToggleEditor={() => setEditorOpen((prev) => !prev)}
