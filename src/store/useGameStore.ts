@@ -7,6 +7,7 @@ import {
   Mission,
   GameStats,
 } from '../types/game';
+import { FieldConfig } from '../types/field';
 import { CROPS } from '../game/simulation/cropConfig';
 import { WEATHER_PROFILES } from '../game/simulation/weatherConfig';
 import { INITIAL_MISSIONS } from '../game/simulation/missionConfig';
@@ -17,6 +18,7 @@ export interface GameState {
   gridWidth: number;
   gridHeight: number;
   tiles: Record<string, TileState>; // key: `${x}_${y}`
+  activeFieldConfig: FieldConfig | null;
 
   // Robots
   robots: RobotState[];
@@ -97,6 +99,7 @@ export interface GameState {
   loadGame: () => boolean;
   resetGame: () => void;
   resetFarmPlots: () => void;
+  applyFieldConfig: (config: FieldConfig) => void;
 }
 
 const GRID_DEFAULT_WIDTH = 6;
@@ -116,6 +119,32 @@ function createInitialTiles(): Record<string, TileState> {
         crop: null,
         stage: 'empty',
         growthProgress: 0,
+        health: 100,
+        lastWateredTime: 0,
+      };
+    }
+  }
+  return tiles;
+}
+
+function createTilesFromFieldConfig(config: FieldConfig): Record<string, TileState> {
+  const tiles: Record<string, TileState> = {};
+  for (let x = 0; x < config.width; x++) {
+    for (let y = 0; y < config.height; y++) {
+      const key = `${x}_${y}`;
+      const custom = config.tiles[key];
+      const isUnlocked = custom !== undefined ? custom.unlocked : true;
+      const crop = (custom?.crop as CropId) || null;
+      tiles[key] = {
+        x,
+        y,
+        unlocked: isUnlocked,
+        moisture: custom?.moisture ?? (45 + Math.floor(Math.random() * 20)),
+        nutrients: custom?.nutrients ?? (50 + Math.floor(Math.random() * 25)),
+        weedLevel: custom?.weedLevel ?? 0,
+        crop,
+        stage: crop ? 'seedling' : 'empty',
+        growthProgress: crop ? 0.3 : 0,
         health: 100,
         lastWateredTime: 0,
       };
@@ -173,6 +202,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   gridWidth: GRID_DEFAULT_WIDTH,
   gridHeight: GRID_DEFAULT_HEIGHT,
   tiles: createInitialTiles(),
+  activeFieldConfig: null,
   robots: INITIAL_ROBOTS,
   activeRobotId: 'drone_01',
 
@@ -843,8 +873,43 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   resetFarmPlots: () => {
+    const { activeFieldConfig, stats } = get();
+    if (activeFieldConfig) {
+      const newTiles = createTilesFromFieldConfig(activeFieldConfig);
+      set({
+        gridWidth: activeFieldConfig.width,
+        gridHeight: activeFieldConfig.height,
+        tiles: newTiles,
+        stats: {
+          ...stats,
+          tilesUnlocked: Object.values(newTiles).filter((t) => t.unlocked).length,
+        },
+      });
+    } else {
+      set({
+        tiles: createInitialTiles(),
+        gridWidth: GRID_DEFAULT_WIDTH,
+        gridHeight: GRID_DEFAULT_HEIGHT,
+        stats: {
+          ...stats,
+          tilesUnlocked: GRID_DEFAULT_WIDTH * GRID_DEFAULT_HEIGHT,
+        },
+      });
+    }
+  },
+
+  applyFieldConfig: (config: FieldConfig) => {
+    const { stats } = get();
+    const newTiles = createTilesFromFieldConfig(config);
     set({
-      tiles: createInitialTiles(),
+      activeFieldConfig: config,
+      gridWidth: config.width,
+      gridHeight: config.height,
+      tiles: newTiles,
+      stats: {
+        ...stats,
+        tilesUnlocked: Object.values(newTiles).filter((t) => t.unlocked).length,
+      },
     });
   },
 

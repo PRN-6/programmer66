@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Room, Team, Submission, Challenge, RoomSettings } from '../types/competition';
+import { FieldConfig } from '../types/field';
 import { CompetitionService } from '../services/competitionService';
 
 const SESSION_KEY = 'programmer66_competition_session';
@@ -76,6 +77,7 @@ interface CompetitionState {
   closeRoom: () => Promise<void>;
   setActiveChallenge: (challengeId: string) => Promise<void>;
   updateRoomSettings: (settings: Partial<RoomSettings>) => Promise<void>;
+  updateRoomField: (fieldConfig: FieldConfig) => Promise<void>;
   addCustomChallenge: (challenge: Challenge) => Promise<void>;
   deleteChallenge: (challengeId: string) => Promise<void>;
   kickTeam: (teamId: string) => Promise<void>;
@@ -211,6 +213,11 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
         isAdmin: true,
       });
 
+      if (room.settings?.fieldConfig) {
+        const { useGameStore } = await import('./useGameStore');
+        useGameStore.getState().applyFieldConfig(room.settings.fieldConfig);
+      }
+
       return room;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to create room';
@@ -250,6 +257,11 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
         isAdmin: true,
       });
 
+      if (room.settings?.fieldConfig) {
+        const { useGameStore } = await import('./useGameStore');
+        useGameStore.getState().applyFieldConfig(room.settings.fieldConfig);
+      }
+
       return room;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to load room';
@@ -283,6 +295,11 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
         teamId: team.id,
         isAdmin: false,
       });
+
+      if (room.settings?.fieldConfig) {
+        const { useGameStore } = await import('./useGameStore');
+        useGameStore.getState().applyFieldConfig(room.settings.fieldConfig);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to join room';
       set({ error: msg, isLoading: false });
@@ -290,7 +307,7 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
     }
   },
 
-  leaveRoom: () => {
+  leaveRoom: async () => {
     saveSession(null);
     set({
       currentRoom: null,
@@ -301,6 +318,8 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
       selectedChallengeId: null,
       isAdmin: false,
     });
+    const { useGameStore } = await import('./useGameStore');
+    useGameStore.getState().resetFarmPlots();
   },
 
   refreshRoomData: async () => {
@@ -320,6 +339,11 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
           null;
 
         const updatedTeam = currentTeam ? teams.find((t) => t.id === currentTeam.id) || null : null;
+
+        if (updatedRoom.settings?.fieldConfig) {
+          const { useGameStore } = await import('./useGameStore');
+          useGameStore.getState().applyFieldConfig(updatedRoom.settings.fieldConfig);
+        }
 
         // If room was closed by admin, notify participant and return to main game
         if (updatedRoom.status === 'completed' && !get().isAdmin) {
@@ -436,6 +460,25 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
     await CompetitionService.updateRoom(currentRoom.id, {
       settings: mergedSettings,
     });
+    await get().refreshRoomData();
+  },
+
+  updateRoomField: async (fieldConfig: FieldConfig) => {
+    const { currentRoom } = get();
+    if (!currentRoom) return;
+
+    const mergedSettings: RoomSettings = {
+      ...currentRoom.settings,
+      fieldConfig,
+    };
+    await CompetitionService.updateRoom(currentRoom.id, {
+      settings: mergedSettings,
+      fieldConfig,
+    });
+
+    const { useGameStore } = await import('./useGameStore');
+    useGameStore.getState().applyFieldConfig(fieldConfig);
+
     await get().refreshRoomData();
   },
 

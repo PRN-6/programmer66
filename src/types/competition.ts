@@ -1,3 +1,5 @@
+import { FieldConfig } from './field';
+
 export type RoomStatus = 'waiting' | 'active' | 'paused' | 'completed';
 
 export interface RoomSettings {
@@ -5,6 +7,7 @@ export interface RoomSettings {
   maxTeamSize: number;
   allowDroneAssistance: boolean;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
+  fieldConfig?: FieldConfig;
 }
 
 export type ChallengeCriterion =
@@ -69,5 +72,6 @@ export interface Room {
   settings: RoomSettings;
   challenges: Challenge[];
   adminPasscode?: string;
+  fieldConfig?: FieldConfig;
 }
 

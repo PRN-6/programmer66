@@ -19,11 +19,17 @@ import {
   ExternalLink,
   UserX,
   Power,
+  Maximize2,
+  Minimize2,
+  LayoutGrid,
 } from 'lucide-react';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { Challenge, ChallengeCriterion, ChallengeDifficulty } from '../../types/competition';
+import { FieldConfig } from '../../types/field';
 import { isSupabaseConfigured } from '../../services/supabase';
 import { DEFAULT_CHALLENGES } from '../../services/defaultChallenges';
+import { DEFAULT_FIELD_PRESETS } from '../../services/defaultFields';
+import { FieldDesignerTab } from './FieldDesignerTab';
 
 export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const {
@@ -44,9 +50,12 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     kickTeam,
     refreshRoomData,
     updateRoomSettings,
+    updateRoomField,
   } = useCompetitionStore();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'scoreboard' | 'challenges' | 'teams' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'field' | 'scoreboard' | 'challenges' | 'teams' | 'settings'>('overview');
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [selectedFieldPreset, setSelectedFieldPreset] = useState<FieldConfig>(() => DEFAULT_FIELD_PRESETS[0]);
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [newRoomTitle, setNewRoomTitle] = useState('');
@@ -169,7 +178,7 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       selectedChallengeIds.includes(c.id)
     );
     const challengesToUse = chosenChallenges.length > 0 ? chosenChallenges : DEFAULT_CHALLENGES;
-    await createRoom(newRoomTitle, newRoomDuration, undefined, challengesToUse);
+    await createRoom(newRoomTitle, newRoomDuration, { fieldConfig: selectedFieldPreset }, challengesToUse);
     setNewRoomTitle('');
   };
 
@@ -194,10 +203,14 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="w-full max-w-5xl h-[88vh] bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-neutral-100">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-200 ${
+      isFullScreen ? 'p-0' : 'p-2 sm:p-4'
+    }`}>
+      <div className={`w-full bg-neutral-900 border border-neutral-800 shadow-2xl flex flex-col overflow-hidden text-neutral-100 transition-all duration-200 ${
+        isFullScreen ? 'h-full w-full rounded-none border-none' : 'max-w-6xl h-[90vh] rounded-2xl'
+      }`}>
         {/* --- HEADER --- */}
-        <div className="px-6 py-4 border-b border-neutral-800 flex items-center justify-between bg-neutral-950/70">
+        <div className="px-6 py-3.5 border-b border-neutral-800 flex items-center justify-between bg-neutral-950/70">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400">
               <Shield className="w-6 h-6" />
@@ -208,19 +221,38 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   Organizer Console
                 </span>
+                {isFullScreen && (
+                  <span className="hidden sm:inline px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-neutral-800 text-neutral-400 border border-neutral-700">
+                    FULL SCREEN
+                  </span>
+                )}
               </div>
               <p className="text-xs text-neutral-400">
-                Manage live coding hackathons, multi-team challenges, and real-time scoreboards
+                Manage live coding hackathons, multi-team challenges, terrain design, and real-time scoreboards
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 rounded-xl transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setIsFullScreen((prev) => !prev)}
+              className="p-2 text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 rounded-xl transition"
+              title={isFullScreen ? 'Exit Full Screen' : 'Expand to Full Screen'}
+            >
+              {isFullScreen ? (
+                <Minimize2 className="w-5 h-5 text-amber-400" />
+              ) : (
+                <Maximize2 className="w-5 h-5" />
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 rounded-xl transition"
+              title="Close Console"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* --- ROOM STATUS & QUICK CONTROLS BANNER (If room exists) --- */}
@@ -321,9 +353,10 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         )}
 
         {/* --- NAVIGATION TABS --- */}
-        <div className="flex border-b border-neutral-800 bg-neutral-950/40 px-6 gap-2">
+        <div className="flex border-b border-neutral-800 bg-neutral-950/40 px-6 gap-2 overflow-x-auto">
           {[
             { id: 'overview', label: 'Room & Controls', icon: Layers },
+            { id: 'field', label: 'Field & Terrain', icon: LayoutGrid },
             { id: 'scoreboard', label: `Live Scoreboard (${teams.length})`, icon: Trophy },
             { id: 'challenges', label: `Problems & Levels (${currentRoom?.challenges.length || 0})`, icon: Code },
             { id: 'teams', label: `Teams Manager (${teams.length})`, icon: Users },
@@ -447,6 +480,50 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         onChange={(e) => setNewRoomDuration(Number(e.target.value))}
                         className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3.5 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500"
                       />
+                    </div>
+
+                    {/* Selected Field / Terrain */}
+                    <div className="p-3 bg-neutral-900/60 border border-neutral-800 rounded-xl flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <LayoutGrid className="w-3.5 h-3.5 text-amber-400" />
+                          <span className="text-xs font-bold text-neutral-200">
+                            Competition Field & Terrain
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs font-semibold text-amber-300">
+                            {selectedFieldPreset.name}
+                          </span>
+                          <span className="text-[10px] font-mono text-neutral-400">
+                            ({selectedFieldPreset.width}x{selectedFieldPreset.height} • {Object.values(selectedFieldPreset.tiles).filter((t) => t.unlocked).length} arable plots)
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={selectedFieldPreset.id}
+                          onChange={(e) => {
+                            const found = DEFAULT_FIELD_PRESETS.find((p) => p.id === e.target.value);
+                            if (found) setSelectedFieldPreset(found);
+                          }}
+                          className="bg-neutral-950 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-200"
+                        >
+                          {DEFAULT_FIELD_PRESETS.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name} ({p.width}x{p.height})
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('field')}
+                          className="px-2.5 py-1.5 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 rounded-lg text-xs font-semibold transition"
+                        >
+                          Design Field →
+                        </button>
+                      </div>
                     </div>
 
                     {/* Level / Challenge Selection */}
@@ -672,6 +749,25 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       </div>
                     </div>
 
+                    {/* Active Field Layout Info */}
+                    <div className="p-3 bg-neutral-900/80 border border-neutral-800/80 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <LayoutGrid className="w-4 h-4 text-amber-400 shrink-0" />
+                        <div>
+                          <span className="text-[11px] text-neutral-400 block">Room Terrain / Field Layout</span>
+                          <span className="text-xs font-bold text-neutral-200">
+                            {currentRoom.settings?.fieldConfig?.name || currentRoom.fieldConfig?.name || 'Standard 6x6'}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('field')}
+                        className="px-2.5 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-semibold transition"
+                      >
+                        Modify Field in Designer →
+                      </button>
+                    </div>
+
                     {/* Active Challenge Selector */}
                     <div>
                       <label className="block text-xs font-semibold text-neutral-300 mb-2">
@@ -718,6 +814,21 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 </div>
               )}
             </div>
+          )}
+
+          {/* TAB: FIELD & TERRAIN DESIGNER */}
+          {activeTab === 'field' && (
+            <FieldDesignerTab
+              currentRoomField={currentRoom?.settings?.fieldConfig || currentRoom?.fieldConfig}
+              onApplyToActiveRoom={async (field) => {
+                await updateRoomField(field);
+              }}
+              onSelectForRoomCreation={(field) => {
+                setSelectedFieldPreset(field);
+              }}
+              selectedForRoomId={selectedFieldPreset.id}
+              isRoomActive={Boolean(currentRoom && currentRoom.status !== 'completed')}
+            />
           )}
 
           {/* TAB 2: LIVE SCOREBOARD */}

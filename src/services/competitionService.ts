@@ -111,8 +111,10 @@ export class CompetitionService {
         maxTeamSize: settings?.maxTeamSize || 4,
         allowDroneAssistance: settings?.allowDroneAssistance ?? true,
         difficulty: settings?.difficulty || 'beginner',
+        fieldConfig: settings?.fieldConfig,
       },
       challenges,
+      fieldConfig: settings?.fieldConfig,
     };
 
     if (isSupabaseConfigured && supabase) {
