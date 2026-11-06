@@ -123,6 +123,7 @@ interface AuthState {
   setError: (err: string | null) => void;
   initAuth: () => Promise<void>;
   loginAsSuperAdmin: (identifier: string, pass: string) => boolean;
+  directDevLogin: () => boolean;
   loginAsDevGoogle: (displayName?: string) => void;
   signUp: (emailOrUsername: string, pass: string, displayName: string) => Promise<boolean>;
   signIn: (emailOrUsername: string, pass: string) => Promise<boolean>;
@@ -367,6 +368,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     set({ error: 'Invalid Super Admin credentials. Check your .env configuration.' });
     return false;
+  },
+
+  directDevLogin: () => {
+    const adminUser = {
+      id: 'super-admin-001',
+      email: SUPER_ADMIN_EMAIL,
+      app_metadata: { role: 'super_admin' },
+      user_metadata: { display_name: 'Developer Admin' },
+      aud: 'authenticated',
+      created_at: new Date().toISOString(),
+    } as unknown as User;
+
+    set({
+      user: adminUser,
+      profile: {
+        id: 'super-admin-001',
+        email: SUPER_ADMIN_EMAIL,
+        displayName: 'Developer Admin 👑',
+      },
+      isSuperAdmin: true,
+      isLoading: false,
+      showAuthModal: false,
+      error: null,
+    });
+
+    setSessionItem('programmer66_super_admin', 'true');
+    useCompetitionStore.setState({
+      isAdmin: true,
+      showAdminModal: true,
+    });
+
+    soundManager.playSuccess();
+    return true;
   },
 
   loginAsDevGoogle: (displayName = 'Google Farmer') => {

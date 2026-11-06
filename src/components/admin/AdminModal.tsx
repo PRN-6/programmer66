@@ -22,6 +22,7 @@ import {
   Maximize2,
   Minimize2,
   LayoutGrid,
+  Zap,
 } from 'lucide-react';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { Challenge, ChallengeCriterion, ChallengeDifficulty, ChallengeTopic } from '../../types/competition';
@@ -30,6 +31,7 @@ import { isSupabaseConfigured } from '../../services/supabase';
 import { DEFAULT_CHALLENGES } from '../../services/defaultChallenges';
 import { DEFAULT_FIELD_PRESETS } from '../../services/defaultFields';
 import { FieldDesignerTab } from './FieldDesignerTab';
+import { DevGodModeTab } from './DevGodModeTab';
 
 export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const {
@@ -53,7 +55,7 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     updateRoomField,
   } = useCompetitionStore();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'field' | 'scoreboard' | 'challenges' | 'teams' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'field' | 'scoreboard' | 'challenges' | 'teams' | 'settings' | 'godmode'>('overview');
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedFieldPreset, setSelectedFieldPreset] = useState<FieldConfig>(() => DEFAULT_FIELD_PRESETS[0]);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -369,6 +371,7 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             { id: 'scoreboard', label: `Live Scoreboard (${teams.length})`, icon: Trophy },
             { id: 'challenges', label: `Problems & Levels (${currentRoom?.challenges.length || 0})`, icon: Code },
             { id: 'teams', label: `Teams Manager (${teams.length})`, icon: Users },
+            { id: 'godmode', label: '⚡ Dev God Mode', icon: Zap },
             { id: 'settings', label: 'Settings & Cloud DB', icon: SettingsIcon },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -1345,6 +1348,9 @@ export const AdminModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               )}
             </div>
           )}
+
+          {/* TAB 7: DEV GOD MODE & CHEATS */}
+          {activeTab === 'godmode' && <DevGodModeTab />}
         </div>
 
         {/* --- CODE INSPECTOR POPUP (If admin wants to inspect student team's code) --- */}

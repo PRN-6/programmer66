@@ -37,7 +37,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
     setFormError(null);
   };
 
-  const { signIn, signUp, signInWithGoogle, loginAsSuperAdmin, isLoading, error, setError } =
+  const { signIn, signUp, signInWithGoogle, loginAsSuperAdmin, directDevLogin, isLoading, error, setError } =
     useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -204,6 +204,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, defaultMode = 'si
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
+          {mode === 'admin' && (
+            <div className="space-y-3 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  directDevLogin();
+                  onClose();
+                }}
+                className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-neutral-950 font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-950/60 transition transform active:scale-95 cursor-pointer"
+              >
+                <Zap className="w-4 h-4 fill-current text-neutral-950" />
+                <span>⚡ Instant 1-Click Developer Access</span>
+              </button>
+              <div className="flex items-center gap-2 text-[10px] text-neutral-500 uppercase tracking-wider font-bold">
+                <div className="flex-1 h-px bg-neutral-800" />
+                <span>or authorize with master credentials</span>
+                <div className="flex-1 h-px bg-neutral-800" />
+              </div>
+            </div>
+          )}
+
           {displayError && (
             <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-xl text-red-200 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
