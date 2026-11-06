@@ -24,6 +24,7 @@ import {
   Shield,
   ChevronDown,
   CheckCircle2,
+  Globe,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useEditorStore } from '../../store/useEditorStore';
@@ -36,6 +37,7 @@ interface TopHUDProps {
   onOpenMarket: () => void;
   onOpenMissions: () => void;
   onOpenRobots: () => void;
+  onOpenWorldLeaderboard: () => void;
   onOpenSettings: () => void;
   onToggleEditor: () => void;
   editorOpen: boolean;
@@ -62,6 +64,7 @@ export const TopHUD: React.FC<TopHUDProps> = ({
   onOpenMarket,
   onOpenMissions,
   onOpenRobots,
+  onOpenWorldLeaderboard,
   onOpenSettings,
   onToggleEditor,
   editorOpen,
@@ -381,6 +384,16 @@ export const TopHUD: React.FC<TopHUDProps> = ({
               <Bot className="w-3.5 h-3.5 text-neutral-400" />
               <span className="hidden sm:inline">Robots</span>
             </button>
+
+            {/* World Leaderboard */}
+            <button
+              onClick={onOpenWorldLeaderboard}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-950/40 hover:bg-neutral-900/60 backdrop-blur-md text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 text-xs font-semibold transition shadow-lg"
+              title="World Leaderboard (Global Mission Rankings)"
+            >
+              <Globe className="w-3.5 h-3.5 text-sky-400" />
+              <span className="hidden sm:inline">World Rank</span>
+            </button>
           </>
         )}
 
@@ -479,6 +492,17 @@ export const TopHUD: React.FC<TopHUDProps> = ({
                     <UploadCloud className="w-3.5 h-3.5 text-neutral-400" />
                   </button>
                 )}
+
+                <button
+                  onClick={() => {
+                    onOpenWorldLeaderboard();
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-200 transition font-medium flex items-center justify-between"
+                >
+                  <span>World Leaderboard</span>
+                  <Globe className="w-3.5 h-3.5 text-sky-400" />
+                </button>
 
                 <button
                   onClick={() => {

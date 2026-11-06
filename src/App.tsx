@@ -43,6 +43,11 @@ const WaitingLobby = lazy(() =>
 const AuthModal = lazy(() =>
   import('./components/auth/AuthModal').then((m) => ({ default: m.AuthModal }))
 );
+const WorldLeaderboardModal = lazy(() =>
+  import('./components/leaderboard/WorldLeaderboardModal').then((m) => ({
+    default: m.WorldLeaderboardModal,
+  }))
+);
 
 export function App() {
   const [editorOpen, setEditorOpen] = useState(false);
@@ -50,6 +55,7 @@ export function App() {
   const [showMissions, setShowMissions] = useState(false);
   const [showRobots, setShowRobots] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showWorldLeaderboard, setShowWorldLeaderboard] = useState(false);
 
   const showDocsModal = useEditorStore((state) => state.showDocsModal);
   const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
@@ -151,6 +157,7 @@ export function App() {
         onOpenMarket={() => setShowMarket(true)}
         onOpenMissions={() => setShowMissions(true)}
         onOpenRobots={() => setShowRobots(true)}
+        onOpenWorldLeaderboard={() => setShowWorldLeaderboard(true)}
         onOpenSettings={() => setShowSettings(true)}
         onToggleEditor={() => setEditorOpen((prev) => !prev)}
         editorOpen={editorOpen}
@@ -163,6 +170,10 @@ export function App() {
           <MissionsModal
             onClose={() => setShowMissions(false)}
             onOpenEditor={() => setEditorOpen(true)}
+            onOpenWorldLeaderboard={() => {
+              setShowMissions(false);
+              setShowWorldLeaderboard(true);
+            }}
           />
         )}
         {showRobots && <RobotsModal onClose={() => setShowRobots(false)} />}
@@ -172,6 +183,12 @@ export function App() {
         {showJoinModal && <JoinCompetitionModal onClose={() => setShowJoinModal(false)} />}
         {showScoreboardModal && <ScoreboardModal onClose={() => setShowScoreboardModal(false)} />}
         {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+        {showWorldLeaderboard && (
+          <WorldLeaderboardModal
+            onClose={() => setShowWorldLeaderboard(false)}
+            onOpenAuth={() => setShowAuthModal(true)}
+          />
+        )}
 
         {/* Fullscreen Waiting Lobby for Participants when Room is in 'waiting' status */}
         {isWaitingForAdmin && (

@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
+  Trophy,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useEditorStore } from '../../store/useEditorStore';
@@ -19,9 +20,14 @@ import { useEditorStore } from '../../store/useEditorStore';
 interface MissionsModalProps {
   onClose: () => void;
   onOpenEditor: () => void;
+  onOpenWorldLeaderboard?: () => void;
 }
 
-export const MissionsModal: React.FC<MissionsModalProps> = ({ onClose, onOpenEditor }) => {
+export const MissionsModal: React.FC<MissionsModalProps> = ({
+  onClose,
+  onOpenEditor,
+  onOpenWorldLeaderboard,
+}) => {
   const { missions, claimMissionReward } = useGameStore();
   const { addTab, updateCode, tabs } = useEditorStore();
   const [expandedHints, setExpandedHints] = useState<Record<string, boolean>>({});
@@ -73,12 +79,28 @@ export const MissionsModal: React.FC<MissionsModalProps> = ({ onClose, onOpenEdi
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onOpenWorldLeaderboard && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenWorldLeaderboard();
+                }}
+                className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
+                title="View World Leaderboard"
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                <span>World Rank</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Missions List */}
