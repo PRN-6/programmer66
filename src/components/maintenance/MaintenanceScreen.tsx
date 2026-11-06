@@ -123,3 +123,4 @@ export const MaintenanceScreen: React.FC<MaintenanceScreenProps> = ({ onOpenAdmi
     </div>
   );
 };
+
