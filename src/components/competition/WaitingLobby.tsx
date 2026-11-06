@@ -13,7 +13,6 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
-import { CompetitionService } from '../../services/competitionService';
 
 interface WaitingLobbyProps {
   onOpenScoreboard?: () => void;
@@ -32,22 +31,15 @@ export const WaitingLobby: React.FC<WaitingLobbyProps> = ({
 
   const [copiedCode, setCopiedCode] = useState(false);
 
-  // Real-time synchronization & polling fallback
+  // High-reliability polling fallback to keep lobby teams and room status fresh
   useEffect(() => {
     if (!currentRoom) return;
 
-    // 1. Supabase Realtime subscription
-    const unsubscribe = CompetitionService.subscribeToRoomChanges(currentRoom.id, () => {
-      refreshRoomData();
-    });
-
-    // 2. High-reliability polling fallback every 2 seconds
     const interval = setInterval(() => {
       refreshRoomData();
     }, 2000);
 
     return () => {
-      unsubscribe();
       clearInterval(interval);
     };
   }, [currentRoom, refreshRoomData]);

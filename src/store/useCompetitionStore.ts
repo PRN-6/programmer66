@@ -213,9 +213,10 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
         isAdmin: true,
       });
 
-      if (room.settings?.fieldConfig) {
+      const fieldConfig = room.settings?.fieldConfig || room.fieldConfig;
+      if (fieldConfig) {
         const { useGameStore } = await import('./useGameStore');
-        useGameStore.getState().applyFieldConfig(room.settings.fieldConfig);
+        useGameStore.getState().applyFieldConfig(fieldConfig);
       }
 
       return room;
@@ -257,9 +258,10 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
         isAdmin: true,
       });
 
-      if (room.settings?.fieldConfig) {
+      const fieldConfig = room.settings?.fieldConfig || room.fieldConfig;
+      if (fieldConfig) {
         const { useGameStore } = await import('./useGameStore');
-        useGameStore.getState().applyFieldConfig(room.settings.fieldConfig);
+        useGameStore.getState().applyFieldConfig(fieldConfig);
       }
 
       return room;
@@ -296,9 +298,10 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
         isAdmin: false,
       });
 
-      if (room.settings?.fieldConfig) {
+      const fieldConfig = room.settings?.fieldConfig || room.fieldConfig;
+      if (fieldConfig) {
         const { useGameStore } = await import('./useGameStore');
-        useGameStore.getState().applyFieldConfig(room.settings.fieldConfig);
+        useGameStore.getState().applyFieldConfig(fieldConfig);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to join room';
@@ -340,9 +343,10 @@ export const useCompetitionStore = create<CompetitionState>((set, get) => ({
 
         const updatedTeam = currentTeam ? teams.find((t) => t.id === currentTeam.id) || null : null;
 
-        if (updatedRoom.settings?.fieldConfig) {
+        const fieldConfig = updatedRoom.settings?.fieldConfig || updatedRoom.fieldConfig;
+        if (fieldConfig) {
           const { useGameStore } = await import('./useGameStore');
-          useGameStore.getState().applyFieldConfig(updatedRoom.settings.fieldConfig);
+          useGameStore.getState().applyFieldConfig(fieldConfig);
         }
 
         // If room was closed by admin, notify participant and return to main game

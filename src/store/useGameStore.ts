@@ -129,19 +129,24 @@ function createInitialTiles(): Record<string, TileState> {
 
 function createTilesFromFieldConfig(config: FieldConfig): Record<string, TileState> {
   const tiles: Record<string, TileState> = {};
-  for (let x = 0; x < config.width; x++) {
-    for (let y = 0; y < config.height; y++) {
+  if (!config) return createInitialTiles();
+  const width = typeof config.width === 'number' && config.width > 0 ? config.width : GRID_DEFAULT_WIDTH;
+  const height = typeof config.height === 'number' && config.height > 0 ? config.height : GRID_DEFAULT_HEIGHT;
+  const sourceTiles = config.tiles || {};
+
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
       const key = `${x}_${y}`;
-      const custom = config.tiles[key];
-      const isUnlocked = custom !== undefined ? custom.unlocked : true;
+      const custom = sourceTiles[key];
+      const isUnlocked = custom !== undefined ? Boolean(custom.unlocked) : true;
       const crop = (custom?.crop as CropId) || null;
       tiles[key] = {
         x,
         y,
         unlocked: isUnlocked,
-        moisture: custom?.moisture ?? (45 + Math.floor(Math.random() * 20)),
-        nutrients: custom?.nutrients ?? (50 + Math.floor(Math.random() * 25)),
-        weedLevel: custom?.weedLevel ?? 0,
+        moisture: typeof custom?.moisture === 'number' ? custom.moisture : (45 + Math.floor(Math.random() * 20)),
+        nutrients: typeof custom?.nutrients === 'number' ? custom.nutrients : (50 + Math.floor(Math.random() * 25)),
+        weedLevel: typeof custom?.weedLevel === 'number' ? custom.weedLevel : 0,
         crop,
         stage: crop ? 'seedling' : 'empty',
         growthProgress: crop ? 0.3 : 0,
@@ -915,13 +920,36 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   applyFieldConfig: (config: FieldConfig) => {
-    const { stats } = get();
+    if (!config) return;
+    const { stats, robots, selectedTileCoord } = get();
     const newTiles = createTilesFromFieldConfig(config);
+    const width = typeof config.width === 'number' && config.width > 0 ? config.width : GRID_DEFAULT_WIDTH;
+    const height = typeof config.height === 'number' && config.height > 0 ? config.height : GRID_DEFAULT_HEIGHT;
+
+    // Safely clamp robot positions within new field bounds
+    const clampedRobots = robots.map((r) => ({
+      ...r,
+      x: Math.min(Math.max(0, r.x), width - 1),
+      y: Math.min(Math.max(0, r.y), height - 1),
+      targetX: Math.min(Math.max(0, r.targetX), width - 1),
+      targetY: Math.min(Math.max(0, r.targetY), height - 1),
+    }));
+
+    // Safely clamp selected tile coord
+    const clampedSelected = selectedTileCoord
+      ? {
+          x: Math.min(Math.max(0, selectedTileCoord.x), width - 1),
+          y: Math.min(Math.max(0, selectedTileCoord.y), height - 1),
+        }
+      : { x: 0, y: 0 };
+
     set({
       activeFieldConfig: config,
-      gridWidth: config.width,
-      gridHeight: config.height,
+      gridWidth: width,
+      gridHeight: height,
       tiles: newTiles,
+      robots: clampedRobots,
+      selectedTileCoord: clampedSelected,
       stats: {
         ...stats,
         tilesUnlocked: Object.values(newTiles).filter((t) => t.unlocked).length,

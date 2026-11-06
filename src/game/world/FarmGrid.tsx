@@ -37,7 +37,7 @@ export const FarmGrid: React.FC = () => {
   return (
     <group position={[-offsetX * 1.2, 0, -offsetZ * 1.2]}>
       {Object.values(tiles).map((tile) => {
-        if (!tile.unlocked) return null;
+        if (!tile || !tile.unlocked) return null;
 
         const posX = tile.x * 1.2;
         const posZ = tile.y * 1.2;
@@ -46,7 +46,8 @@ export const FarmGrid: React.FC = () => {
 
         // Natural soil moisture dynamics
         // Moisture 0: #a16207 (warm dry amber-brown) -> Moisture 100: #3b1d11 (deep moist rich loam)
-        const moistureFactor = tile.moisture / 100;
+        const moisture = typeof tile.moisture === 'number' && !isNaN(tile.moisture) ? tile.moisture : 50;
+        const moistureFactor = Math.min(100, Math.max(0, moisture)) / 100;
         const r = Math.round(165 - moistureFactor * 105);
         const g = Math.round(100 - moistureFactor * 70);
         const b = Math.round(35 - moistureFactor * 20);
@@ -98,7 +99,7 @@ export const FarmGrid: React.FC = () => {
             </mesh>
 
             {/* Weeds if infested */}
-            {tile.weedLevel > 20 && (
+            {(tile.weedLevel ?? 0) > 20 && (
               <group position={[0.2, 0.1, 0.2]}>
                 <mesh rotation={[0, 0.5, 0.2]}>
                   <coneGeometry args={[0.08, 0.15, 4]} />
@@ -133,7 +134,7 @@ export const FarmGrid: React.FC = () => {
             )}
 
             {/* Water Moisture Sheen when wet */}
-            {tile.moisture > 75 && (
+            {moisture > 75 && (
               <mesh position={[0, 0.102, 0]} rotation={[-Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[1.0, 1.0]} />
                 <meshStandardMaterial

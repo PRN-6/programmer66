@@ -161,6 +161,7 @@ export class CompetitionService {
           .single();
 
         if (!error && data) {
+          const settings = (data.settings && typeof data.settings === 'object') ? data.settings : {};
           return {
             id: data.id,
             code: data.code,
@@ -171,8 +172,9 @@ export class CompetitionService {
             durationMinutes: data.duration_minutes,
             remainingSeconds: data.remaining_seconds,
             activeChallengeId: data.active_challenge_id,
-            settings: data.settings,
-            challenges: data.challenges,
+            settings,
+            challenges: Array.isArray(data.challenges) ? data.challenges : [],
+            fieldConfig: settings.fieldConfig || data.field_config || undefined,
           };
         }
       } catch (err) {
@@ -196,19 +198,23 @@ export class CompetitionService {
           .limit(8);
 
         if (!error && data) {
-          return data.map((d) => ({
-            id: d.id,
-            code: d.code,
-            title: d.title,
-            status: d.status,
-            createdAt: d.created_at,
-            startedAt: d.started_at,
-            durationMinutes: d.duration_minutes,
-            remainingSeconds: d.remaining_seconds,
-            activeChallengeId: d.active_challenge_id,
-            settings: d.settings,
-            challenges: d.challenges,
-          }));
+          return data.map((d) => {
+            const settings = (d.settings && typeof d.settings === 'object') ? d.settings : {};
+            return {
+              id: d.id,
+              code: d.code,
+              title: d.title,
+              status: d.status,
+              createdAt: d.created_at,
+              startedAt: d.started_at,
+              durationMinutes: d.duration_minutes,
+              remainingSeconds: d.remaining_seconds,
+              activeChallengeId: d.active_challenge_id,
+              settings,
+              challenges: Array.isArray(d.challenges) ? d.challenges : [],
+              fieldConfig: settings.fieldConfig || d.field_config || undefined,
+            };
+          });
         }
       } catch (err) {
         console.warn('Supabase getRecentRooms error:', err);
@@ -502,22 +508,31 @@ export class CompetitionService {
   // --- REALTIME SUBSCRIPTIONS ---
   static subscribeToRoomChanges(roomId: string, onChange: (event: string) => void): () => void {
     if (isSupabaseConfigured && supabase) {
-      const channel = supabase
-        .channel(`room_${roomId}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` }, () => {
-          onChange('ROOM_UPDATED');
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'teams', filter: `room_id=eq.${roomId}` }, () => {
-          onChange('TEAMS_UPDATED');
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'submissions', filter: `room_id=eq.${roomId}` }, () => {
-          onChange('SUBMISSIONS_UPDATED');
-        })
-        .subscribe();
+      try {
+        const subId = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const channel = supabase
+          .channel(`room_${roomId}_${subId}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` }, () => {
+            onChange('ROOM_UPDATED');
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'teams', filter: `room_id=eq.${roomId}` }, () => {
+            onChange('TEAMS_UPDATED');
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'submissions', filter: `room_id=eq.${roomId}` }, () => {
+            onChange('SUBMISSIONS_UPDATED');
+          })
+          .subscribe();
 
-      return () => {
-        supabase?.removeChannel(channel);
-      };
+        return () => {
+          try {
+            supabase?.removeChannel(channel);
+          } catch (e) {
+            console.warn('Error removing Supabase channel:', e);
+          }
+        };
+      } catch (err) {
+        console.warn('Supabase subscribeToRoomChanges error:', err);
+      }
     }
 
     // Local broadcast listener
