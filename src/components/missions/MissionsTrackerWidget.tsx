@@ -1,43 +1,39 @@
-import React, { useState } from 'react';
+import React from 'react';
 import confetti from 'canvas-confetti';
 import {
   Target,
   CheckCircle2,
   Circle,
   Code2,
-  ChevronLeft,
-  ChevronRight,
   Maximize2,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { Mission } from '../../types/game';
 
-interface MissionsTrackerWidgetProps {
+export interface MissionsTrackerCardProps {
   onOpenEditor?: () => void;
   onOpenFullModal?: () => void;
+  onClose?: () => void;
 }
 
-export const MissionsTrackerWidget: React.FC<MissionsTrackerWidgetProps> = ({
+export const MissionsTrackerCard: React.FC<MissionsTrackerCardProps> = ({
   onOpenEditor,
   onOpenFullModal,
+  onClose,
 }) => {
   const currentRoom = useCompetitionStore((state) => state.currentRoom);
   const missions = useGameStore((state) => state.missions);
   const claimMissionReward = useGameStore((state) => state.claimMissionReward);
   const { addTab, updateCode, tabs } = useEditorStore();
 
-  const [isMinimized, setIsMinimized] = useState(true);
-
   // Hidden in competition rooms (competition mode has its own dedicated tournament round challenges)
   if (currentRoom) return null;
 
   const activeMissions = missions.filter((m) => !m.completed || !m.rewardClaimed);
-  const hasClaimableReward = activeMissions.some((m) =>
-    m.objectives.every((obj) => obj.completed) && !m.rewardClaimed
-  );
 
   const handleClaim = (missionId: string) => {
     claimMissionReward(missionId);
@@ -68,45 +64,8 @@ export const MissionsTrackerWidget: React.FC<MissionsTrackerWidgetProps> = ({
     }
   };
 
-  // Minimized state docked to the left edge
-  if (isMinimized) {
-    return (
-      <div className="pointer-events-auto animate-in slide-in-from-left duration-200">
-        <button
-          onClick={() => setIsMinimized(false)}
-          className="flex items-center gap-2 bg-neutral-950/80 hover:bg-neutral-900/90 border border-white/10 text-neutral-200 px-3 py-2 rounded-2xl shadow-2xl backdrop-blur-md group transition"
-          title="Click to expand Active Missions tracker"
-        >
-          <div className="w-5 h-5 rounded-md bg-neutral-800 border border-neutral-700 text-emerald-400 flex items-center justify-center">
-            <Target className="w-3.5 h-3.5" />
-          </div>
-          <div className="flex flex-col text-left">
-            <span className="text-xs font-bold text-white group-hover:text-emerald-400 transition flex items-center gap-1.5">
-              <span>Missions</span>
-              {hasClaimableReward && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
-              )}
-            </span>
-            <span className="text-[10px] text-neutral-400 font-mono">
-              {hasClaimableReward
-                ? '🎉 Claim Reward!'
-                : activeMissions.length > 0
-                ? `${activeMissions.length} in progress`
-                : 'All complete!'}
-            </span>
-          </div>
-          <ChevronRight className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white group-hover:translate-x-0.5 transition ml-0.5" />
-        </button>
-      </div>
-    );
-  }
-
-  // Expanded state
   return (
-    <div className="pointer-events-auto w-72 bg-neutral-950/80 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-3.5 text-neutral-100 flex flex-col gap-2.5 animate-in fade-in duration-150 max-h-[380px]">
+    <div className="pointer-events-auto w-76 bg-neutral-950/85 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-3.5 text-neutral-100 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-150 max-h-[380px]">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
         <div className="flex items-center gap-2">
@@ -136,13 +95,15 @@ export const MissionsTrackerWidget: React.FC<MissionsTrackerWidgetProps> = ({
               <Maximize2 className="w-3.5 h-3.5" />
             </button>
           )}
-          <button
-            onClick={() => setIsMinimized(true)}
-            className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800 transition"
-            title="Minimize to left side"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800 transition"
+              title="Close tracker"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -158,7 +119,8 @@ export const MissionsTrackerWidget: React.FC<MissionsTrackerWidgetProps> = ({
           </div>
         ) : (
           activeMissions.slice(0, 2).map((mission) => {
-            const isReadyToClaim = mission.objectives.every((obj) => obj.completed) && !mission.rewardClaimed;
+            const isReadyToClaim =
+              mission.objectives.every((obj) => obj.completed) && !mission.rewardClaimed;
 
             return (
               <div
@@ -246,3 +208,6 @@ export const MissionsTrackerWidget: React.FC<MissionsTrackerWidgetProps> = ({
   );
 };
 
+export const MissionsTrackerWidget: React.FC<MissionsTrackerCardProps> = (props) => {
+  return <MissionsTrackerCard {...props} />;
+};

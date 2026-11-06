@@ -8,14 +8,22 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Maximize2,
+  X,
+  Droplets,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { soundManager } from '../../audio/soundEffects';
+import { CROPS } from '../../game/simulation/cropConfig';
 
 export interface LeftSidebarProps {
   onOpenMarket: () => void;
-  onOpenMissions: () => void;
+  onOpenMissionsModal: () => void;
+  onToggleMissionsTracker: () => void;
+  isMissionsTrackerOpen: boolean;
+  onTogglePlotInspector: () => void;
+  isPlotInspectorOpen: boolean;
   onOpenRobots: () => void;
   onOpenWorldLeaderboard: () => void;
   onOpenDocs: () => void;
@@ -23,7 +31,11 @@ export interface LeftSidebarProps {
 
 export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   onOpenMarket,
-  onOpenMissions,
+  onOpenMissionsModal,
+  onToggleMissionsTracker,
+  isMissionsTrackerOpen,
+  onTogglePlotInspector,
+  isPlotInspectorOpen,
   onOpenRobots,
   onOpenWorldLeaderboard,
   onOpenDocs,
@@ -36,6 +48,18 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
     s.missions.some((m) => m.objectives.every((o) => o.completed) && !m.rewardClaimed)
   );
   const robotCount = useGameStore((s) => s.robots.length);
+  const selectedTileCoord = useGameStore((s) => s.selectedTileCoord);
+  const clearSelection = useGameStore((s) => s.clearSelection);
+
+  // Read selected tile details if present
+  const selectedTileKey = selectedTileCoord
+    ? `${selectedTileCoord.x}_${selectedTileCoord.y}`
+    : null;
+  const selectedTile = useGameStore((s) =>
+    selectedTileKey ? s.tiles[selectedTileKey] : null
+  );
+
+  const selectedCropConfig = selectedTile?.crop ? CROPS[selectedTile.crop] : null;
 
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -66,7 +90,10 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
         : `${uncompletedMissions} Remaining`,
       icon: Target,
       iconColor: 'text-emerald-400',
-      iconBg: 'bg-emerald-500/15 border-emerald-500/30',
+      iconBg: isMissionsTrackerOpen
+        ? 'bg-emerald-500/25 border-emerald-500/50 text-emerald-300 ring-1 ring-emerald-500/40'
+        : 'bg-emerald-500/15 border-emerald-500/30',
+      isActive: isMissionsTrackerOpen,
       hasAlert: hasClaimableReward || uncompletedMissions > 0,
       badge: hasClaimableReward ? (
         <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold animate-pulse">
@@ -80,7 +107,11 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
       ) : null,
       onClick: () => {
         soundManager.playCoin();
-        onOpenMissions();
+        onToggleMissionsTracker();
+      },
+      onPopOut: () => {
+        soundManager.playCoin();
+        onOpenMissionsModal();
       },
     },
     {
@@ -90,6 +121,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
       icon: ShoppingBag,
       iconColor: 'text-amber-400',
       iconBg: 'bg-amber-500/15 border-amber-500/30',
+      isActive: false,
       hasAlert: false,
       badge: null,
       onClick: () => {
@@ -104,6 +136,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
       icon: Bot,
       iconColor: 'text-purple-400',
       iconBg: 'bg-purple-500/15 border-purple-500/30',
+      isActive: false,
       hasAlert: false,
       badge: (
         <span className="px-1.5 py-0.5 rounded-full bg-neutral-800 text-purple-300 border border-purple-500/30 text-[10px] font-mono">
@@ -122,6 +155,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
       icon: Globe,
       iconColor: 'text-sky-400',
       iconBg: 'bg-sky-500/15 border-sky-500/30',
+      isActive: false,
       hasAlert: false,
       badge: null,
       onClick: () => {
@@ -136,6 +170,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
       icon: BookOpen,
       iconColor: 'text-cyan-400',
       iconBg: 'bg-cyan-500/15 border-cyan-500/30',
+      isActive: false,
       hasAlert: false,
       badge: null,
       onClick: () => {
@@ -165,7 +200,11 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                 isCollapsed
                   ? 'p-2 justify-center w-full'
                   : 'px-2.5 py-2 w-full gap-2.5'
-              } hover:bg-neutral-900/80 border border-transparent hover:border-white/10`}
+              } ${
+                item.isActive
+                  ? 'bg-neutral-900/90 border border-white/15 shadow-sm'
+                  : 'hover:bg-neutral-900/80 border border-transparent hover:border-white/10'
+              }`}
               title={isCollapsed ? `${item.label} • ${item.subtitle}` : undefined}
             >
               {/* Icon Badge */}
@@ -193,7 +232,21 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                       {item.subtitle}
                     </span>
                   </div>
-                  {item.badge && <div className="ml-1.5 shrink-0">{item.badge}</div>}
+                  <div className="flex items-center gap-1 shrink-0 ml-1">
+                    {item.onPopOut && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          item.onPopOut?.();
+                        }}
+                        className="text-neutral-500 hover:text-white p-1 rounded-md hover:bg-neutral-800 transition"
+                        title="Open full dialog"
+                      >
+                        <Maximize2 className="w-3 h-3" />
+                      </button>
+                    )}
+                    {item.badge}
+                  </div>
                 </div>
               )}
 
@@ -210,6 +263,84 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
             </button>
           );
         })}
+
+        {/* Selected Soil Plot Item (Shown seamlessly inside the dock whenever a plot is selected!) */}
+        {selectedTile && (
+          <div className="pt-1 mt-0.5 border-t border-white/10">
+            <button
+              onClick={() => {
+                soundManager.playPlant();
+                onTogglePlotInspector();
+              }}
+              className={`group relative flex items-center rounded-xl transition-all duration-150 text-left ${
+                isCollapsed
+                  ? 'p-2 justify-center w-full'
+                  : 'px-2.5 py-2 w-full gap-2.5'
+              } ${
+                isPlotInspectorOpen
+                  ? 'bg-sky-500/20 border border-sky-500/40 text-sky-200'
+                  : 'hover:bg-neutral-900/80 border border-transparent hover:border-white/10'
+              }`}
+              title={
+                isCollapsed
+                  ? `Plot (${selectedTile.x}, ${selectedTile.y}) • ${
+                      selectedCropConfig?.name || 'Empty'
+                    } • 💧${Math.round(selectedTile.moisture)}%`
+                  : undefined
+              }
+            >
+              {/* Plot Coordinates Icon Badge */}
+              <div className="relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border bg-sky-500/15 border-sky-500/30 text-sky-300 font-mono text-[10px] font-bold shadow-sm group-hover:scale-105 transition">
+                <span>
+                  {selectedTile.x},{selectedTile.y}
+                </span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-sky-400 shadow-sm" />
+              </div>
+
+              {/* Text in Expanded Mode */}
+              {!isCollapsed && (
+                <div className="flex items-center justify-between min-w-0 flex-1">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-bold text-neutral-100 group-hover:text-white leading-tight truncate">
+                      Plot ({selectedTile.x}, {selectedTile.y})
+                    </span>
+                    <span className="text-[10px] text-neutral-400 group-hover:text-neutral-300 truncate font-sans flex items-center gap-1">
+                      <span>{selectedCropConfig?.name || 'Empty Bed'}</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-0.5 text-sky-400 font-mono">
+                        <Droplets className="w-2.5 h-2.5" />
+                        {Math.round(selectedTile.moisture)}%
+                      </span>
+                    </span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearSelection();
+                    }}
+                    className="text-neutral-500 hover:text-white p-1 rounded-md hover:bg-neutral-800 transition"
+                    title="Deselect plot"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+
+              {/* Hover Floating Tooltip in Collapsed Mode */}
+              {isCollapsed && (
+                <div className="absolute left-full ml-3 px-2.5 py-1.5 bg-neutral-900/95 border border-neutral-700/80 rounded-xl text-xs font-semibold text-white whitespace-nowrap shadow-2xl z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                  <span>
+                    Plot ({selectedTile.x}, {selectedTile.y})
+                  </span>
+                  <span className="text-[10px] text-neutral-400">
+                    {selectedCropConfig?.name || 'Empty'} • 💧
+                    {Math.round(selectedTile.moisture)}%
+                  </span>
+                </div>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Collapse / Expand Toggle Button */}

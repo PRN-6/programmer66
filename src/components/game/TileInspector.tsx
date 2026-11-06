@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   X,
   Droplets,
@@ -6,23 +6,19 @@ import {
   Sprout,
   Scissors,
   Heart,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useCompetitionStore } from '../../store/useCompetitionStore';
 import { CROPS } from '../../game/simulation/cropConfig';
 
-interface TileInspectorContentProps {
+export interface TileInspectorCardProps {
   coord: { x: number; y: number };
-  isMinimized: boolean;
-  onToggleMinimize: () => void;
+  onClose?: () => void;
 }
 
-const TileInspectorContent: React.FC<TileInspectorContentProps> = ({
+export const TileInspectorCard: React.FC<TileInspectorCardProps> = ({
   coord,
-  isMinimized,
-  onToggleMinimize,
+  onClose,
 }) => {
   const currentRoom = useCompetitionStore((state) => state.currentRoom);
   const isCompeting = Boolean(currentRoom);
@@ -44,34 +40,16 @@ const TileInspectorContent: React.FC<TileInspectorContentProps> = ({
   const handleFertilize = () => useGameStore.getState().fertilizeTile(coord.x, coord.y);
   const handleClearWeeds = () => useGameStore.getState().clearWeeds(coord.x, coord.y);
 
-  // Minimized state docked to the left edge
-  if (isMinimized) {
-    return (
-      <div className="pointer-events-auto animate-in slide-in-from-left duration-200">
-        <button
-          onClick={onToggleMinimize}
-          className="flex items-center gap-2 bg-neutral-950/80 hover:bg-neutral-900/90 border border-white/10 text-neutral-200 px-3 py-2 rounded-2xl shadow-2xl backdrop-blur-md group transition"
-          title="Click to expand Soil Plot Inspector"
-        >
-          <div className="w-5 h-5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-200 font-mono text-[10px] flex items-center justify-center font-bold">
-            {tile.x},{tile.y}
-          </div>
-          <div className="flex flex-col text-left">
-            <span className="text-xs font-bold text-white group-hover:text-emerald-400 transition">
-              Plot ({tile.x}, {tile.y})
-            </span>
-            <span className="text-[10px] text-neutral-400">
-              {tile.crop ? cropConfig?.name : 'Empty'} • 💧{Math.round(tile.moisture)}%
-            </span>
-          </div>
-          <ChevronRight className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white group-hover:translate-x-0.5 transition ml-0.5" />
-        </button>
-      </div>
-    );
-  }
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      clearSelection();
+    }
+  };
 
   return (
-    <div className="pointer-events-auto w-72 bg-neutral-950/80 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-4 text-neutral-100 flex flex-col gap-3 animate-in fade-in duration-150">
+    <div className="pointer-events-auto w-72 bg-neutral-950/85 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-4 text-neutral-100 flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-150">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
         <div className="flex items-center gap-2">
@@ -79,7 +57,9 @@ const TileInspectorContent: React.FC<TileInspectorContentProps> = ({
             {tile.x},{tile.y}
           </div>
           <div>
-            <h3 className="text-sm font-bold leading-tight text-white">Soil Plot ({tile.x}, {tile.y})</h3>
+            <h3 className="text-sm font-bold leading-tight text-white">
+              Plot ({tile.x}, {tile.y})
+            </h3>
             <span className="text-[11px] text-neutral-400">
               {tile.crop ? cropConfig?.name : 'Empty Bed'}
             </span>
@@ -87,14 +67,7 @@ const TileInspectorContent: React.FC<TileInspectorContentProps> = ({
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={onToggleMinimize}
-            className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800 transition"
-            title="Minimize to left side"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={clearSelection}
+            onClick={handleClose}
             className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800 transition"
             title="Close inspector"
           >
@@ -139,7 +112,7 @@ const TileInspectorContent: React.FC<TileInspectorContentProps> = ({
           </div>
         </div>
 
-        {/* Crop Growth & Health if planted */}
+        {/* Crop Progress */}
         {tile.crop && (
           <div className="bg-neutral-900 p-2.5 rounded-xl border border-neutral-800 flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -246,15 +219,6 @@ const TileInspectorContent: React.FC<TileInspectorContentProps> = ({
 
 export const TileInspector: React.FC = () => {
   const selectedTileCoord = useGameStore((state) => state.selectedTileCoord);
-  const [isMinimized, setIsMinimized] = useState(false);
-
   if (!selectedTileCoord) return null;
-
-  return (
-    <TileInspectorContent
-      coord={selectedTileCoord}
-      isMinimized={isMinimized}
-      onToggleMinimize={() => setIsMinimized((prev) => !prev)}
-    />
-  );
+  return <TileInspectorCard coord={selectedTileCoord} />;
 };

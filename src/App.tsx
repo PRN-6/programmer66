@@ -4,8 +4,8 @@ import { FarmCanvas } from './game/world/FarmCanvas';
 import { TopHUD } from './components/hud/TopHUD';
 import { LeftSidebar } from './components/navigation/LeftSidebar';
 import { FarmToolbar } from './components/game/FarmToolbar';
-import { TileInspector } from './components/game/TileInspector';
-import { MissionsTrackerWidget } from './components/missions/MissionsTrackerWidget';
+import { TileInspectorCard } from './components/game/TileInspector';
+import { MissionsTrackerCard } from './components/missions/MissionsTrackerWidget';
 import { CodeEditorPanel } from './components/editor/CodeEditorPanel';
 import { useEditorStore } from './store/useEditorStore';
 import { useGameStore } from './store/useGameStore';
@@ -57,6 +57,26 @@ export function App() {
   const [showRobots, setShowRobots] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showWorldLeaderboard, setShowWorldLeaderboard] = useState(false);
+  const [showMissionsTracker, setShowMissionsTracker] = useState(false);
+  const [closedTileCoordKey, setClosedTileCoordKey] = useState<string | null>(null);
+
+  const selectedTileCoord = useGameStore((state) => state.selectedTileCoord);
+  const selectedTileKey = selectedTileCoord
+    ? `${selectedTileCoord.x}_${selectedTileCoord.y}`
+    : null;
+
+  // Derives whether plot inspector is open; automatically opens whenever a new plot is selected
+  const isPlotInspectorOpen = Boolean(
+    selectedTileCoord && closedTileCoordKey !== selectedTileKey
+  );
+
+  const handleTogglePlotInspector = () => {
+    if (isPlotInspectorOpen) {
+      setClosedTileCoordKey(selectedTileKey);
+    } else {
+      setClosedTileCoordKey(null);
+    }
+  };
 
   const showDocsModal = useEditorStore((state) => state.showDocsModal);
   const setShowDocsModal = useEditorStore((state) => state.setShowDocsModal);
@@ -135,20 +155,37 @@ export function App() {
       <div className="flex-1 min-w-0 h-full relative overflow-hidden">
         <FarmCanvas />
 
-        {/* Left-docked floating panels: Navigation Sidebar, Soil Plot Inspector & Missions Tracker */}
-        <div className="absolute top-16 left-3.5 z-20 pointer-events-none flex flex-col items-start gap-2.5 max-h-[calc(100vh-80px)] overflow-y-auto no-scrollbar">
+        {/* Left Floating Sidebar Navigation & Adjacent Side Panels */}
+        <div className="absolute top-16 left-3.5 z-20 pointer-events-none flex items-start gap-3 max-h-[calc(100vh-80px)]">
           <LeftSidebar
             onOpenMarket={() => setShowMarket(true)}
-            onOpenMissions={() => setShowMissions(true)}
+            onOpenMissionsModal={() => setShowMissions(true)}
+            onToggleMissionsTracker={() => setShowMissionsTracker((prev) => !prev)}
+            isMissionsTrackerOpen={showMissionsTracker}
+            onTogglePlotInspector={handleTogglePlotInspector}
+            isPlotInspectorOpen={isPlotInspectorOpen}
             onOpenRobots={() => setShowRobots(true)}
             onOpenWorldLeaderboard={() => setShowWorldLeaderboard(true)}
             onOpenDocs={() => setShowDocsModal(true)}
           />
-          <TileInspector />
-          <MissionsTrackerWidget
-            onOpenEditor={() => setEditorOpen(true)}
-            onOpenFullModal={() => setShowMissions(true)}
-          />
+
+          {/* Adjacent Flyout Panels */}
+          <div className="flex flex-col gap-2.5 overflow-y-auto no-scrollbar max-h-[calc(100vh-90px)]">
+            {isPlotInspectorOpen && selectedTileCoord && (
+              <TileInspectorCard
+                coord={selectedTileCoord}
+                onClose={() => setClosedTileCoordKey(selectedTileKey)}
+              />
+            )}
+
+            {showMissionsTracker && !currentRoom && (
+              <MissionsTrackerCard
+                onOpenEditor={() => setEditorOpen(true)}
+                onOpenFullModal={() => setShowMissions(true)}
+                onClose={() => setShowMissionsTracker(false)}
+              />
+            )}
+          </div>
         </div>
 
         {/* Bottom Farm Interaction Toolbar */}
