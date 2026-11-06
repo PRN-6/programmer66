@@ -11,6 +11,7 @@ import { useEditorStore } from './store/useEditorStore';
 import { useGameStore } from './store/useGameStore';
 import { useCompetitionStore } from './store/useCompetitionStore';
 import { useAuthStore } from './store/useAuthStore';
+import { CompetitionService } from './services/competitionService';
 import { soundManager } from './audio/soundEffects';
 
 // Lazy-loaded modal components to reduce initial page bundle
@@ -96,6 +97,27 @@ export function App() {
   const currentRoom = useCompetitionStore((state) => state.currentRoom);
   const currentTeam = useCompetitionStore((state) => state.currentTeam);
   const isAdmin = useCompetitionStore((state) => state.isAdmin);
+  const refreshRoomData = useCompetitionStore((state) => state.refreshRoomData);
+
+  // Global real-time competition synchronization for all active competitors & admin
+  useEffect(() => {
+    if (!currentRoom?.id) return;
+
+    // Realtime websocket listener (Supabase Realtime + cross-tab BroadcastChannel)
+    const unsubscribe = CompetitionService.subscribeToRoomChanges(currentRoom.id, () => {
+      refreshRoomData();
+    });
+
+    // 3-second heartbeat fallback polling
+    const interval = setInterval(() => {
+      refreshRoomData();
+    }, 3000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, [currentRoom?.id, refreshRoomData]);
 
   const prevStatusRef = useRef<string | null>(null);
 
