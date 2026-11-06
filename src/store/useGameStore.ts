@@ -823,10 +823,17 @@ export const useGameStore = create<GameState>((set, get) => ({
       };
       localStorage.setItem('programmer66_save', JSON.stringify(saveData));
 
-      // Asynchronously sync to Supabase cloud if player is signed in
+      // Asynchronously sync to Supabase cloud and per-account storage if player is signed in
       import('./useAuthStore')
         .then(({ useAuthStore }) => {
           const auth = useAuthStore.getState();
+          if (auth.user?.id) {
+            try {
+              localStorage.setItem(`programmer66_save_${auth.user.id}`, JSON.stringify(saveData));
+            } catch {
+              // ignore
+            }
+          }
           if (auth.user && !auth.isSyncing) {
             auth.syncToCloud();
           }
@@ -850,6 +857,15 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (!inventory.wheat_seed || inventory.wheat_seed < 12) {
         inventory.wheat_seed = 50;
       }
+
+      // Merge saved missions with initial missions to automatically include newly added missions
+      const savedMissions: Mission[] = Array.isArray(data.missions) ? data.missions : [];
+      const savedMap = new Map(savedMissions.map((m) => [m.id, m]));
+      const mergedMissions = INITIAL_MISSIONS.map((initM) => {
+        const existing = savedMap.get(initM.id);
+        return existing ? { ...initM, ...existing } : initM;
+      });
+
       set({
         tiles: data.tiles,
         robots: data.robots,
@@ -861,7 +877,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         xp: data.xp,
         level: data.level,
         stats: data.stats,
-        missions: data.missions,
+        missions: mergedMissions,
         robotActionCount: data.robotActionCount || 0,
         graphicsQuality: data.graphicsQuality || get().graphicsQuality,
       });

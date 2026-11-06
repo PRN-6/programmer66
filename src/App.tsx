@@ -229,6 +229,7 @@ export function App() {
           <WorldLeaderboardModal
             onClose={() => setShowWorldLeaderboard(false)}
             onOpenAuth={() => setShowAuthModal(true)}
+            onOpenEditor={() => setEditorOpen(true)}
           />
         )}
 

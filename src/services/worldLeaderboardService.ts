@@ -1,124 +1,13 @@
 import { WorldLeaderboardEntry, WorldLeaderboardSort } from '../types/leaderboard';
 import { useAuthStore, DevAccount } from '../store/useAuthStore';
 import { useGameStore } from '../store/useGameStore';
+import { INITIAL_MISSIONS } from '../game/simulation/missionConfig';
 import { supabase, isSupabaseConfigured } from './supabase';
 
-const BASELINE_CHAMPIONS: Omit<WorldLeaderboardEntry, 'id'>[] = [
-  {
-    displayName: 'AeroMaster_99',
-    username: 'aeromaster',
-    countryCode: 'US',
-    level: 9,
-    xp: 4120,
-    money: 8450,
-    missionsSolved: 6,
-    totalMissions: 6,
-    cropsHarvested: 520,
-    cropsPlanted: 640,
-    farmerTitle: '🏆 Grandmaster Agronomist',
-    lastActive: '5m ago',
-  },
-  {
-    displayName: 'CyberPlanter',
-    username: 'cyber_planter',
-    countryCode: 'DE',
-    level: 8,
-    xp: 3680,
-    money: 6920,
-    missionsSolved: 6,
-    totalMissions: 6,
-    cropsHarvested: 480,
-    cropsPlanted: 530,
-    farmerTitle: '🏆 Grandmaster Agronomist',
-    lastActive: '12m ago',
-  },
-  {
-    displayName: 'NeuralFarmer_X',
-    username: 'neural_farmer',
-    countryCode: 'IN',
-    level: 7,
-    xp: 2950,
-    money: 5340,
-    missionsSolved: 5,
-    totalMissions: 6,
-    cropsHarvested: 390,
-    cropsPlanted: 450,
-    farmerTitle: '⚡ Principal Automation Engineer',
-    lastActive: '1h ago',
-  },
-  {
-    displayName: 'TokyoHarvester',
-    username: 'tokyo_harvester',
-    countryCode: 'JP',
-    level: 6,
-    xp: 2400,
-    money: 4150,
-    missionsSolved: 5,
-    totalMissions: 6,
-    cropsHarvested: 310,
-    cropsPlanted: 380,
-    farmerTitle: '⚡ Principal Automation Engineer',
-    lastActive: '3h ago',
-  },
-  {
-    displayName: 'KernelPanic42',
-    username: 'kernel_panic',
-    countryCode: 'GB',
-    level: 5,
-    xp: 1850,
-    money: 3200,
-    missionsSolved: 4,
-    totalMissions: 6,
-    cropsHarvested: 240,
-    cropsPlanted: 290,
-    farmerTitle: '🌾 Senior Crop Architect',
-    lastActive: '6h ago',
-  },
-  {
-    displayName: 'HexGrower',
-    username: 'hexgrower',
-    countryCode: 'CA',
-    level: 4,
-    xp: 1320,
-    money: 2100,
-    missionsSolved: 3,
-    totalMissions: 6,
-    cropsHarvested: 180,
-    cropsPlanted: 210,
-    farmerTitle: '🚜 Drone Fleet Operator',
-    lastActive: '14h ago',
-  },
-  {
-    displayName: 'ByteSprout',
-    username: 'bytesprout',
-    countryCode: 'FR',
-    level: 3,
-    xp: 850,
-    money: 1450,
-    missionsSolved: 2,
-    totalMissions: 6,
-    cropsHarvested: 110,
-    cropsPlanted: 140,
-    farmerTitle: '🌱 Apprentice Agronomist',
-    lastActive: '1d ago',
-  },
-  {
-    displayName: 'FarmBot_Alpha',
-    username: 'farmbot_alpha',
-    countryCode: 'KR',
-    level: 2,
-    xp: 450,
-    money: 820,
-    missionsSolved: 1,
-    totalMissions: 6,
-    cropsHarvested: 65,
-    cropsPlanted: 90,
-    farmerTitle: '🌱 Novice Farmer',
-    lastActive: '2d ago',
-  },
-];
-
 export function getFarmerTitle(missionsSolved: number): string {
+  if (missionsSolved >= 12) return '🌟 Singularity Grandmaster';
+  if (missionsSolved >= 10) return '🏆 Grandmaster Agronomist';
+  if (missionsSolved >= 8) return '🏆 Grandmaster Agronomist';
   if (missionsSolved >= 6) return '🏆 Grandmaster Agronomist';
   if (missionsSolved >= 5) return '⚡ Principal Automation Engineer';
   if (missionsSolved >= 4) return '🌾 Senior Crop Architect';
@@ -134,6 +23,8 @@ export async function fetchWorldLeaderboard(
   const authState = useAuthStore.getState();
   const user = authState.user;
   const profile = authState.profile;
+
+  const totalMissionsCount = gameState.missions.length || INITIAL_MISSIONS.length;
 
   // 1. Calculate live current user stats
   const solvedCount = gameState.missions.filter(
@@ -155,23 +46,17 @@ export async function fetchWorldLeaderboard(
     xp: gameState.xp,
     money: gameState.money,
     missionsSolved: solvedCount,
-    totalMissions: gameState.missions.length || 6,
+    totalMissions: totalMissionsCount,
     cropsHarvested: gameState.stats.totalHarvested,
     cropsPlanted: gameState.stats.totalPlanted,
     farmerTitle: getFarmerTitle(solvedCount),
-    countryCode: 'GLOBAL',
+    countryCode: 'PLAYER',
     lastActive: 'Active Now',
   };
 
   const entriesMap = new Map<string, WorldLeaderboardEntry>();
 
-  // Add baseline international champions
-  BASELINE_CHAMPIONS.forEach((champ, index) => {
-    const id = `champ-${index + 1}`;
-    entriesMap.set(id, { ...champ, id });
-  });
-
-  // 2. Fetch other local development accounts if in localStorage
+  // 2. Fetch other real local accounts created on this client
   if (typeof localStorage !== 'undefined') {
     try {
       const raw = localStorage.getItem('programmer66_dev_accounts');
@@ -179,21 +64,53 @@ export async function fetchWorldLeaderboard(
         const localAccounts: DevAccount[] = JSON.parse(raw);
         localAccounts.forEach((acc) => {
           if (acc.id !== currentUserId) {
+            // Check if account has an actual save file
+            let accLevel = 1;
+            let accXp = 0;
+            let accMoney = 120;
+            let accSolved = 0;
+            let accHarvested = 0;
+            let accPlanted = 0;
+            let lastActive = 'Registered';
+
+            const savedRaw = localStorage.getItem(`programmer66_save_${acc.id}`);
+            if (savedRaw) {
+              try {
+                const parsedSave = JSON.parse(savedRaw);
+                accLevel = parsedSave.level || 1;
+                accXp = parsedSave.xp || 0;
+                accMoney = parsedSave.money || 120;
+                if (Array.isArray(parsedSave.missions)) {
+                  accSolved = parsedSave.missions.filter(
+                    (m: { completed?: boolean; rewardClaimed?: boolean }) =>
+                      m.completed || m.rewardClaimed
+                  ).length;
+                }
+                if (parsedSave.stats) {
+                  accHarvested = parsedSave.stats.totalHarvested || 0;
+                  accPlanted = parsedSave.stats.totalPlanted || 0;
+                }
+                lastActive = 'Saved locally';
+              } catch {
+                // ignore
+              }
+            }
+
             entriesMap.set(acc.id, {
               id: acc.id,
               displayName: acc.displayName || acc.username,
               username: acc.username,
               isCurrentUser: false,
-              level: Math.floor(Math.random() * 3) + 2,
-              xp: 650,
-              money: 980,
-              missionsSolved: Math.floor(Math.random() * 3) + 1,
-              totalMissions: 6,
-              cropsHarvested: 80,
-              cropsPlanted: 100,
-              farmerTitle: getFarmerTitle(2),
+              level: accLevel,
+              xp: accXp,
+              money: accMoney,
+              missionsSolved: accSolved,
+              totalMissions: totalMissionsCount,
+              cropsHarvested: accHarvested,
+              cropsPlanted: accPlanted,
+              farmerTitle: getFarmerTitle(accSolved),
               countryCode: 'DEV',
-              lastActive: 'Recent',
+              lastActive,
             });
           }
         });
@@ -210,7 +127,7 @@ export async function fetchWorldLeaderboard(
         .from('player_saves')
         .select('user_id, level, xp, money, missions, stats, updated_at')
         .order('level', { ascending: false })
-        .limit(30);
+        .limit(50);
 
       if (!error && saves && saves.length > 0) {
         // Also fetch profile names
@@ -242,7 +159,7 @@ export async function fetchWorldLeaderboard(
             xp: s.xp || 0,
             money: s.money || 120,
             missionsSolved: mSolved,
-            totalMissions: 6,
+            totalMissions: totalMissionsCount,
             cropsHarvested: sStats.totalHarvested || 0,
             cropsPlanted: sStats.totalPlanted || 0,
             farmerTitle: getFarmerTitle(mSolved),
