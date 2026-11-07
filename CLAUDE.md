@@ -59,3 +59,4 @@ npm run build
    - Use atomic selectors (`state => state.property`) or `useShallow` to prevent unnecessary component re-renders.
 7. **UI Styling**:
    - Maintain the dark futuristic sci-fi aesthetic (`neutral-900`, `neutral-950`, `amber` for admin, `sky` for player accounts, `emerald` for missions).
+
