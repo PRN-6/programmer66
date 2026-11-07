@@ -20,3 +20,4 @@ export const DEFAULT_MAINTENANCE_CONFIG: MaintenanceConfig = {
   startedAt: null,
   broadcastMessage: null,
 };
+
