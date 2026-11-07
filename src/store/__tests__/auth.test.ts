@@ -20,20 +20,24 @@ describe('Super Admin Authentication', () => {
     });
   });
 
+  const adminEmail = import.meta.env.VITE_SUPER_ADMIN_EMAIL || 'admin@programmer66.com';
+  const adminUser = import.meta.env.VITE_SUPER_ADMIN_USERNAME || 'admin';
+  const adminPass = import.meta.env.VITE_SUPER_ADMIN_PASSWORD || 'admin123';
+
   it('validates super admin credentials using email or username', () => {
     // Expected default .env values
-    expect(isSuperAdminCredential('admin@programmer66.com', 'admin123')).toBe(true);
-    expect(isSuperAdminCredential('admin', 'admin123')).toBe(true);
-    expect(isSuperAdminCredential('ADMIN', 'admin123')).toBe(true);
-    expect(isSuperAdminCredential(' Admin@programmer66.com ', 'admin123')).toBe(true);
+    expect(isSuperAdminCredential(adminEmail, adminPass)).toBe(true);
+    expect(isSuperAdminCredential(adminUser, adminPass)).toBe(true);
+    expect(isSuperAdminCredential(adminUser.toUpperCase(), adminPass)).toBe(true);
+    expect(isSuperAdminCredential(` ${adminEmail} `, adminPass)).toBe(true);
 
     // Invalid credentials
-    expect(isSuperAdminCredential('wrong@email.com', 'admin123')).toBe(false);
-    expect(isSuperAdminCredential('admin', 'wrongpassword')).toBe(false);
+    expect(isSuperAdminCredential('wrong@email.com', adminPass)).toBe(false);
+    expect(isSuperAdminCredential(adminUser, 'wrongpassword')).toBe(false);
   });
 
   it('logs in as super admin, sets state and opens competition admin modal', () => {
-    const success = useAuthStore.getState().loginAsSuperAdmin('admin', 'admin123');
+    const success = useAuthStore.getState().loginAsSuperAdmin(adminUser, adminPass);
     expect(success).toBe(true);
 
     const authState = useAuthStore.getState();
@@ -48,7 +52,7 @@ describe('Super Admin Authentication', () => {
   });
 
   it('rejects invalid super admin login attempts', () => {
-    const success = useAuthStore.getState().loginAsSuperAdmin('admin', 'invalid_pass');
+    const success = useAuthStore.getState().loginAsSuperAdmin(adminUser, 'invalid_pass');
     expect(success).toBe(false);
 
     const authState = useAuthStore.getState();
@@ -57,7 +61,7 @@ describe('Super Admin Authentication', () => {
   });
 
   it('signs out super admin and cleans up admin privileges', async () => {
-    useAuthStore.getState().loginAsSuperAdmin('admin', 'admin123');
+    useAuthStore.getState().loginAsSuperAdmin(adminUser, adminPass);
     expect(useAuthStore.getState().isSuperAdmin).toBe(true);
 
     await useAuthStore.getState().signOut();

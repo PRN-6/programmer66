@@ -5,9 +5,10 @@ import { useGameStore } from './useGameStore';
 import { useCompetitionStore } from './useCompetitionStore';
 import { soundManager } from '../audio/soundEffects';
 
-const SUPER_ADMIN_EMAIL = (import.meta.env.VITE_SUPER_ADMIN_EMAIL || (import.meta.env.DEV ? 'admin@programmer66.com' : '')).toLowerCase().trim();
-const SUPER_ADMIN_USERNAME = (import.meta.env.VITE_SUPER_ADMIN_USERNAME || (import.meta.env.DEV ? 'admin' : '')).toLowerCase().trim();
-const SUPER_ADMIN_PASSWORD = (import.meta.env.VITE_SUPER_ADMIN_PASSWORD || (import.meta.env.DEV ? 'admin123' : '')).trim();
+const isDevOrTest = Boolean(import.meta.env.DEV || import.meta.env.MODE === 'test');
+const SUPER_ADMIN_EMAIL = (import.meta.env.VITE_SUPER_ADMIN_EMAIL || (isDevOrTest ? 'admin@programmer66.com' : '')).toLowerCase().trim();
+const SUPER_ADMIN_USERNAME = (import.meta.env.VITE_SUPER_ADMIN_USERNAME || (isDevOrTest ? 'admin' : '')).toLowerCase().trim();
+const SUPER_ADMIN_PASSWORD = (import.meta.env.VITE_SUPER_ADMIN_PASSWORD || (isDevOrTest ? 'admin123' : '')).trim();
 
 function getSessionItem(key: string): string | null {
   if (typeof window !== 'undefined' && window.sessionStorage) {
