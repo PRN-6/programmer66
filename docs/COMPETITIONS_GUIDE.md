@@ -46,3 +46,4 @@
    - Click **Load Starter** to insert the recommended code template into your editor.
    - Write your Python script and click **Run Script** to verify in real time on the 3D farm canvas.
    - Click **Submit Solution** to submit your code for automated grading and earn points on the live scoreboard.
+

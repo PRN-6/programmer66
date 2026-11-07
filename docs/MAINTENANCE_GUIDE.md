@@ -8,9 +8,10 @@ The **System Maintenance Console** in **programmer66** allows Super Admins to ma
 
 1. Click **Sign In** in the top bar.
 2. Select **Developer / Admin Access**.
-3. Authorize using the master credentials defined in your `.env` configuration:
-   - `VITE_SUPER_ADMIN_EMAIL` (default: `admin@programmer66.com`)
-   - `VITE_SUPER_ADMIN_PASSWORD` (default: `admin123`)
+3. Authorize using the master credentials configured in your `.env` file:
+   - `VITE_SUPER_ADMIN_EMAIL` (e.g. `admin@programmer66.com`)
+   - `VITE_SUPER_ADMIN_USERNAME` (e.g. `admin`)
+   - `VITE_SUPER_ADMIN_PASSWORD` (your private secure admin password)
 4. Once authorized, an amber **Admin Profile** badge appears in the top bar with access to the **System Maintenance** console.
 
 ---
@@ -54,3 +55,4 @@ CREATE POLICY "Allow public insert on system_settings" ON public.system_settings
 CREATE POLICY "Allow public update on system_settings" ON public.system_settings FOR UPDATE USING (true);
 ALTER PUBLICATION supabase_realtime ADD TABLE public.system_settings;
 ```
+

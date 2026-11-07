@@ -113,10 +113,10 @@ npm run build    # Production TypeScript & Vite bundle check
    VITE_SUPABASE_URL=https://your-project-id.supabase.co
    VITE_SUPABASE_ANON_KEY=your-anon-public-key
 
-   # Super Admin Master Credentials (Optional)
-   VITE_SUPER_ADMIN_EMAIL=admin@programmer66.com
-   VITE_SUPER_ADMIN_PASSWORD=admin123
-   VITE_SUPER_ADMIN_USERNAME=admin
+   # Super Admin Master Credentials
+   VITE_SUPER_ADMIN_EMAIL=your_admin_email@example.com
+   VITE_SUPER_ADMIN_USERNAME=your_admin_username
+   VITE_SUPER_ADMIN_PASSWORD=your_secure_password_here
    ```
 5. Restart your dev server (`npm run dev`) or run `npm run build`.
 

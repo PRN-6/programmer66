@@ -72,3 +72,4 @@
 - **Super Admin**: Master credential authentication verified against `.env` variables (`VITE_SUPER_ADMIN_EMAIL`, `VITE_SUPER_ADMIN_PASSWORD`).
 - **Player Cloud Saves**: Syncs automatically to Supabase `player_saves` and `player_profiles` when online, with instant local developer session fallback.
 - **Row Level Security (RLS)**: Enforced via PostgreSQL policies in `supabase_schema.sql` to protect sensitive cloud data.
+

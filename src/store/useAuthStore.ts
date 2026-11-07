@@ -5,15 +5,9 @@ import { useGameStore } from './useGameStore';
 import { useCompetitionStore } from './useCompetitionStore';
 import { soundManager } from '../audio/soundEffects';
 
-const SUPER_ADMIN_EMAIL = (import.meta.env.VITE_SUPER_ADMIN_EMAIL || 'admin@programmer66.com').toLowerCase().trim();
-const SUPER_ADMIN_USERNAME = (import.meta.env.VITE_SUPER_ADMIN_USERNAME || 'admin').toLowerCase().trim();
-const SUPER_ADMIN_PASSWORD = (import.meta.env.VITE_SUPER_ADMIN_PASSWORD || 'admin123').trim();
-
-export const SUPER_ADMIN_DEFAULTS = {
-  username: SUPER_ADMIN_USERNAME,
-  email: SUPER_ADMIN_EMAIL,
-  password: SUPER_ADMIN_PASSWORD,
-};
+const SUPER_ADMIN_EMAIL = (import.meta.env.VITE_SUPER_ADMIN_EMAIL || (import.meta.env.DEV ? 'admin@programmer66.com' : '')).toLowerCase().trim();
+const SUPER_ADMIN_USERNAME = (import.meta.env.VITE_SUPER_ADMIN_USERNAME || (import.meta.env.DEV ? 'admin' : '')).toLowerCase().trim();
+const SUPER_ADMIN_PASSWORD = (import.meta.env.VITE_SUPER_ADMIN_PASSWORD || (import.meta.env.DEV ? 'admin123' : '')).trim();
 
 function getSessionItem(key: string): string | null {
   if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -49,15 +43,18 @@ function removeSessionItem(key: string): void {
 export function isSuperAdminCredential(identifier: string, pass: string): boolean {
   const cleanId = identifier.toLowerCase().trim();
   const cleanPass = pass.trim();
+
+  // If no password is configured or input is empty, reject immediately
+  if (!SUPER_ADMIN_PASSWORD || !cleanPass) {
+    return false;
+  }
+
   const isMatchId =
-    cleanId === SUPER_ADMIN_EMAIL ||
-    cleanId === SUPER_ADMIN_USERNAME ||
-    cleanId === 'admin' ||
-    cleanId === 'admin@programmer66.com';
-  const isMatchPass =
-    cleanPass === SUPER_ADMIN_PASSWORD ||
-    cleanPass === 'admin123' ||
-    cleanPass === 'admin';
+    (Boolean(SUPER_ADMIN_EMAIL) && cleanId === SUPER_ADMIN_EMAIL) ||
+    (Boolean(SUPER_ADMIN_USERNAME) && cleanId === SUPER_ADMIN_USERNAME);
+
+  const isMatchPass = cleanPass === SUPER_ADMIN_PASSWORD;
+
   return Boolean(isMatchId && isMatchPass);
 }
 
