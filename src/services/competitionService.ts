@@ -158,7 +158,9 @@ export class CompetitionService {
           .from('rooms')
           .select('*')
           .eq('code', cleanCode)
-          .single();
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
         if (!error && data) {
           const settings = (data.settings && typeof data.settings === 'object') ? data.settings : {};

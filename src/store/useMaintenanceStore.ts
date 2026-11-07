@@ -1,129 +1,96 @@
 import { create } from 'zustand';
+import { MaintenanceConfig, MaintenanceType, DEFAULT_MAINTENANCE_CONFIG } from '../types/maintenance';
+import { MaintenanceService } from '../services/maintenanceService';
 
-export type MaintenanceType = 'lockdown' | 'read_only' | 'banner';
-
-export interface MaintenanceConfig {
-  isMaintenanceActive: boolean;
-  maintenanceType: MaintenanceType;
-  headline: string;
-  message: string;
-  estimatedDuration: string;
-  startedAt: string | null;
-  broadcastMessage: string | null;
-}
+export type { MaintenanceConfig, MaintenanceType };
+export { DEFAULT_MAINTENANCE_CONFIG };
 
 interface MaintenanceState extends MaintenanceConfig {
-  setMaintenanceActive: (active: boolean) => void;
-  setMaintenanceType: (type: MaintenanceType) => void;
-  updateConfig: (config: Partial<MaintenanceConfig>) => void;
-  sendBroadcast: (msg: string) => void;
-  clearBroadcast: () => void;
+  setMaintenanceActive: (active: boolean) => Promise<void>;
+  setMaintenanceType: (type: MaintenanceType) => Promise<void>;
+  updateConfig: (patch: Partial<MaintenanceConfig>) => Promise<void>;
+  sendBroadcast: (msg: string) => Promise<void>;
+  clearBroadcast: () => Promise<void>;
+  applyRemoteConfig: (config: MaintenanceConfig) => void;
+  syncFromCloud: () => Promise<void>;
 }
 
 const STORAGE_KEY = 'programmer66_maintenance_config';
-
-const DEFAULT_CONFIG: MaintenanceConfig = {
-  isMaintenanceActive: false,
-  maintenanceType: 'lockdown',
-  headline: 'System Maintenance & Grid Upgrades',
-  message:
-    'Our engineering team is deploying quantum farm enhancements and database optimization. Services will resume shortly.',
-  estimatedDuration: '30 minutes',
-  startedAt: null,
-  broadcastMessage: null,
-};
-
-const broadcastChannel =
-  typeof window !== 'undefined' && 'BroadcastChannel' in window
-    ? new BroadcastChannel('programmer66_maintenance_channel')
-    : null;
 
 function loadInitialConfig(): MaintenanceConfig {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        return { ...DEFAULT_CONFIG, ...JSON.parse(raw) };
+        return { ...DEFAULT_MAINTENANCE_CONFIG, ...JSON.parse(raw) };
       }
     } catch {
       // ignore
     }
   }
-  return DEFAULT_CONFIG;
-}
-
-function persistConfig(config: MaintenanceConfig) {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-    } catch {
-      // ignore
-    }
-  }
-  broadcastChannel?.postMessage({ type: 'MAINTENANCE_SYNC', payload: config });
+  return DEFAULT_MAINTENANCE_CONFIG;
 }
 
 export const useMaintenanceStore = create<MaintenanceState>((set, get) => {
-  // Listen for cross-tab sync
-  if (broadcastChannel) {
-    broadcastChannel.addEventListener('message', (event) => {
-      if (event.data?.type === 'MAINTENANCE_SYNC' && event.data?.payload) {
-        set(event.data.payload);
-      }
-    });
-  }
-
   const initial = loadInitialConfig();
 
   return {
     ...initial,
 
-    setMaintenanceActive: (active: boolean) => {
+    setMaintenanceActive: async (active: boolean) => {
       const updated: MaintenanceConfig = {
         ...get(),
         isMaintenanceActive: active,
         startedAt: active ? new Date().toISOString() : null,
       };
       set(updated);
-      persistConfig(updated);
+      await MaintenanceService.saveMaintenanceConfig(updated);
     },
 
-    setMaintenanceType: (type: MaintenanceType) => {
+    setMaintenanceType: async (type: MaintenanceType) => {
       const updated: MaintenanceConfig = {
         ...get(),
         maintenanceType: type,
       };
       set(updated);
-      persistConfig(updated);
+      await MaintenanceService.saveMaintenanceConfig(updated);
     },
 
-    updateConfig: (patch: Partial<MaintenanceConfig>) => {
+    updateConfig: async (patch: Partial<MaintenanceConfig>) => {
       const current = get();
       const updated: MaintenanceConfig = {
         ...current,
         ...patch,
       };
       set(updated);
-      persistConfig(updated);
+      await MaintenanceService.saveMaintenanceConfig(updated);
     },
 
-    sendBroadcast: (msg: string) => {
+    sendBroadcast: async (msg: string) => {
       const updated: MaintenanceConfig = {
         ...get(),
         broadcastMessage: msg.trim() || null,
       };
       set(updated);
-      persistConfig(updated);
+      await MaintenanceService.saveMaintenanceConfig(updated);
     },
 
-    clearBroadcast: () => {
+    clearBroadcast: async () => {
       const updated: MaintenanceConfig = {
         ...get(),
         broadcastMessage: null,
       };
       set(updated);
-      persistConfig(updated);
+      await MaintenanceService.saveMaintenanceConfig(updated);
+    },
+
+    applyRemoteConfig: (config: MaintenanceConfig) => {
+      set(config);
+    },
+
+    syncFromCloud: async () => {
+      const cloud = await MaintenanceService.fetchMaintenanceConfig();
+      set(cloud);
     },
   };
 });
-

@@ -173,3 +173,39 @@ CREATE POLICY "Users can insert their own save" ON public.player_saves
 DROP POLICY IF EXISTS "Users can update their own save" ON public.player_saves;
 CREATE POLICY "Users can update their own save" ON public.player_saves
   FOR UPDATE USING (auth.uid() = user_id);
+
+-- ========================================================
+-- 12. SYSTEM SETTINGS & MAINTENANCE SCHEMA
+-- ========================================================
+CREATE TABLE IF NOT EXISTS public.system_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Enable RLS for System Settings
+ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public read access on system_settings" ON public.system_settings;
+CREATE POLICY "Allow public read access on system_settings" ON public.system_settings
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public insert on system_settings" ON public.system_settings;
+CREATE POLICY "Allow public insert on system_settings" ON public.system_settings
+  FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public update on system_settings" ON public.system_settings;
+CREATE POLICY "Allow public update on system_settings" ON public.system_settings
+  FOR UPDATE USING (true);
+
+-- Enable Realtime Replication for System Settings
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'system_settings'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.system_settings;
+  END IF;
+END $$;
+

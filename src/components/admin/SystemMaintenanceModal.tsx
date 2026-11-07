@@ -47,37 +47,46 @@ export const SystemMaintenanceModal: React.FC<SystemMaintenanceModalProps> = ({
   const [inputDuration, setInputDuration] = useState(estimatedDuration);
   const [inputBroadcast, setInputBroadcast] = useState(broadcastMessage || '');
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleToggleMaintenance = () => {
+  const handleToggleMaintenance = async () => {
+    setIsUpdating(true);
     const nextState = !isMaintenanceActive;
-    setMaintenanceActive(nextState);
+    await setMaintenanceActive(nextState);
+    setIsUpdating(false);
     setActionNotice(
       nextState
-        ? '⚠️ Maintenance Mode ACTIVATED: Visitors are now gated or notified according to your policy.'
+        ? '⚠️ Maintenance Mode ACTIVATED: Live website is now gated in production.'
         : '🟢 Maintenance Mode DEACTIVATED: Live website is now fully operational for all visitors.'
     );
     setTimeout(() => setActionNotice(null), 5000);
   };
 
-  const handleSaveConfig = () => {
-    updateConfig({
+  const handleSaveConfig = async () => {
+    setIsUpdating(true);
+    await updateConfig({
       headline: inputHeadline.trim() || 'System Maintenance in Progress',
       message: inputMessage.trim() || 'Services will resume shortly.',
       estimatedDuration: inputDuration.trim() || '30 minutes',
     });
-    setActionNotice('✅ Maintenance settings updated successfully.');
+    setIsUpdating(false);
+    setActionNotice('✅ Maintenance settings synced to production successfully.');
     setTimeout(() => setActionNotice(null), 4000);
   };
 
-  const handleSendBroadcast = () => {
+  const handleSendBroadcast = async () => {
     if (!inputBroadcast.trim()) return;
-    sendBroadcast(inputBroadcast.trim());
-    setActionNotice('📡 Live broadcast alert sent to all connected players.');
+    setIsUpdating(true);
+    await sendBroadcast(inputBroadcast.trim());
+    setIsUpdating(false);
+    setActionNotice('📡 Live broadcast alert sent to all connected players in production.');
     setTimeout(() => setActionNotice(null), 4000);
   };
 
-  const handleClearBroadcast = () => {
-    clearBroadcast();
+  const handleClearBroadcast = async () => {
+    setIsUpdating(true);
+    await clearBroadcast();
+    setIsUpdating(false);
     setInputBroadcast('');
     setActionNotice('Broadcast alert cleared.');
     setTimeout(() => setActionNotice(null), 3000);
@@ -126,7 +135,7 @@ export const SystemMaintenanceModal: React.FC<SystemMaintenanceModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150">
       <div className="w-full max-w-3xl bg-neutral-950 border border-amber-500/30 rounded-2xl shadow-[0_0_50px_rgba(245,158,11,0.15)] flex flex-col max-h-[92vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 bg-neutral-900/60 backdrop-blur-md">
@@ -224,7 +233,8 @@ export const SystemMaintenanceModal: React.FC<SystemMaintenanceModalProps> = ({
 
               <button
                 onClick={handleToggleMaintenance}
-                className={`py-3 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all transform active:scale-95 flex items-center justify-center gap-2 shrink-0 shadow-lg cursor-pointer ${
+                disabled={isUpdating}
+                className={`py-3 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all transform active:scale-95 flex items-center justify-center gap-2 shrink-0 shadow-lg cursor-pointer disabled:opacity-50 ${
                   isMaintenanceActive
                     ? 'bg-emerald-500 hover:bg-emerald-400 text-neutral-950 shadow-emerald-950/50'
                     : 'bg-amber-500 hover:bg-amber-400 text-neutral-950 shadow-amber-950/50'

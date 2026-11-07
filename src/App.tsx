@@ -15,6 +15,7 @@ import { soundManager } from './audio/soundEffects';
 
 import { MaintenanceScreen } from './components/maintenance/MaintenanceScreen';
 import { useMaintenanceStore } from './store/useMaintenanceStore';
+import { MaintenanceService } from './services/maintenanceService';
 import { X, Wrench } from 'lucide-react';
 
 // Lazy-loaded modal components to reduce initial page bundle
@@ -94,6 +95,27 @@ export function App() {
   const currentTeam = useCompetitionStore((state) => state.currentTeam);
   const isAdmin = useCompetitionStore((state) => state.isAdmin);
   const refreshRoomData = useCompetitionStore((state) => state.refreshRoomData);
+
+  // Cloud-synced system maintenance listener & heartbeat
+  useEffect(() => {
+    // 1. Initial fetch from Supabase cloud
+    useMaintenanceStore.getState().syncFromCloud();
+
+    // 2. Real-time subscription to maintenance changes
+    const unsubscribe = MaintenanceService.subscribeToMaintenance((remoteConfig) => {
+      useMaintenanceStore.getState().applyRemoteConfig(remoteConfig);
+    });
+
+    // 3. Fallback heartbeat polling every 20 seconds
+    const interval = setInterval(() => {
+      useMaintenanceStore.getState().syncFromCloud();
+    }, 20000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, []);
 
   // Global real-time competition synchronization for all active competitors & admin
   useEffect(() => {
