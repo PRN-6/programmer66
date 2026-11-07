@@ -119,11 +119,12 @@ export class CompetitionService {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data, error } = await supabase
+        let roomCode = newRoom.code;
+        let insertRes = await supabase
           .from('rooms')
           .insert({
             id: newRoom.id,
-            code: newRoom.code,
+            code: roomCode,
             title: newRoom.title,
             status: newRoom.status,
             duration_minutes: newRoom.durationMinutes,
@@ -135,7 +136,33 @@ export class CompetitionService {
           .select()
           .single();
 
-        if (!error && data) return newRoom;
+        if (insertRes.error && insertRes.error.code === '23505') {
+          // Retry with fresh unique room code if collision occurred
+          roomCode = generateRoomCode();
+          newRoom.code = roomCode;
+          insertRes = await supabase
+            .from('rooms')
+            .insert({
+              id: newRoom.id,
+              code: roomCode,
+              title: newRoom.title,
+              status: newRoom.status,
+              duration_minutes: newRoom.durationMinutes,
+              remaining_seconds: newRoom.remainingSeconds,
+              active_challenge_id: newRoom.activeChallengeId,
+              settings: newRoom.settings,
+              challenges: newRoom.challenges,
+            })
+            .select()
+            .single();
+        }
+
+        if (!insertRes.error && insertRes.data) {
+          const rooms = this.getLocalRooms();
+          rooms[newRoom.id] = newRoom;
+          this.saveLocalRooms(rooms);
+          return newRoom;
+        }
       } catch (err) {
         console.warn('Supabase createRoom fallback to local:', err);
       }

@@ -11,6 +11,8 @@ import {
   Code2,
   Trophy,
   Sparkles,
+  Globe,
+  Compass,
 } from 'lucide-react';
 import { useEditorStore } from '../../store/useEditorStore';
 
@@ -182,6 +184,38 @@ export const ApiDocsModal: React.FC<ApiDocsModalProps> = ({ onClose }) => {
           sig: '🚀 Solution Submission & Scoring',
           desc: 'When in a live competition, an active problem banner appears above the Python editor. Click "Load Starter" to load template code, and click "Submit Solution" to earn points on the live Admin Scoreboard.',
           example: '# Verify ripe harvest before submitting:\nfor tile in farm.get_tiles():\n    if tile.is_ready():\n        tile.harvest()',
+        },
+      ],
+    },
+    {
+      category: 'Terrain Topographies & Canal Navigation',
+      icon: <Compass className="w-4 h-4 text-cyan-400" />,
+      apis: [
+        {
+          sig: 'tile.unlocked (Waterway & Obstacle Detection)',
+          desc: 'In terrain presets like Dual Terraces or Islands, canals and rock formations have unlocked == False. Drones can fly over water, but only arable plots can be planted.',
+          example: 'for tile in farm.get_tiles():\n    # Only operate on fertile arable soil\n    if getattr(tile, "unlocked", True) and tile.is_empty():\n        robot.move_to(tile.x, tile.y)\n        robot.plant("wheat")',
+        },
+        {
+          sig: 'farm.get_width() / farm.get_height()',
+          desc: 'Returns the active field grid boundaries (e.g. 4x4 Sprint, 6x6 Standard, 8x8 Master).',
+          example: 'w = farm.get_width()\nh = farm.get_height()\nprint("Field dimensions:", w, "x", h)',
+        },
+      ],
+    },
+    {
+      category: 'World Leaderboard & Player Progression',
+      icon: <Globe className="w-4 h-4 text-sky-400" />,
+      apis: [
+        {
+          sig: 'farm.get_stats()',
+          desc: 'Returns player telemetry including totalHarvested, totalPlanted, totalWatered, and moneyEarned.',
+          example: 'stats = farm.get_stats()\nprint("Total crops harvested:", stats.get("totalHarvested", 0))',
+        },
+        {
+          sig: '🎯 Solving Missions for Global Rank',
+          desc: 'Complete farming missions from the left sidebar tracker to earn cash rewards and XP. Ranks on the World Leaderboard are computed dynamically from completed missions and XP.',
+          example: '# Automate planting 10 wheat to complete Pioneer Harvester mission\nfor i, tile in enumerate(farm.get_tiles()):\n    if i < 10 and tile.is_empty():\n        robot.move_to(tile.x, tile.y)\n        robot.plant("wheat")\n        robot.water()',
         },
       ],
     },
